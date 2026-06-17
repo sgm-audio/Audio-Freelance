@@ -1,6 +1,5 @@
 """FastAPI route definitions for the freelance acquisition system."""
 
-import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
