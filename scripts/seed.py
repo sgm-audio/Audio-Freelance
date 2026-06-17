@@ -1,130 +1,74 @@
-"""Seed script: pre-populates ChromaDB with sample leads for demo purposes."""
+"""Seed script: generates sample leads for demo purposes.
 
-import asyncio
-import uuid
+Uses entirely synthetic data — no real companies, URLs, or contacts.
+"""
+import os
+import sys
 from datetime import datetime, timezone
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from leads.schema import Lead, LeadStatus
 from leads.store import upsert_lead, ensure_collections_initialized
 
 SAMPLE_LEADS = [
     {
-        "source": "linkedin",
+        "source": "example",
         "tier": 1,
-        "title": "Audio DSP Engineer — Soundtoys",
-        "company": "Soundtoys",
-        "url": "https://www.soundtoys.com/audio-dsp-engineer",
-        "raw_text": "Design, test, and implement new DSP algorithms for professional audio effects. C++, real-time audio, analog modeling. Full-time, Burlington VT.",
-        "niche": "plugin_dev",
-        "score": 18,
-        "verdict": "HOT",
-        "status": "NEW",
-    },
-    {
-        "source": "linkedin",
-        "tier": 1,
-        "title": "Senior Audio / ML Engineer — VoiceWunder",
-        "company": "VoiceWunder GmbH",
-        "url": "https://forum.juce.com/t/senior-audio-ml-engineer-local-tts-on-device/68888",
-        "raw_text": "Build local TTS engine to replace ElevenLabs. On-device inference, model optimization, quantization, Apple Silicon MLX. 8-month project, remote.",
-        "niche": "audio_ml",
-        "score": 22,
-        "verdict": "HOT",
-        "status": "NEW",
-    },
-    {
-        "source": "juce_forum",
-        "tier": 1,
-        "title": "Audio Software Developer — RelicSoundLabs",
-        "company": "RelicSoundLabs",
-        "url": "https://forum.juce.com/t/audio-software-developer-project-based-fully-remote/67300",
-        "raw_text": "Project-based JUCE developer for neural modeling and audio plugins. VST3/AU/AAX. Fully remote, flexible hours.",
+        "title": "Audio DSP Engineer — Example Corp",
+        "company": "Example Corp",
+        "url": "https://example.com/jobs/dsp-engineer",
+        "raw_text": "Design and implement real-time audio DSP algorithms in C++. Plugin development, VST3/CLAP. Remote contract position.",
         "niche": "plugin_dev",
         "score": 15,
         "verdict": "HOT",
         "status": "NEW",
     },
     {
-        "source": "juce_forum",
+        "source": "example",
         "tier": 1,
-        "title": "Context-Aware Drum Quantization — BlackSalt Audio",
-        "company": "BlackSalt Audio",
-        "url": "https://forum.juce.com/t/context-aware-drum-quantization-looking-for-a-juce-ara-dev/68635",
-        "raw_text": "Build ARA plugin for drum quantization with dynamic programming over onset sequences. JUCE, ARA, paid contract, remote.",
-        "niche": "plugin_dev",
-        "score": 14,
-        "verdict": "WARM",
-        "status": "NEW",
-    },
-    {
-        "source": "market_intel",
-        "tier": 4,
-        "title": "Music AI (Moises) — $40M Series A",
-        "company": "Music AI",
-        "url": "https://pulse2.com/music-ai-music-and-audio-technology-company-raises-40-million-series-a",
-        "raw_text": "On-device AI for music. Stem separation, MIR, generative AI. 50M+ users. Strategic priority: edge computing and on-device inference.",
-        "niche": "audio_ml",
-        "score": 16,
-        "verdict": "HOT",
-        "status": "NEW",
-    },
-    {
-        "source": "market_intel",
-        "tier": 4,
-        "title": "ElevenLabs — $500M Series D ($11B valuation)",
-        "company": "ElevenLabs",
-        "url": "https://themusicnetwork.com/news/ai-audio-startup-elevenlabs-valuation-funding-round",
-        "raw_text": "AI voice and audio. Massive hiring, TTS, voice cloning. Raised $500M at $11B valuation.",
+        "title": "ML Audio Engineer — Acme Audio",
+        "company": "Acme Audio",
+        "url": "https://example.com/jobs/ml-audio",
+        "raw_text": "Build on-device inference engine for audio processing. Mamba/SSM experience preferred. Model quantization, low-latency.",
         "niche": "audio_ml",
         "score": 20,
         "verdict": "HOT",
         "status": "NEW",
     },
     {
-        "source": "juce_forum",
+        "source": "example",
         "tier": 2,
-        "title": "C++/JUCE Developer — GForce Software",
-        "company": "GForce Software",
-        "url": "https://www.gforcesoftware.com/blog/software-developer-2026-gforce-software/",
-        "raw_text": "Full-time UK-remote C++/JUCE developer for virtual instrument plugins. DSP, synthesis, 2-3 years experience.",
-        "niche": "plugin_dev",
-        "score": 10,
-        "verdict": "WARM",
-        "status": "NEW",
-    },
-    {
-        "source": "linkedin",
-        "tier": 1,
-        "title": "Senior Audio DSP Engineer — Triunity Software",
-        "company": "Triunity Software",
-        "url": "https://www.linkedin.com/jobs/view/senior-audio-dsp-engineer-at-triunity-software-inc-4259874221",
-        "raw_text": "Senior Audio DSP Engineer (Contractor). Remote. Design and optimize audio pipelines.",
-        "niche": "plugin_dev",
+        "title": "REAPER Scripting — Freelance",
+        "company": None,
+        "url": "https://example.com/gigs/reaper-automation",
+        "raw_text": "Need Lua scripts for REAPER batch processing, rendering automation, and custom actions. Paid project.",
+        "niche": "reaper_scripts",
         "score": 8,
         "verdict": "WARM",
         "status": "NEW",
     },
     {
-        "source": "juce_forum",
-        "tier": 2,
-        "title": "C++/JUCE Developer — Plugin Series",
-        "company": None,
-        "url": "https://forum.juce.com/t/looking-for-c-juce-developer/67196",
-        "raw_text": "Seeking experienced C++/JUCE developer for professional audio plugin series. Long-term, possible cofounder. Netherlands-based, remote supported.",
-        "niche": "plugin_dev",
-        "score": 9,
+        "source": "example",
+        "tier": 1,
+        "title": "Rust Audio Plugin Developer",
+        "company": "AudioStartup.io",
+        "url": "https://example.com/jobs/rust-audio",
+        "raw_text": "Build CLAP plugins in Rust using nih-plug. Real-time audio processing, MIDI, GUI.",
+        "niche": "rust_audio",
+        "score": 12,
         "verdict": "WARM",
         "status": "NEW",
     },
     {
-        "source": "market_intel",
-        "tier": 4,
-        "title": "David AI — $50M Series B (Audio AI Data Layer)",
-        "company": "David AI",
-        "url": "https://www.linkedin.com/posts/cohen-tomer_david-ai-has-raised-a-50m-series-b-to-establish-activity-7381736552110063616-4Ea5",
-        "raw_text": "Data layer for audio AI. Series B led by Meritech with NVIDIA. Building audio ML infrastructure.",
-        "niche": "audio_ml",
-        "score": 12,
+        "source": "example",
+        "tier": 3,
+        "title": "Game Audio Programmer",
+        "company": "Studio X",
+        "url": "https://example.com/jobs/game-audio",
+        "raw_text": "Implement audio systems in Unreal Engine. Wwise integration, real-time mixing, DSP.",
+        "niche": "game_audio_dev",
+        "score": 10,
         "verdict": "WARM",
         "status": "NEW",
     },
@@ -153,7 +97,7 @@ def seed():
         except Exception as e:
             print(f"  ✗ {lead.title[:60]}: {e}")
 
-    print(f"\nSeeded {len(SAMPLE_LEADS)} leads.")
+    print(f"\nSeeded {len(SAMPLE_LEADS)} synthetic leads.")
 
 
 if __name__ == "__main__":
