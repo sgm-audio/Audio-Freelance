@@ -20,6 +20,12 @@
 
 ---
 
+<p align="center">
+  <img src="frontend/public/dashboard.png" alt="Dashboard" width="800">
+</p>
+
+---
+
 **Audio-Freelance** is a full-stack system that finds freelance audio development work — not by scraping job boards, but by mining market intelligence: funding rounds, technology trends, product launches, hiring signals, and pricing data. It scores leads, tracks opportunities, and generates outreach drafts.
 
 Built for audio DSP engineers, plugin developers, and audio ML engineers who want to spend less time hunting and more time coding.

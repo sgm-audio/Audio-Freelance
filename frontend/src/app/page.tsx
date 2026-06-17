@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchStatus, fetchMarket, fetchHealth, StatusResponse, MarketReport } from "@/lib/api";
+import AudioVis from "@/components/audio-vis";
 
 export default function Dashboard() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
@@ -76,6 +77,8 @@ export default function Dashboard() {
             : "Run a market scan to populate"}
         </p>
       </div>
+
+      <AudioVis />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Leads" value={totalLeads} />

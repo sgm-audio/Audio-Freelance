@@ -1,8 +1,10 @@
 version: "3.9"
 
 services:
+  # ── Embedding service (optional) ──
   ollama:
     image: ollama/ollama:latest
+    profiles: ["full"]
     ports:
       - "11434:11434"
     volumes:
@@ -15,6 +17,7 @@ services:
               count: all
               capabilities: [gpu]
 
+  # ── Vector database ──
   chromadb:
     image: chromadb/chroma:latest
     ports:
@@ -25,6 +28,41 @@ services:
       - IS_PERSISTENT=TRUE
       - PERSIST_DIRECTORY=/chroma/chroma
 
+  # ── FastAPI backend ──
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - CHROMA_HOST=http://chromadb:8000
+      - EMBEDDING_MODEL=nomic-embed-text
+      - PREFERRED_NICHES=plugin_dev,reaper_scripts,rust_audio,audio_ml,game_audio_dev
+      - MIN_RATE_CAD=3000
+      - HOURLY_FLOOR_CAD=150
+    depends_on:
+      - chromadb
+    volumes:
+      - lead_data:/app/leads/data
+    command: >
+      sh -c "uv run python scripts/seed.py && uv run python main.py"
+
+  # ── Next.js frontend ──
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - API_HOST=backend
+      - NEXT_TELEMETRY_DISABLED=1
+    depends_on:
+      - backend
+
 volumes:
   ollama_data:
   chroma_data:
+  lead_data:
