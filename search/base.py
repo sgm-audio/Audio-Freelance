@@ -55,6 +55,21 @@ _TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 _SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
 _FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY", "")
 
+
+def _is_key_valid(key: str, min_len: int = 20) -> bool:
+    """Heuristic: key must exist, not be a stub/placeholder, and have reasonable length."""
+    if not key or len(key) < min_len:
+        return False
+    # Catch obvious placeholders like "your-key-here"
+    lower = key.lower()
+    if lower in ("", "your_key", "your-key", "placeholder", "***", "none"):
+        return False
+    # Catch repeated characters used as fillers
+    unique = len(set(key))
+    if unique < 5:
+        return False
+    return True
+
 _TAVILY_URL = "https://api.tavily.com/search"
 _SERPER_URL = "https://google.serper.dev/search"
 _FIRECRAWL_SEARCH_URL = "https://api.firecrawl.dev/v1/search"
@@ -72,7 +87,7 @@ def is_block_page(text: str) -> bool:
 )
 async def _tavily_search(query: str, max_results: int = 10) -> list[SearchResult]:
     """Search via Tavily API."""
-    if not _TAVILY_API_KEY or _TAVILY_API_KEY == "tvly-d...dCrl":
+    if not _is_key_valid(_TAVILY_API_KEY, min_len=20):
         return []
 
     async with httpx.AsyncClient(timeout=30) as client:
@@ -101,7 +116,7 @@ async def _tavily_search(query: str, max_results: int = 10) -> list[SearchResult
 )
 async def _serper_search(query: str, max_results: int = 10) -> list[SearchResult]:
     """Search via Serper (Google) API."""
-    if not _SERPER_API_KEY or _SERPER_API_KEY == "c0203d...09d0":
+    if not _is_key_valid(_SERPER_API_KEY, min_len=20):
         return []
 
     async with httpx.AsyncClient(timeout=30) as client:
@@ -131,7 +146,7 @@ async def _serper_search(query: str, max_results: int = 10) -> list[SearchResult
 )
 async def _firecrawl_search(query: str, max_results: int = 10) -> list[SearchResult]:
     """Search via Firecrawl API."""
-    if not _FIRECRAWL_API_KEY or _FIRECRAWL_API_KEY == "***":
+    if not _is_key_valid(_FIRECRAWL_API_KEY, min_len=20):
         return []
 
     async with httpx.AsyncClient(timeout=30) as client:

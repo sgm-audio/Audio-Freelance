@@ -69,11 +69,29 @@ def _init() -> None:
         return
 
     import chromadb
-    from chromadb.utils import embedding_functions
 
-    embedding_fn = embedding_functions.OllamaEmbeddingFunction(
-        model_name=EMBEDDING_MODEL,
-    )
+    # Try Ollama first, fall back to local sentence-transformers
+    embedding_fn = None
+    try:
+        from chromadb.utils import embedding_functions
+
+        if check_ollama_available():
+            embedding_fn = embedding_functions.OllamaEmbeddingFunction(
+                model_name=EMBEDDING_MODEL,
+            )
+    except Exception:
+        pass
+
+    if embedding_fn is None:
+        try:
+            from chromadb.utils import embedding_functions
+
+            embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+            )
+        except Exception:
+            # Absolute last resort: chromadb default (token count)
+            pass
 
     client = chromadb.PersistentClient(
         path=str(_DATA_DIR),

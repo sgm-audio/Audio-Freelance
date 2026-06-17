@@ -7,7 +7,7 @@ from research.market import (
     MarketReport,
     TechTrend,
     PricingBenchmark,
-    _extract_tech_mentions,
+    _count_tech_mentions as _extract_tech_mentions,
     extract_tech_trends,
     extract_pricing_benchmarks,
     _parse_rate,
