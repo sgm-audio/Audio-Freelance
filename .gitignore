@@ -12,6 +12,9 @@ leads/data/
 # Proposals (generated)
 proposals/
 
+# Outreach drafts (personal application strategies)
+outreach/
+
 # Frontend
 frontend/.next/
 frontend/node_modules/

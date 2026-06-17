@@ -41,3 +41,25 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["leads*", "search*", "scoring*", "graph*", "api*", "generate*", "assets*", "debug*", "research*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "S", "SIM"]
+ignore = ["S101"]  # allow assert in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.coverage.run]
+source = ["leads", "search", "scoring", "graph", "api", "generate", "assets", "debug", "research"]
+omit = ["*/tests/*", "*/__init__.py"]
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]

@@ -7,6 +7,19 @@ on:
     branches: [main, master]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: uv sync
+      - name: Lint
+        run: uv run ruff check .
+
   test-backend:
     runs-on: ubuntu-latest
     strategy:
@@ -24,8 +37,10 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Run tests
-        run: uv run --with pytest --with pytest-asyncio pytest tests/ -v --tb=short
+      - name: Run tests with coverage
+        run: |
+          uv run --with pytest --with pytest-asyncio --with pytest-cov \
+            pytest tests/ -v --tb=short --cov --cov-report=term-missing
 
   build-frontend:
     runs-on: ubuntu-latest
