@@ -25,6 +25,10 @@ from scoring.score import score_candidate
 router = APIRouter(dependencies=[Depends(require_api_key)])
 public = APIRouter()  # no auth
 
+from debug.log import setup_logger
+
+log = setup_logger(__name__)
+
 
 @public.get("/health")
 async def health_check():
@@ -79,7 +83,8 @@ async def change_lead_status(lead_id: str, new_status: str):
     try:
         update_status(lead_id, status_enum)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        log.warning("update_status failed", extra={"lead_id": lead_id, "error": e})
+        raise HTTPException(status_code=500, detail="Failed to update lead status")
     return {"status": "updated", "lead_id": lead_id, "new_status": new_status}
 
 
@@ -114,7 +119,8 @@ async def prospect_niche(niche: str):
             ],
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
+        log.warning("Pipeline failed", extra={"niche": niche, "error": e})
+        raise HTTPException(status_code=500, detail="Pipeline processing failed. Check server logs.")
 
 
 @router.post("/score")
@@ -147,7 +153,8 @@ async def score_manual(
     try:
         upsert_lead(lead)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Storage error: {str(e)}")
+        log.warning("Storage failed", extra={"lead_id": str(lead.id), "error": e})
+        raise HTTPException(status_code=500, detail="Failed to store lead.")
 
     return lead.model_dump(mode="json")
 

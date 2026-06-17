@@ -2,7 +2,6 @@
 """FastAPI entry point — serves dashboard + API + briefing dispatch."""
 
 import os
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,6 +19,15 @@ env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(env_path)
 
 from api.routes import router, public
+
+# ── Startup checks ──
+_api_key = os.getenv("API_KEY", "")
+if not _api_key:
+    import warnings
+    warnings.warn(
+        "⚠ API_KEY not set. All API endpoints are unprotected. "
+        "Set API_KEY in .env for production deployments."
+    )
 
 # ── Rate limiter ──
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])

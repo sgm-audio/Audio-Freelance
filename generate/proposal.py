@@ -1,5 +1,7 @@
 """Structured proposal generator with pricing tiers and IP licensing notes."""
 
+import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -40,13 +42,18 @@ def generate_proposal(
     if out_of_scope is None:
         out_of_scope = []
 
+    if estimated_tier not in PRICING_TIERS:
+        estimated_tier = "medium"
     tier_min, tier_max, tier_desc = PRICING_TIERS.get(
         estimated_tier, PRICING_TIERS["medium"]
     )
     anchor = RATE_ANCHORS.get(niche, RATE_ANCHORS["cpp_plugin_contract"])
 
     date_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
-    filename = f"{client_name.lower().replace(' ', '_')}_{date_str}.md"
+    safe_name = re.sub(r"[^a-zA-Z0-9_-]", "", client_name.lower().replace(" ", "_"))
+    if not safe_name:
+        safe_name = "client"
+    filename = f"{safe_name}_{date_str}.md"
 
     deliverables_bullets = "\n".join(f"- [x] {d}" for d in deliverables)
     oos_bullets = "\n".join(f"- [ ] {d}" for d in out_of_scope)
