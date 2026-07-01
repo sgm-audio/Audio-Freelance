@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchColdLeads, fetchColdStats, rotateColdLeads, Lead, ColdStats } from "@/lib/api";
+import { fetchColdLeads, fetchColdStats, rotateColdLeads, fetchRotationStatus, Lead, ColdStats, RotationStatus } from "@/lib/api";
 
 export default function ColdLeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<ColdStats | null>(null);
+  const [rotStatus, setRotStatus] = useState<RotationStatus | null>(null);
   const [days, setDays] = useState(7);
   const [loading, setLoading] = useState(true);
   const [rotating, setRotating] = useState(false);
@@ -16,12 +17,14 @@ export default function ColdLeadsPage() {
   async function load() {
     setLoading(true);
     try {
-      const [data, s] = await Promise.all([
+      const [data, s, r] = await Promise.all([
         fetchColdLeads(days),
         fetchColdStats(),
+        fetchRotationStatus(),
       ]);
       setLeads(data.leads);
       setStats(s);
+      setRotStatus(r);
     } catch { setLeads([]); }
     setLoading(false);
   }
@@ -51,6 +54,12 @@ export default function ColdLeadsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Cold Leads</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {stats ? `${stats.total_archived} archived · ${leads.length} in range` : "Loading..."}
+            {rotStatus?.hours_ago != null && (
+              <span className="ml-3 text-xs">
+                · Last rotated {rotStatus.hours_ago < 1 ? "recently" : `${Math.round(rotStatus.hours_ago)}h ago`}
+                {rotStatus.hours_ago > rotStatus.rotation_due_days * 24 && " ⚡ due"}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">

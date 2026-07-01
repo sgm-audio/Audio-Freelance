@@ -235,3 +235,15 @@ export async function removeCompany(ats: string, slug: string): Promise<{ status
     return res.json();
   } finally { clearTimeout(timer); }
 }
+
+// ── Rotation status ──
+
+export interface RotationStatus {
+  last_rotation: string | null;
+  hours_ago: number | null;
+  rotation_due_days: number;
+}
+
+export async function fetchRotationStatus(): Promise<RotationStatus> {
+  return get("/leads/rotation-status");
+}

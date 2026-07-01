@@ -1,5 +1,6 @@
 """FastAPI route definitions for the freelance acquisition system."""
 
+import os
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -402,16 +403,33 @@ async def cold_lead_stats():
 @router.post("/leads/rotate-cold")
 async def rotate_cold_leads(days: int = 3):
     """Explicit housekeeping: rotate COLD/WARM leads older than N days to archive."""
-    from leads.store import ensure_collections_initialized, rotate_cold
+    from leads.store import _touch_rotation, ensure_collections_initialized, rotate_cold
 
     if not ensure_collections_initialized():
         raise HTTPException(status_code=503, detail="ChromaDB not available")
 
     archived, deleted = rotate_cold(age_days=days)
+    _touch_rotation()  # Record timestamp so auto-rotation doesn't double-fire
     return {
         "archived": archived,
         "deleted": deleted,
         "message": f"Rotated {archived} leads to archive ({deleted} removed from active store).",
+    }
+
+
+@router.get("/leads/rotation-status")
+async def rotation_status():
+    """Check when the last rotation happened and if one is due."""
+    from datetime import UTC, datetime
+
+    from leads.store import get_last_rotation
+
+    last = get_last_rotation()
+    now = datetime.now(tz=UTC)
+    return {
+        "last_rotation": last.isoformat() if last else None,
+        "hours_ago": round((now - last).total_seconds() / 3600, 1) if last else None,
+        "rotation_due_days": int(os.getenv("COLD_ROTATION_DAYS", "3")),
     }
 
 
