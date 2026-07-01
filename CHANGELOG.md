@@ -13,10 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Auto-rotation on startup** — no cron needed. Every time the app starts, it checks if ≥3 days since last rotation and auto-rotates cold leads. Laptop-friendly: works even with intermittent uptime.
 - **Rotation status endpoint** — `GET /leads/rotation-status` shows last rotation timestamp and hours since. Cold-leads page shows "Last rotated: Xh ago ⚡ due" indicator.
 - **Verified ATS company slugs** — 17 companies across Greenhouse/Lever/Ashby. Spotify (121 jobs, 76 audio-relevant), Splice, Universal Audio, David AI confirmed working. 13 more pre-loaded with correct slugs.
-
-### Changed
-- `POST /leads/rotate-cold` now records rotation timestamp for status tracking.
-- Companies list updated with verified Greenhouse/Lever/Ashby slugs.
 - **`activate.sh`** — single-command venv entry: `./activate.sh` drops into a subshell; `exit` to leave. Canonical `source .venv/bin/activate` documented.
 - **Cold-lead archival** — COLD/SKIP leads are archived to `leads/data/archive/` JSONL instead of bloating the active ChromaDB store. Archive endpoint + frontend submenu.
 - **3-day rotation** — `POST /leads/rotate-cold` (explicit housekeeping) and `scripts/rotate_cold_leads.py` auto-archive COLD/WARM leads older than 3 days.
@@ -27,10 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **env-driven thresholds** — `HOT_THRESHOLD`, `WARM_THRESHOLD`, `MIN_RATE_CAD`, `HOURLY_FLOOR_CAD` now configurable via `.env`.
 
 ### Changed
+- `POST /leads/rotate-cold` now records rotation timestamp for status tracking.
+- Companies list updated with verified Greenhouse/Lever/Ashby slugs.
 - **`update_status`** now logs every transition as a tracking event and archives the full record when moving to `DEAD`.
 - **Pipeline** no longer persists COLD/SKIP leads to ChromaDB — they go to `archive_batch` only.
 - **Dashboard** now shows "Pursuing" stat (CONTACTED + REPLIED + PROPOSAL_SENT) alongside existing counts.
-- **Sidebar** has new entries: Cold Leads, Tracking.
+- **Sidebar** has new entries: Cold Leads, Tracking, Preferences.
 
 ### Fixed
 - Test leads (`source="test"`) no longer pollute the production ChromaDB on `pytest` runs.
