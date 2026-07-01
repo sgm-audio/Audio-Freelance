@@ -5,6 +5,29 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **`activate.sh`** — single-command venv entry: `./activate.sh` drops into a subshell; `exit` to leave. Canonical `source .venv/bin/activate` documented.
+- **Cold-lead archival** — COLD/SKIP leads are archived to `leads/data/archive/` JSONL instead of bloating the active ChromaDB store. Archive endpoint + frontend submenu.
+- **3-day rotation** — `POST /leads/rotate-cold` (explicit housekeeping) and `scripts/rotate_cold_leads.py` auto-archive COLD/WARM leads older than 3 days.
+- **Tracking system** — `leads/tracking.py`: JSONL-per-lead event log for status transitions, outreach, replies. New `/tracking` and `/tracking/active` API endpoints + frontend page with won/lost summary and win rate.
+- **Test isolation** — `tests/conftest.py` forces ephemeral ChromaDB directory via `LEADS_DATA_DIR` env var. Source blacklist in `upsert_lead` blocks `source="test"` in production.
+- **`scripts/purge_test_leads.py`** — one-shot removal of all test-source leads from the production store.
+- **Expanded scoring** — 9 new positive signals (`cxx_audio`, `dsp_any`, `real_time`, `contract_role`, `senior_role`, `audio_impl`, `audio_context`, etc.), `$5K` / `$150K` K-notation budget parsing, aggregator-page detection (directory listing pages like "234 jobs in..." get scored -50 and archived).
+- **env-driven thresholds** — `HOT_THRESHOLD`, `WARM_THRESHOLD`, `MIN_RATE_CAD`, `HOURLY_FLOOR_CAD` now configurable via `.env`.
+
+### Changed
+- **`update_status`** now logs every transition as a tracking event and archives the full record when moving to `DEAD`.
+- **Pipeline** no longer persists COLD/SKIP leads to ChromaDB — they go to `archive_batch` only.
+- **Dashboard** now shows "Pursuing" stat (CONTACTED + REPLIED + PROPOSAL_SENT) alongside existing counts.
+- **Sidebar** has new entries: Cold Leads, Tracking.
+
+### Fixed
+- Test leads (`source="test"`) no longer pollute the production ChromaDB on `pytest` runs.
+- Aggregator/directory pages no longer appear as scored leads.
+- Budget patterns now catch K-notation (`$5K`, `$150K contract`) in addition to numeric.
+
 ## [0.1.0] - 2026-06-17
 
 ### Added

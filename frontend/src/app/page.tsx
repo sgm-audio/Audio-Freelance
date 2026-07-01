@@ -64,6 +64,7 @@ export default function Dashboard() {
 
   const totalLeads = Object.values(counts).reduce((a, b) => a + (b ?? 0), 0);
   const hotCount = counts.HOT ?? 0;
+  const pursuingCount = (counts.CONTACTED ?? 0) + (counts.REPLIED ?? 0) + (counts.PROPOSAL_SENT ?? 0);
 
   return (
     <div className="space-y-8">
@@ -84,6 +85,7 @@ export default function Dashboard() {
         <StatCard label="Total Leads" value={totalLeads} />
         <StatCard label="Hot" value={hotCount} color="text-red-500" />
         <StatCard label="Warm" value={counts.WARM ?? 0} color="text-amber-500" />
+        <StatCard label="Pursuing" value={pursuingCount} color="text-blue-500" />
         <StatCard label="Contacted" value={(counts.CONTACTED ?? 0) + (counts.PROPOSAL_SENT ?? 0)} />
       </div>
 
@@ -106,6 +108,16 @@ export default function Dashboard() {
             className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent transition-colors"
           >
             Opportunities →
+          </a>
+          <a href="/cold-leads"
+            className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+          >
+            Cold Leads →
+          </a>
+          <a href="/tracking"
+            className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+          >
+            Tracking →
           </a>
         </div>
       </div>

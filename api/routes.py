@@ -105,6 +105,8 @@ async def prospect_niche(niche: str):
             "warm": len(result.get("warm_leads", [])),
             "cold": len(result.get("cold_leads", [])),
             "skipped": len(result.get("skipped_leads", [])),
+            "archived": result.get("archived_count", 0),
+            "archive_path": result.get("archive_path", ""),
             "errors": result.get("errors", []),
             "hot_leads": [lead.model_dump(mode="json") for lead in result.get("hot_leads", [])],
             "warm_leads": [lead.model_dump(mode="json") for lead in result.get("warm_leads", [])],
@@ -313,3 +315,297 @@ async def market_opportunities():
             for s in sorted(report.signals, key=lambda x: -x.relevance_score)[:20]
         ],
     }
+
+
+# ── Cold-lead archive ──
+
+
+@router.get("/leads/cold")
+async def list_cold_leads(days: int = 7, niche: str | None = None):
+    """List recently archived cold leads from archive JSONL files."""
+    from datetime import UTC, datetime, timedelta
+
+    import json
+
+    from leads.store import ARCHIVE_DIR
+
+    cutoff = datetime.now(tz=UTC) - timedelta(days=days)
+    leads: list[dict] = []
+
+    if not ARCHIVE_DIR.exists():
+        return {"count": 0, "leads": []}
+
+    for f in sorted(ARCHIVE_DIR.glob("cold_*.jsonl"), reverse=True):
+        try:
+            with open(f) as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    data = json.loads(line)
+                    if niche and data.get("niche") != niche:
+                        continue
+                    disc = data.get("discovered_at", "")
+                    if disc:
+                        try:
+                            dt = datetime.fromisoformat(disc)
+                            if dt < cutoff:
+                                continue
+                        except (ValueError, TypeError):
+                            pass
+                    leads.append(data)
+                    if len(leads) >= 200:
+                        break
+        except Exception:
+            continue
+        if len(leads) >= 200:
+            break
+
+    return {"count": len(leads), "leads": leads}
+
+
+@router.get("/leads/cold/stats")
+async def cold_lead_stats():
+    """Stats for archived cold leads: count by niche/source."""
+    from collections import Counter
+
+    import json
+
+    from leads.store import ARCHIVE_DIR
+
+    niche_counts: Counter = Counter()
+    source_counts: Counter = Counter()
+    total = 0
+
+    if ARCHIVE_DIR.exists():
+        for f in ARCHIVE_DIR.glob("cold_*.jsonl"):
+            try:
+                with open(f) as fh:
+                    for line in fh:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        data = json.loads(line)
+                        niche_counts[data.get("niche", "unknown")] += 1
+                        source_counts[data.get("source", "unknown")] += 1
+                        total += 1
+            except Exception:
+                continue
+
+    return {
+        "total_archived": total,
+        "by_niche": dict(niche_counts.most_common()),
+        "by_source": dict(source_counts.most_common()),
+    }
+
+
+@router.post("/leads/rotate-cold")
+async def rotate_cold_leads(days: int = 3):
+    """Explicit housekeeping: rotate COLD/WARM leads older than N days to archive."""
+    from leads.store import ensure_collections_initialized, rotate_cold
+
+    if not ensure_collections_initialized():
+        raise HTTPException(status_code=503, detail="ChromaDB not available")
+
+    archived, deleted = rotate_cold(age_days=days)
+    return {
+        "archived": archived,
+        "deleted": deleted,
+        "message": f"Rotated {archived} leads to archive ({deleted} removed from active store).",
+    }
+
+
+# ── Tracking & pursuits ──
+
+
+@router.get("/tracking")
+async def tracking_overview(limit: int = 50):
+    """Recent tracking events across all leads."""
+    from leads.tracking import get_all_tracking
+
+    events = get_all_tracking(limit=limit)
+    return {"count": len(events), "events": events}
+
+
+@router.get("/tracking/{lead_id}")
+async def lead_tracking(lead_id: str):
+    """All tracking events for a specific lead."""
+    from leads.tracking import get_tracking_history
+    from leads.store import get_lead_by_id
+
+    lead = get_lead_by_id(lead_id)
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    events = get_tracking_history(lead_id)
+    return {
+        "lead_id": lead_id,
+        "lead_title": lead.title,
+        "lead_status": lead.status.value,
+        "events": events,
+    }
+
+
+@router.get("/tracking/active")
+async def active_pursuits():
+    """Leads currently in active pursuit (CONTACTED/REPLIED/PROPOSAL_SENT)."""
+    from leads.tracking import get_active_pursuit_lead_ids, get_tracking_history
+    from leads.store import get_lead_by_id
+
+    active_ids = get_active_pursuit_lead_ids()
+    pursuits = []
+    for lid in active_ids:
+        lead = get_lead_by_id(lid)
+        if lead is None:
+            continue
+        events = get_tracking_history(lid)
+        last_event = events[-1] if events else None
+        pursuits.append({
+            "lead": lead.model_dump(mode="json"),
+            "last_event": last_event,
+            "total_events": len(events),
+        })
+
+    pursuits.sort(key=lambda p: p["lead"]["last_updated"], reverse=True)
+    return {"count": len(pursuits), "active": pursuits}
+
+
+@router.get("/tracking/won-lost")
+async def won_lost_summary():
+    """Summary of won and lost leads, for pipeline effectiveness tracking."""
+    from collections import Counter
+    from datetime import UTC, datetime
+
+    from leads.schema import LeadStatus
+    from leads.store import get_leads_by_status
+    from leads.tracking import get_active_pursuit_lead_ids
+
+    won = get_leads_by_status(LeadStatus.WON)
+    lost = get_leads_by_status(LeadStatus.LOST)
+    active = get_active_pursuit_lead_ids()
+
+    niche_won: Counter = Counter()
+    niche_lost: Counter = Counter()
+    for lead in won:
+        niche_won[lead.niche] += 1
+    for lead in lost:
+        niche_lost[lead.niche] += 1
+
+    return {
+        "won": len(won),
+        "lost": len(lost),
+        "active_pursuits": len(active),
+        "win_rate": round(len(won) / max(len(won) + len(lost), 1) * 100, 1),
+        "by_niche": {
+            "won": dict(niche_won),
+            "lost": dict(niche_lost),
+        },
+        "timestamp": datetime.now(tz=UTC).isoformat(),
+    }
+
+
+# ── Profile (personalization) ──
+
+
+@public.get("/profile/status")
+async def profile_status():
+    """Check if a profile exists (for first-boot detection)."""
+    from scoring.profile import profile_exists, load_profile
+
+    exists = profile_exists()
+    profile = load_profile() if exists else None
+    return {
+        "exists": exists,
+        "is_empty": profile.is_empty() if profile else True,
+        "completeness": profile.completeness() if profile else 0,
+    }
+
+
+@router.get("/profile")
+async def get_profile():
+    """Get the current user profile."""
+    from scoring.profile import load_profile
+
+    profile = load_profile()
+    return profile.to_dict()
+
+
+@router.post("/profile")
+async def update_profile(profile_data: dict):
+    """Update the user profile."""
+    from scoring.profile import save_profile, _dict_to_profile
+
+    profile = _dict_to_profile(profile_data)
+    save_profile(profile)
+    return {"status": "saved", "profile": profile.to_dict()}
+
+
+@router.delete("/profile")
+async def delete_profile():
+    """Delete the user profile (reset to empty)."""
+    from scoring.profile import get_profile_path
+
+    path = get_profile_path()
+    if path.exists():
+        path.unlink()
+    return {"status": "deleted"}
+
+
+# ── Companies (ATS tracking) ──
+
+
+@router.get("/companies")
+async def list_companies():
+    """List all tracked ATS companies."""
+    from search.ats import load_companies
+
+    companies = load_companies()
+    return {
+        "greenhouse": companies.get("greenhouse", []),
+        "lever": companies.get("lever", []),
+        "ashby": companies.get("ashby", []),
+        "total": sum(len(v) for v in companies.values()),
+    }
+
+
+@router.post("/companies")
+async def add_company(ats: str, slug: str):
+    """Add a company to track on a specific ATS."""
+    from search.ats import get_companies_path, load_companies
+
+    if ats not in ("greenhouse", "lever", "ashby"):
+        raise HTTPException(status_code=400, detail=f"Invalid ATS: {ats}")
+
+    companies = load_companies()
+    if slug not in companies.get(ats, []):
+        companies.setdefault(ats, []).append(slug)
+
+    # Save back
+    import yaml
+
+    path = get_companies_path()
+    with open(path, "w") as f:
+        yaml.dump(companies, f, default_flow_style=False)
+
+    return {"status": "added", "ats": ats, "slug": slug}
+
+
+@router.delete("/companies")
+async def remove_company(ats: str, slug: str):
+    """Remove a company from tracking."""
+    from search.ats import get_companies_path, load_companies
+
+    if ats not in ("greenhouse", "lever", "ashby"):
+        raise HTTPException(status_code=400, detail=f"Invalid ATS: {ats}")
+
+    companies = load_companies()
+    if slug in companies.get(ats, []):
+        companies[ats].remove(slug)
+
+    import yaml
+
+    path = get_companies_path()
+    with open(path, "w") as f:
+        yaml.dump(companies, f, default_flow_style=False)
+
+    return {"status": "removed", "ats": ats, "slug": slug}

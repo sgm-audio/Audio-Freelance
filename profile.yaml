@@ -1,0 +1,34 @@
+# ── Freelance Profile ──
+# All fields are optional. Leave blank to skip.
+# Edit anytime via the Preferences page in the UI.
+# The system works with a minimal profile and gets better as you add info.
+
+identity:
+  name: ""                    # Your name (optional)
+  location: ""                # e.g., "Vancouver, BC"
+  timezone: ""                # e.g., "PST"
+  remote_ok: true             # Are you open to remote work?
+  relocation_ok: false        # Are you willing to relocate?
+
+skills:
+  languages: []               # e.g., ["c++", "rust", "python"]
+  frameworks: []              # e.g., ["juce", "nih-plug", "clap-rs", "vst3"]
+  domains: []                 # e.g., ["real-time audio dsp", "plugin development"]
+  specializations: []         # e.g., ["fixed-point optimization", "low-latency design"]
+
+preferences:
+  niches: []                  # e.g., ["plugin_dev", "rust_audio", "audio_ml"]
+  excluded_niches: []         # e.g., ["game_audio_dev"]
+  dealbreakers: []            # e.g., ["revenue share", "equity only", "unpaid"]
+  rate_floor: 0               # Minimum project rate (CAD, 0 = no minimum)
+  hourly_floor: 0             # Minimum hourly rate (CAD, 0 = no minimum)
+  contract_types: []          # e.g., ["contract", "freelance", "part-time"]
+
+experience:
+  years: null                 # Years of experience (null = no filter)
+  seniority: []               # e.g., ["senior", "lead", "staff", "principal"]
+
+portfolio:
+  github: ""                  # Your GitHub URL (optional)
+  website: ""                 # Your website URL (optional)
+  notable_work: []            # List of notable projects (optional)

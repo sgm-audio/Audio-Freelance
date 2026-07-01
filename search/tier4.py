@@ -22,7 +22,6 @@ SEED_COMPANIES = [
 
 TIER_4_QUERIES = {
     "plugin_dev": [
-        'site:ycombinator.com/companies audio OR "music AI" OR "audio AI" OR "plugin"',
         '"audio plugin company" OR "pro audio company" careers OR jobs OR contract OR freelance',
         '"audio AI" OR "music AI" startup funding 2025 OR 2026 hiring OR jobs',
     ],
@@ -32,13 +31,11 @@ TIER_4_QUERIES = {
     ],
     "rust_audio": [
         '"rust" "audio" company OR startup hiring OR jobs OR careers',
-        "site:ycombinator.com/companies rust audio",
         '"audio tooling" OR "audio infrastructure" rust hiring OR jobs',
     ],
     "audio_ml": [
         '"audio AI" OR "music AI" startup OR company hiring OR jobs OR careers',
         '"neural dsp" OR "ai audio" OR "ml audio" company OR startup hiring OR jobs',
-        'site:ycombinator.com/companies "audio" OR "music" AI OR ML',
     ],
     "game_audio_dev": [
         '"wwise" OR "fmod" OR "game audio" middleware company OR startup careers OR jobs',
