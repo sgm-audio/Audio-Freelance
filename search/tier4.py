@@ -24,22 +24,41 @@ TIER_4_QUERIES = {
     "plugin_dev": [
         '"audio plugin company" OR "pro audio company" careers OR jobs OR contract OR freelance',
         '"audio AI" OR "music AI" startup funding 2025 OR 2026 hiring OR jobs',
+        # European audio companies
+        '"audio software" OR "music tech" company berlin OR london OR paris OR stockholm hiring OR jobs',
+        '"pro audio" OR "music production" company europe OR uk OR germany careers OR jobs',
+        # Asian/Australian
+        '"audio" OR "music" tech startup tokyo OR singapore OR sydney OR melbourne hiring OR jobs',
+        # YC companies
+        'site:ycombinator.com/companies audio OR music OR speech OR dsp',
+        # VC-backed audio startups
+        '"audio" OR "music" OR "speech" "series a" OR "seed funded" startup hiring engineer OR developer',
     ],
     "reaper_scripts": [
         '"reaper" OR "daw" "developer" OR "contractor" OR "freelance" jobs OR careers',
         '"audio software company" OR "music software company" reaper OR daw developer',
+        '"daw" OR "audio workstation" company development OR engineering careers OR jobs',
     ],
     "rust_audio": [
         '"rust" "audio" company OR startup hiring OR jobs OR careers',
         '"audio tooling" OR "audio infrastructure" rust hiring OR jobs',
+        'site:ycombinator.com/companies rust audio OR dsp',
     ],
     "audio_ml": [
         '"audio AI" OR "music AI" startup OR company hiring OR jobs OR careers',
         '"neural dsp" OR "ai audio" OR "ml audio" company OR startup hiring OR jobs',
+        # Worldwide audio AI
+        '"speech" OR "audio" "deep learning" startup europe OR asia OR australia hiring',
+        'site:ycombinator.com/companies "audio" OR "speech" OR "music" AI OR ML',
+        '"audio" AND ("machine learning" OR "deep learning") startup "series" OR "seed" OR "funded" hiring',
     ],
     "game_audio_dev": [
         '"wwise" OR "fmod" OR "game audio" middleware company OR startup careers OR jobs',
         '"game audio" OR "audio programmer" company OR studio hiring OR contract',
+        # Worldwide game studios
+        '"game studio" OR "game developer" "audio" OR "sound" engineer OR programmer europe OR asia OR australia',
+        # Indie game audio
+        '"indie game studio" OR "indie developer" looking for OR hiring audio OR sound programmer OR engineer',
     ],
 }
 

@@ -177,7 +177,7 @@ export async function fetchWonLost(): Promise<WonLostSummary> {
 export interface ProfileData {
   identity: { name: string; location: string; timezone: string; remote_ok: boolean; relocation_ok: boolean };
   skills: { languages: string[]; frameworks: string[]; domains: string[]; specializations: string[] };
-  preferences: { niches: string[]; excluded_niches: string[]; dealbreakers: string[]; rate_floor: number; hourly_floor: number; contract_types: string[] };
+  preferences: { niches: string[]; excluded_niches: string[]; dealbreakers: string[]; blocked_companies: string[]; rate_floor: number; hourly_floor: number; contract_types: string[] };
   experience: { years: number | null; seniority: string[] };
   portfolio: { github: string; website: string; notable_work: string[] };
   completeness: number;
@@ -246,4 +246,26 @@ export interface RotationStatus {
 
 export async function fetchRotationStatus(): Promise<RotationStatus> {
   return get("/leads/rotation-status");
+}
+
+// ── Blocked companies ──
+
+export async function fetchBlockedCompanies(): Promise<{ blocked_companies: string[] }> {
+  return get("/profile/blocked");
+}
+
+export async function addBlockedCompany(company: string): Promise<{ status: string; blocked_companies: string[] }> {
+  return post(`/profile/blocked?company=${encodeURIComponent(company)}`);
+}
+
+export async function removeBlockedCompany(company: string): Promise<{ status: string; blocked_companies: string[] }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(`${API}/profile/blocked?company=${encodeURIComponent(company)}`, {
+      method: "DELETE", signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  } finally { clearTimeout(timer); }
 }

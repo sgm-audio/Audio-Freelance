@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Company blocklist** — block any company from appearing in leads. Block button on each lead card, managed via Preferences. Past employers, competitors, or companies with irrelevant recurring postings can be suppressed individually.
+- **Worldwide search coverage** — tier1-4 queries expanded from 15 to 60+ total. Now includes: European job boards (indeed.co.uk, indeed.de, indeed.fr, reed.co.uk), Australian board (seek.com.au), freelance platforms (upwork, freelancer, peopleperhour, guru), niche audio communities (KVR, VI-C, Reddit r/audioengineering, r/DSP, r/rust, r/MachineLearning, r/GameAudio, r/gamedev), game audio (gamesjobsdirect, itch.io), Asian audio companies, and VC-backed audio AI startups.
 - **Auto-rotation on startup** — no cron needed. Every time the app starts, it checks if ≥3 days since last rotation and auto-rotates cold leads. Laptop-friendly: works even with intermittent uptime.
 - **Rotation status endpoint** — `GET /leads/rotation-status` shows last rotation timestamp and hours since. Cold-leads page shows "Last rotated: Xh ago ⚡ due" indicator.
 - **Verified ATS company slugs** — 17 companies across Greenhouse/Lever/Ashby. Spotify (121 jobs, 76 audio-relevant), Splice, Universal Audio, David AI confirmed working. 13 more pre-loaded with correct slugs.

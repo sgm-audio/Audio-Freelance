@@ -47,6 +47,9 @@ class Profile:
     years: int | None = None
     seniority: list[str] = field(default_factory=list)
 
+    # Blocked companies (suppress all leads from these)
+    blocked_companies: list[str] = field(default_factory=list)
+
     # Portfolio (all optional — system doesn't require these)
     github: str = ""
     website: str = ""
@@ -102,6 +105,7 @@ class Profile:
                 "niches": self.niches,
                 "excluded_niches": self.excluded_niches,
                 "dealbreakers": self.dealbreakers,
+                "blocked_companies": self.blocked_companies,
                 "rate_floor": self.rate_floor,
                 "hourly_floor": self.hourly_floor,
                 "contract_types": self.contract_types,
@@ -179,6 +183,7 @@ def _dict_to_profile(data: dict[str, Any]) -> Profile:
         contract_types=preferences.get("contract_types", []) or [],
         years=experience.get("years"),
         seniority=experience.get("seniority", []) or [],
+        blocked_companies=preferences.get("blocked_companies", []) or [],
         github=portfolio.get("github", "") or "",
         website=portfolio.get("website", "") or "",
         notable_work=portfolio.get("notable_work", []) or [],

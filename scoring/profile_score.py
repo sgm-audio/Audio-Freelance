@@ -82,7 +82,26 @@ def score_against_profile(
             status=LeadStatus.SKIPPED,
         )
 
-    # ── Step 3: Generic hard-skip keywords (revenue share, equity only, etc.) ──
+    # ── Step 3: Blocked companies guard ──
+    if profile.blocked_companies:
+        company_text = ' '.join([candidate.company or '', combined_text])
+        for blocked in profile.blocked_companies:
+            if blocked.lower() in company_text.lower():
+                return Lead(
+                    source=candidate.source,
+                    tier=candidate.tier,
+                    title=candidate.title,
+                    company=candidate.company,
+                    url=candidate.url,
+                    raw_text=candidate.raw_text,
+                    niche=niche,
+                    signals={'blocked_company': -999},
+                    score=0,
+                    verdict='SKIP',
+                    status=LeadStatus.SKIPPED,
+                )
+
+    # ── Step 4: Generic hard-skip keywords (revenue share, equity only, etc.) ──
     if check_hard_skip(combined_text):
         return Lead(
             source=candidate.source,
@@ -98,13 +117,13 @@ def score_against_profile(
             status=LeadStatus.SKIPPED,
         )
 
-    # ── Step 4: Generic signal extraction (always runs) ──
+    # ── Step 5: Generic signal extraction (always runs) ──
     for name, points in extract_signals(combined_text, POSITIVE_SIGNALS).items():
         signals[name] = signals.get(name, 0) + points
     for name, points in extract_signals(combined_text, NEGATIVE_SIGNALS).items():
         signals[name] = signals.get(name, 0) + points
 
-    # ── Step 5: Profile-driven scoring (only if profile has data) ──
+    # ── Step 6: Profile-driven scoring (only if profile has data) ──
     if not profile.is_empty():
         # Skills match: +5 per language overlap, +4 per framework overlap
         lang_overlap = _count_overlap(combined_text, profile.languages)
@@ -149,7 +168,7 @@ def score_against_profile(
                 else:
                     signals["rate_below_floor"] = -15
 
-    # ── Step 6: Verdict ──
+    # ── Step 7: Verdict ──
     total = sum(signals.values())
 
     if total >= 10:

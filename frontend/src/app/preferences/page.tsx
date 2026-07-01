@@ -158,7 +158,48 @@ export default function PreferencesPage() {
       )}
     </section>
 
+    {/* Blocked Companies */}
+    <section className="rounded-lg border border-border bg-card p-5">
+      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Blocked Companies</h2>
+      <p className="text-xs text-muted-foreground mb-3">
+        Leads mentioning these companies will be hidden from all search results.
+        Block companies you don't want to see (e.g., past employers, competitors).
+      </p>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {profile.preferences.blocked_companies?.map((c: string) => (
+          <span key={c} className="inline-flex items-center gap-1 rounded-md border border-red-500/30 px-2 py-0.5 text-xs bg-red-500/10 text-red-400">
+            {c}
+            <button onClick={() => setProfile({...profile, preferences: {...profile.preferences, blocked_companies: profile.preferences.blocked_companies?.filter((x: string) => x !== c)}})}
+              className="ml-1 hover:text-red-300">×</button>
+          </span>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <input id="block-input"
+          placeholder="Company name or domain" className="flex-1 rounded-md border border-border bg-card px-3 py-1 text-xs"
+          onKeyDown={e => {
+            if (e.key === "Enter") {
+              const val = (e.target as HTMLInputElement).value.trim().toLowerCase();
+              if (val && !(profile.preferences.blocked_companies || []).includes(val)) {
+                setProfile({...profile, preferences: {...profile.preferences, blocked_companies: [...(profile.preferences.blocked_companies || []), val]}});
+              }
+              (e.target as HTMLInputElement).value = "";
+            }
+          }}
+        />
+        <button onClick={() => {
+          const input = document.getElementById("block-input") as HTMLInputElement;
+          const val = input.value.trim().toLowerCase();
+          if (val && !(profile.preferences.blocked_companies || []).includes(val)) {
+            setProfile({...profile, preferences: {...profile.preferences, blocked_companies: [...(profile.preferences.blocked_companies || []), val]}});
+          }
+          input.value = "";
+        }} className="rounded-md border border-red-500/30 text-red-400 px-3 py-1 text-xs hover:bg-red-500/10">Add</button>
+      </div>
+    </section>
+
     {/* Save */}
+    
     <div className="flex items-center gap-4">
       <button onClick={handleSave} disabled={saving}
         className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm disabled:opacity-50">
