@@ -11,48 +11,93 @@ from search.base import RawCandidate, web_search
 
 QUERIES = {
     "plugin_dev": [
-        # Indeed: audio plugin development
+        # US job boards
         'site:indeed.com "audio plugin" OR "dsp engineer" OR "audio developer" contract OR freelance -intern',
-        # ZipRecruiter: real audio DSP contracts
         'site:ziprecruiter.com "audio dsp" OR "plugin developer" contract OR freelance OR remote',
-        # General: actual contract posts with budgets
+        'site:craigslist.org "audio" OR "dsp" OR "plugin" contract OR freelance OR gig',
+        # European job boards
+        'site:indeed.co.uk "audio dsp" OR "audio plugin" OR "audio engineer" contract OR freelance',
+        'site:indeed.de "audio dsp" OR "audio entwicklung" OR "plugin entwickler" OR "dsp ingenieur"',
+        'site:indeed.fr ingenieur OR developpeur audio OR dsp OR plugin freelance OR contrat',
+        'site:reed.co.uk "audio software" OR "dsp" OR "plugin" contract OR freelance',
+        # Canadian/Australian boards
+        'site:ca.indeed.com "audio" OR "dsp" OR "plugin" contract OR freelance',
+        'site:seek.com.au "audio engineer" OR "audio developer" OR "dsp" contract OR freelance',
+        # Niche audio job boards
+        'site:theaudioprogrammer.com job OR contract OR freelance OR hiring',
+        'site:kvr.com forum job OR hiring OR commission OR contract OR freelance audio plugin',
+        'site:forum.cockos.com job OR hiring OR commission OR paid script OR extension OR plugin',
+        'site:vi-control.net forum job OR hiring OR commission OR freelance audio OR composer OR plugin',
+        # Worldwide remote contracts
+        'remote "audio dsp" OR "audio software" OR "plugin developer" contract OR freelance NOT us NOT uk',
+        '"audio dsp consultant" OR "audio freelance engineer" OR "contract audio programmer"',
+        # General with budgets
         '"audio plugin" "budget" "$" "contract" OR "freelance" -forum -discussion -reddit',
         '"DSP engineer" OR "audio DSP" "$" "contract" OR "freelance" OR "remote" -forum -reddit -discussion',
     ],
     "reaper_scripts": [
-        # Indeed: REAPER scripting
+        # Primary boards
         'site:indeed.com REAPER OR reascript OR "audio automation" contract OR freelance',
-        # Upwork-style: paid REAPER scripting (from any board)
-        '"REAPER" OR "reascript" "paid" OR "commission" "script" OR "automation" -forum -reddit -discussion',
-        # Cockos forum jobs section specifically
+        # Cockos forum
         'site:forum.cockos.com "jobs" OR "hiring" OR "commission" OR "paid" "script" OR "extension"',
+        # Worldwide REAPER
+        '"REAPER" OR "reascript" "paid" OR "commission" "script" OR "automation" -forum -reddit -discussion',
+        'site:vi-control.net REAPER OR reascript OR "daw automation" job OR commission OR paid',
+        'remote REAPER OR reascript OR "daw automation" developer OR contractor OR freelance',
+        # EU/AU specific
+        'site:indeed.co.uk REAPER OR reascript OR "daw script" contract OR freelance',
+        'site:seek.com.au REAPER OR reascript OR "daw automation"',
     ],
     "rust_audio": [
-        # Indeed: Rust audio
+        # Primary boards
         'site:indeed.com "rust" "audio" OR "dsp" contract OR freelance',
-        # GitHub: Rust audio bounty/contract issues
         'site:github.com "rust" "audio" OR "dsp" "bounty" OR "contract" OR "hiring"',
-        # General Rust audio contracts
+        # Worldwide
         '"rust" "audio" OR "dsp" "$" OR "contract" OR "freelance" OR "remote" -forum -reddit -discussion',
-        # nih-plug / clap-rs specific
+        'remote "rust" "audio" OR "dsp" OR "plugin" contract OR freelance OR job',
         '"nih-plug" OR "clap-rs" OR "rust vst" "contract" OR "freelance" OR "paid"',
+        # EU/AU specific
+        'site:indeed.co.uk "rust" "audio" OR "dsp" contract OR freelance',
+        'site:reed.co.uk "rust" "audio" OR "dsp"',
+        'site:seek.com.au "rust" "audio" OR "dsp"',
+        # EU job sites
+        'site:stackoverflow.com/jobs "rust" "audio" OR "dsp" OR "plugin"',
+        'site:remoteok.com rust audio OR dsp OR plugin',
     ],
     "audio_ml": [
-        # Indeed: ML audio
+        # Primary boards
         'site:indeed.com "machine learning" "audio" OR "speech" contract OR freelance',
-        # Research/engineering: on-device ML, audio inference
+        # Research/engineering
         '"on-device" OR "edge" OR "cpu-only" "audio" OR "speech" "engineer" OR "developer" contract OR freelance',
         '"mamba" OR "state space" OR "neural audio" "audio" OR "dsp" "contract" OR "freelance" OR "hiring"',
-        # Audio AI startups hiring
+        # Audio AI startups
         '"audio AI" OR "music AI" OR "speech AI" "hiring" OR "contract" "engineer" -forum -reddit',
+        # Worldwide
+        'remote "audio machine learning" OR "audio AI" OR "speech ML" engineer OR developer contract',
+        'site:indeed.co.uk "machine learning" audio OR speech OR music contract OR freelance',
+        'site:indeed.de "machine learning" OR "kuenstliche intelligenz" audio OR sprache OR musik',
+        'site:seek.com.au "machine learning" audio OR speech OR music',
+        'site:stackoverflow.com/jobs "machine learning" audio OR speech',
+        # Conference job boards
+        'site:adc2025.org job OR hiring OR career',
     ],
     "game_audio_dev": [
-        # Indeed: game audio programming
+        # Primary boards
         'site:indeed.com "audio programmer" OR "game audio" OR "wwise" OR "fmod" contract OR freelance',
-        # GameAudio specific jobs
         '"game audio" "programmer" OR "developer" "contract" OR "freelance" OR "remote" -forum -reddit',
-        # Wwise/FMOD contract work
         '"wwise" OR "fmod" OR "audio middleware" "contract" OR "freelance" "developer" OR "integrator"',
+        # Worldwide - European game studios
+        'site:gamesjobsdirect.com "audio" OR "sound" programmer OR designer OR engineer',
+        'site:indeed.co.uk "audio programmer" OR "game audio" OR "sound designer" contract OR freelance',
+        'site:indeed.de "audio programmer" OR "game audio" OR "sound designer"',
+        # Asia/Pacific game audio
+        'site:seek.com.au "audio programmer" OR "game audio" OR "sound designer"',
+        'site:jobin.co.jp "audio" OR "sound" game OR video',
+        # Remote game audio
+        'remote "game audio" OR "audio programmer" OR "wwise" OR "fmod" contract OR freelance',
+        # Indie game audio
+        '"indie game" "audio" OR "sound" "contract" OR "freelance" OR "hiring" -forum -reddit',
+        'site:itch.io job OR hiring OR contract audio OR sound OR composer',
     ],
 }
 

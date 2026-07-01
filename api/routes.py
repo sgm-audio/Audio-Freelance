@@ -627,3 +627,40 @@ async def remove_company(ats: str, slug: str):
         yaml.dump(companies, f, default_flow_style=False)
 
     return {"status": "removed", "ats": ats, "slug": slug}
+
+
+# ── Blocked companies ──
+
+
+@router.get("/profile/blocked")
+async def get_blocked_companies():
+    """List all blocked companies from the user's profile."""
+    from scoring.profile import load_profile
+
+    profile = load_profile()
+    return {"blocked_companies": profile.blocked_companies}
+
+
+@router.post("/profile/blocked")
+async def add_blocked_company(company: str):
+    """Add a company to the blocklist. Supports name or domain."""
+    from scoring.profile import load_profile, save_profile
+
+    profile = load_profile()
+    company = company.strip().lower()
+    if company and company not in profile.blocked_companies:
+        profile.blocked_companies.append(company)
+        save_profile(profile)
+    return {"status": "added", "blocked_companies": profile.blocked_companies}
+
+
+@router.delete("/profile/blocked")
+async def remove_blocked_company(company: str):
+    """Remove a company from the blocklist."""
+    from scoring.profile import load_profile, save_profile
+
+    profile = load_profile()
+    company = company.strip().lower()
+    profile.blocked_companies = [c for c in profile.blocked_companies if c != company]
+    save_profile(profile)
+    return {"status": "removed", "blocked_companies": profile.blocked_companies}

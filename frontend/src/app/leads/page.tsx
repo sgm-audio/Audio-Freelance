@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchLeads, Lead } from "@/lib/api";
+import { fetchLeads, fetchBlockedCompanies, addBlockedCompany, Lead } from "@/lib/api";
 
 const STATUSES = ["NEW", "HOT", "WARM", "COLD", "SKIPPED", "CONTACTED", "PROPOSAL_SENT", "WON", "LOST", "DEAD"];
 
@@ -10,6 +10,8 @@ export default function LeadsPage() {
   const [filter, setFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [blocked, setBlocked] = useState<string[]>([]);
+  const [blockMsg, setBlockMsg] = useState("");
 
   useEffect(() => { load(); }, [filter]);
 
@@ -17,14 +19,29 @@ export default function LeadsPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await fetchLeads(filter || undefined);
+      const [data, b] = await Promise.all([
+        fetchLeads(filter || undefined),
+        fetchBlockedCompanies(),
+      ]);
       setLeads(data.leads);
+      setBlocked(b.blocked_companies || []);
     } catch (e: any) {
-      if (e.name === "AbortError") setError("Backend not responding. Start the server.");
+      if (e.name === "AbortError") setError("Backend not responding.");
       else setError("Could not load leads. Backend may be down.");
       setLeads([]);
     }
     setLoading(false);
+  }
+
+  async function handleBlock(name: string) {
+    try {
+      await addBlockedCompany(name);
+      setBlocked([...blocked, name.toLowerCase()]);
+      setBlockMsg(`"${name}" blocked`);
+    } catch {
+      setBlockMsg("Failed to block company");
+    }
+    setTimeout(() => setBlockMsg(""), 3000);
   }
 
   const hotCount = leads.filter(l => l.verdict === "HOT").length;
@@ -52,10 +69,18 @@ export default function LeadsPage() {
             {loading ? "Loading..." : `${leads.length} total · ${hotCount} hot · ${warmCount} warm`}
           </p>
         </div>
-        <button onClick={load} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
-          {loading ? "..." : "Refresh"}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={load} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
+            {loading ? "..." : "Refresh"}
+          </button>
+        </div>
       </div>
+
+      {blockMsg && (
+        <div className="rounded-md border border-green-500/30 bg-green-500/10 text-green-400 px-4 py-2 text-sm">
+          {blockMsg}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-1">
         <button onClick={() => setFilter("")}
@@ -74,32 +99,41 @@ export default function LeadsPage() {
         <p className="text-sm text-muted-foreground">No leads yet. Run a prospect scan from the Dashboard.</p>
       ) : (
         <div className="space-y-2">
-          {leads.map((lead) => (
-            <div key={lead.id} className="rounded-lg border border-border bg-card p-4 hover:bg-accent/50 transition-colors">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-block w-2 h-2 rounded-full ${lead.verdict === "HOT" ? "bg-red-500" : lead.verdict === "WARM" ? "bg-amber-500" : lead.verdict === "SKIP" ? "bg-gray-500" : "bg-blue-500"}`} />
-                    <span className="font-medium truncate">{lead.title}</span>
-                    {lead.tier ? <span className="text-xs text-muted-foreground shrink-0">T{lead.tier}</span> : null}
+          {leads.map((lead) => {
+            const isBlocked = lead.company && blocked.includes(lead.company.toLowerCase());
+            return (
+              <div key={lead.id} className={`rounded-lg border p-4 hover:bg-accent/50 transition-colors ${isBlocked ? "border-red-500/30 opacity-60" : "border-border bg-card"}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-block w-2 h-2 rounded-full ${lead.verdict === "HOT" ? "bg-red-500" : lead.verdict === "WARM" ? "bg-amber-500" : lead.verdict === "SKIP" ? "bg-gray-500" : "bg-blue-500"}`} />
+                      <span className="font-medium truncate">{lead.title}</span>
+                      {lead.tier ? <span className="text-xs text-muted-foreground shrink-0">T{lead.tier}</span> : null}
+                    </div>
+                    {lead.company && <p className="text-sm text-muted-foreground mt-0.5">{lead.company}</p>}
+                    <p className="text-xs text-muted-foreground mt-1 truncate">{lead.raw_text.slice(0, 200)}</p>
                   </div>
-                  {lead.company && <p className="text-sm text-muted-foreground mt-0.5">{lead.company}</p>}
-                  <p className="text-xs text-muted-foreground mt-1 truncate">{lead.raw_text.slice(0, 200)}</p>
+                  <div className="text-right shrink-0">
+                    <p className={`text-lg font-semibold ${lead.verdict === "HOT" ? "text-red-500" : lead.verdict === "WARM" ? "text-amber-500" : "text-muted-foreground"}`}>
+                      {lead.score}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{lead.source}</p>
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className={`text-lg font-semibold ${lead.verdict === "HOT" ? "text-red-500" : lead.verdict === "WARM" ? "text-amber-500" : "text-muted-foreground"}`}>
-                    {lead.score}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{lead.source}</p>
+                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                  <a href={lead.url} target="_blank" className="hover:text-foreground">Open →</a>
+                  <span>Status: {lead.status}</span>
+                  <span>{new Date(lead.discovered_at).toLocaleDateString()}</span>
+                  {lead.company && !isBlocked && (
+                    <button onClick={() => handleBlock(lead.company!)}
+                      className="ml-auto text-red-400 hover:text-red-300"
+                    >Block {lead.company}</button>
+                  )}
+                  {isBlocked && <span className="ml-auto text-red-400">Blocked</span>}
                 </div>
               </div>
-              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                <a href={lead.url} target="_blank" className="hover:text-foreground">Open →</a>
-                <span>Status: {lead.status}</span>
-                <span>{new Date(lead.discovered_at).toLocaleDateString()}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
