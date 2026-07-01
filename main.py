@@ -31,6 +31,22 @@ if not _api_key:
         "Set API_KEY in .env for production deployments."
     )
 
+# ── Auto-rotate cold leads on startup (laptop-friendly, no cron needed) ──
+try:
+    from leads.store import auto_rotate_if_needed
+
+    rotation_days = int(os.getenv("COLD_ROTATION_DAYS", "3"))
+    result = auto_rotate_if_needed(age_days=rotation_days)
+    if result is not None:
+        archived, deleted = result
+        import logging
+
+        logging.getLogger("uvicorn").info(
+            f"Auto-rotated cold leads: {archived} archived, {deleted} deleted."
+        )
+except Exception:
+    pass  # Rotation is best-effort — never block startup
+
 # ── Rate limiter ──
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 

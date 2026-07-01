@@ -435,3 +435,48 @@ def log_outreach(
             }
         ],
     )
+
+
+# ── Rotation tracking (laptop-friendly: on-startup, not cron) ──
+
+_ROTATION_STAMP_FILE = _DATA_DIR.parent / ".last_rotation"
+
+
+def get_last_rotation() -> datetime | None:
+    """Return the timestamp of the last rotation, or None if never."""
+    if not _ROTATION_STAMP_FILE.exists():
+        return None
+    try:
+        return datetime.fromisoformat(_ROTATION_STAMP_FILE.read_text().strip())
+    except Exception:
+        return None
+
+
+def _touch_rotation() -> None:
+    """Record that a rotation just happened."""
+    _ROTATION_STAMP_FILE.write_text(datetime.now(tz=UTC).isoformat())
+
+
+def auto_rotate_if_needed(age_days: int = 3) -> tuple[int, int] | None:
+    """Check if rotation is overdue, and run it if so.
+
+    Called once on application startup.  No cron needed — every time you
+    start the app after ≥age_days away from the keyboard, cold leads are
+    rotated automatically.
+
+    Returns (archived, deleted) if rotation ran, or None if not needed.
+    """
+    last = get_last_rotation()
+    now = datetime.now(tz=UTC)
+
+    if last is None:
+        # First run — record timestamp, don't rotate
+        _touch_rotation()
+        return None
+
+    if (now - last) < timedelta(days=age_days):
+        return None
+
+    archived, deleted = rotate_cold(age_days=age_days)
+    _touch_rotation()
+    return archived, deleted

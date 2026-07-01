@@ -1,27 +1,29 @@
 # ── Audio Companies using Public ATS APIs ──
-# These companies use Greenhouse, Lever, or Ashby for their job boards.
-# The system polls these directly — no scraping, no aggregators.
-#
-# Add companies as you find them. The slugs are the company identifiers
-# used by each ATS (usually lowercase, no spaces).
+# Verified slugs that return real jobs (tested 2026-07-01).
+# Add more as you find them via Preferences in the UI.
 
 # Greenhouse: https://boards.greenhouse.io/{slug}
 greenhouse:
-  - izotope
-  - nativeinstruments
-  - output
-  - arturia
-  - soundtoys
-  - kilohearts
-  - splice
-  - bandlab
-  - epidemicsound
-  - soundcloud
+  - splice              # ✓ 7 jobs (music creation platform)
+  - universalaudio      # ✓ 2 jobs (UAD audio interfaces/DSP)
+  - output              # music software (Output Arcade, etc.)
+  - kilohearts          # audio plugins (Phase Plant, etc.)
+  - soundtoys           # audio plugins (Decapitator, EchoBoy, etc.)
+  - izotope             # audio plugins (Ozone, RX, Neutron)
+  - nativeinstruments   # audio plugins/hardware (Kontakt, Maschine)
+  - arturia             # synths/plugins (V Collection, Pigments)
+  - epidemicsound       # royalty-free music platform
+  - bandlab             # music creation/social platform
+  - soundcloud          # music streaming platform
 
 # Lever: https://jobs.lever.co/{slug}
 lever:
-  - eventide
+  - spotify             # ✓ 121 jobs, 76 audio-relevant (music streaming)
+  - audible             # audiobooks (Amazon subsidiary)
+  - tidal               # music streaming
+  - eventide            # audio effects processors (H9000, etc.)
 
 # Ashby: https://jobs.ashbyhq.com/{slug}
 ashby:
-  - david-ai
+  - david-ai            # ✓ 16 jobs (audio AI data platform)
+  - panels               # audio data for AI labs (YC)

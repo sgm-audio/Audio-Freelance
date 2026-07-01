@@ -155,7 +155,7 @@ def extract_job_signals(text: str) -> dict:
     }
 
     # Try to find title (usually in <h1> or first line)
-    lines = [line.strip() for line in text.split("\n") if l.strip()]
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
     if lines:
         result["title"] = lines[0][:200]
 
