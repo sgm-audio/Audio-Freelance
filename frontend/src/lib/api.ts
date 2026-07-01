@@ -26,7 +26,8 @@ async function post<T>(path: string, timeoutMs = 30000): Promise<T> {
 
 export interface LeadCounts {
   NEW?: number; HOT?: number; WARM?: number; COLD?: number;
-  CONTACTED?: number; SKIPPED?: number; PROPOSAL_SENT?: number; WON?: number; LOST?: number; DEAD?: number;
+  CONTACTED?: number; REPLIED?: number; PROPOSAL_SENT?: number;
+  SKIPPED?: number; WON?: number; LOST?: number; DEAD?: number;
 }
 
 export interface StatusResponse {
@@ -68,7 +69,34 @@ export interface MarketReport {
 export interface ProspectResult {
   niche: string; total_candidates: number; total_leads: number;
   hot: number; warm: number; cold: number; skipped: number;
+  archived: number; archive_path: string;
   hot_leads: Lead[]; warm_leads: Lead[]; errors: string[];
+}
+
+export interface TrackingEvent {
+  at: string; type: string; data: Record<string, unknown>; lead_id?: string;
+}
+
+export interface ActivePursuit {
+  lead: Lead;
+  last_event: TrackingEvent | null;
+  total_events: number;
+}
+
+export interface WonLostSummary {
+  won: number; lost: number; active_pursuits: number; win_rate: number;
+  by_niche: { won: Record<string, number>; lost: Record<string, number> };
+  timestamp: string;
+}
+
+export interface ColdLeadsResponse {
+  count: number; leads: Lead[];
+}
+
+export interface ColdStats {
+  total_archived: number;
+  by_niche: Record<string, number>;
+  by_source: Record<string, number>;
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
@@ -108,4 +136,102 @@ export async function fetchMarketOpportunities(): Promise<{
 
 export async function prospectNiche(niche: string): Promise<ProspectResult> {
   return post(`/prospect/${niche}`, 120000);
+}
+
+export async function fetchColdLeads(days?: number, niche?: string): Promise<ColdLeadsResponse> {
+  const params = new URLSearchParams();
+  if (days) params.set("days", String(days));
+  if (niche) params.set("niche", niche);
+  const qs = params.toString();
+  return get(`/leads/cold${qs ? `?${qs}` : ""}`);
+}
+
+export async function fetchColdStats(): Promise<ColdStats> {
+  return get("/leads/cold/stats");
+}
+
+export async function rotateColdLeads(days = 3): Promise<{ archived: number; deleted: number; message: string }> {
+  return post(`/leads/rotate-cold?days=${days}`);
+}
+
+export async function fetchTracking(limit = 50): Promise<{ count: number; events: TrackingEvent[] }> {
+  return get(`/tracking?limit=${limit}`);
+}
+
+export async function fetchLeadTracking(leadId: string): Promise<{
+  lead_id: string; lead_title: string; lead_status: string; events: TrackingEvent[];
+}> {
+  return get(`/tracking/${leadId}`);
+}
+
+export async function fetchActivePursuits(): Promise<{ count: number; active: ActivePursuit[] }> {
+  return get("/tracking/active");
+}
+
+export async function fetchWonLost(): Promise<WonLostSummary> {
+  return get("/tracking/won-lost");
+}
+
+// ── Profile ──
+
+export interface ProfileData {
+  identity: { name: string; location: string; timezone: string; remote_ok: boolean; relocation_ok: boolean };
+  skills: { languages: string[]; frameworks: string[]; domains: string[]; specializations: string[] };
+  preferences: { niches: string[]; excluded_niches: string[]; dealbreakers: string[]; rate_floor: number; hourly_floor: number; contract_types: string[] };
+  experience: { years: number | null; seniority: string[] };
+  portfolio: { github: string; website: string; notable_work: string[] };
+  completeness: number;
+  is_empty: boolean;
+}
+
+export interface ProfileStatus { exists: boolean; is_empty: boolean; completeness: number; }
+
+export async function fetchProfileStatus(): Promise<ProfileStatus> {
+  return get("/profile/status");
+}
+
+export async function fetchProfile(): Promise<ProfileData> {
+  return get("/profile");
+}
+
+export async function saveProfile(data: Record<string, unknown> | ProfileData): Promise<{ status: string; profile: ProfileData }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(`${API}/profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  } finally { clearTimeout(timer); }
+}
+
+// ── Companies ──
+
+export interface CompaniesData {
+  greenhouse: string[]; lever: string[]; ashby: string[]; total: number;
+}
+
+export async function fetchCompanies(): Promise<CompaniesData> {
+  return get("/companies");
+}
+
+export async function addCompany(ats: string, slug: string): Promise<{ status: string }> {
+  return post(`/companies?ats=${ats}&slug=${encodeURIComponent(slug)}`);
+}
+
+export async function removeCompany(ats: string, slug: string): Promise<{ status: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(`${API}/companies?ats=${ats}&slug=${encodeURIComponent(slug)}`, {
+      method: "DELETE",
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  } finally { clearTimeout(timer); }
 }

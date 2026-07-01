@@ -8,7 +8,7 @@ import json
 import os
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -27,10 +27,28 @@ _raw_threshold = os.getenv("DEDUP_SIMILARITY_THRESHOLD", "0.92")
 try:
     DEDUP_SIMILARITY_THRESHOLD: float = float(_raw_threshold)
 except ValueError:
-    DEDUP_SIMILARITY_THRESHOLD: float = 0.92
+    DEDUP_SIMILARITY_THRESHOLD = 0.92
 
-_DATA_DIR = Path(__file__).resolve().parent / "data" / "chroma"
+_DATA_DIR = Path(
+    os.getenv(
+        "LEADS_DATA_DIR",
+        str(Path(__file__).resolve().parent / "data" / "chroma"),
+    )
+)
 _DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+ARCHIVE_DIR = Path(
+    os.getenv(
+        "LEADS_ARCHIVE_DIR",
+        str(Path(__file__).resolve().parent / "data" / "archive"),
+    )
+)
+ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+
+# ponytail: source blacklist prevents test pollution in production
+_SOURCE_BLACKLIST: set[str] = {"test"}
+# Allow explicit override for test runners
+_allow_test_source: bool = bool(os.getenv("LEADS_ALLOW_TEST_LEADS"))
 
 _leads_collection = None
 _outreach_collection = None
@@ -193,7 +211,20 @@ def _metadata_to_lead(metadata: dict) -> Lead:
 
 
 def upsert_lead(lead: Lead) -> None:
+    """Persist a lead to ChromaDB.
+
+    Blocks blacklisted sources (e.g. 'test') unless LEADS_ALLOW_TEST_LEADS
+    is set, so test suites cannot accidentally pollute the production store.
+    """
     _init()
+
+    # ── Source blacklist guard ──
+    if lead.source in _SOURCE_BLACKLIST and not _allow_test_source:
+        raise ValueError(
+            f"source '{lead.source}' is blocked in production. "
+            "Set LEADS_ALLOW_TEST_LEADS=1 to bypass (for test suites only)."
+        )
+
     lead.last_updated = datetime.now(tz=UTC)
     text = embed_text(lead)
     metadata = _lead_to_metadata(lead)
@@ -252,10 +283,38 @@ def search_leads(query_text: str, n_results: int = 10) -> list[Lead]:
 
 
 def update_status(lead_id: uuid.UUID | str, new_status: LeadStatus) -> None:
+    """Transition a lead to a new status, archiving the prior state via tracking.
+
+    When moving to LeadStatus.DEAD, the lead is also deleted from the active
+    ChromaDB and its full record is archived for audit/future analysis.
+    """
     _init()
-    lead_id = str(lead_id)
+    lead_id_str = str(lead_id)
+
+    # Log the transition as a tracking event
+    old_lead = get_lead_by_id(lead_id_str)
+    if old_lead is not None:
+        from leads.tracking import log_tracking_event  # ponytail: local import avoids circular
+
+        log_tracking_event(
+            lead_id_str,
+            "status_change",
+            {
+                "from_status": old_lead.status.value,
+                "to_status": new_status.value,
+                "from_verdict": old_lead.verdict,
+            },
+        )
+
+        # If moving to DEAD, archive full record and delete from active store
+        if new_status == LeadStatus.DEAD:
+            _archive_lead_record(old_lead, tag="dead")
+            _leads_collection.delete(ids=[lead_id_str])
+            return
+
+    # Update Chroma
     _leads_collection.update(
-        ids=[lead_id],
+        ids=[lead_id_str],
         metadatas=[
             {
                 "status": new_status.value,
@@ -268,6 +327,90 @@ def update_status(lead_id: uuid.UUID | str, new_status: LeadStatus) -> None:
 def delete_lead(lead_id: uuid.UUID | str) -> None:
     _init()
     _leads_collection.delete(ids=[str(lead_id)])
+
+
+# ── Archive (cold leads, dead leads, historical audit) ──
+
+
+def archive_batch(leads: list, tag: str = "cold") -> Path:
+    """Write a batch of leads to archive/<tag>_<UTC>.jsonl.
+
+    Returns the archive file path for audit/logging.
+    """
+    ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(tz=UTC).strftime("%Y-%m-%dT%H%M%S")
+    path = ARCHIVE_DIR / f"{tag}_{ts}.jsonl"
+    with open(path, "a") as f:
+        for lead in leads:
+            f.write(lead.model_dump_json() + "\n")
+    return path
+
+
+def _archive_lead_record(lead: Lead, tag: str = "dead") -> Path:
+    """Archive a single lead record (used for DEAD transitions)."""
+    return archive_batch([lead], tag=tag)
+
+
+def rotate_cold(age_days: int = 3) -> tuple[int, int]:
+    """Move COLD/WARM leads older than *age_days* to archive, delete from Chroma.
+
+    Only rotates leads with status in {COLD, WARM} to keep HOT/NEW/
+    CONTACTED leads active.  Returns (archived_count, deleted_count).
+    """
+    _init()
+    cutoff = datetime.now(tz=UTC) - timedelta(days=age_days)
+
+    all_leads = get_all_leads()
+    to_archive: list[Lead] = []
+
+    for lead in all_leads:
+        # Only rotate cold/warm leads that are old enough
+        if lead.status not in (LeadStatus.COLD, LeadStatus.WARM):
+            continue
+        # discovered_at may be naive — make it aware for comparison
+        ts = lead.discovered_at
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=UTC)
+        if ts < cutoff:
+            to_archive.append(lead)
+
+    archived = 0
+    deleted = 0
+    if to_archive:
+        archive_batch(to_archive, tag="cold")
+        archived = len(to_archive)
+        for lead in to_archive:
+            try:
+                _leads_collection.delete(ids=[str(lead.id)])
+                deleted += 1
+            except Exception:
+                pass
+
+    return archived, deleted
+
+
+def restore_from_archive(archive_path: Path) -> int:
+    """Re-ingest leads from an archive JSONL file.
+
+    Each lead is upserted individually; duplicates are skipped.
+    Returns the number of leads restored.
+    """
+    _init()
+    restored = 0
+    with open(archive_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                data = json.loads(line)
+                lead = Lead(**data)
+                upsert_lead(lead)
+                restored += 1
+            except ValueError:
+                # Duplicate or blocked source — skip
+                pass
+    return restored
 
 
 # ── Outreach logging ──

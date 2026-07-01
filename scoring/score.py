@@ -1,7 +1,10 @@
 """Main scoring pipeline: candidate → scored lead with verdict."""
 
+import os
 import re
+from pathlib import Path
 
+from dotenv import load_dotenv
 from leads.schema import Lead, LeadStatus, Verdict
 from scoring.signals import (
     NEGATIVE_SIGNALS,
@@ -11,18 +14,34 @@ from scoring.signals import (
 )
 from search.base import RawCandidate
 
-# Lowered thresholds for real-world job market
-_HOT_THRESHOLD = 10
-_WARM_THRESHOLD = 5
-_MIN_RATE_CAD = 3000
-_HOURLY_FLOOR_CAD = 150
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+# Thresholds configurable via .env (fallback to reality-tested defaults)
+_HOT_THRESHOLD = int(os.getenv("HOT_THRESHOLD", "10"))
+_WARM_THRESHOLD = int(os.getenv("WARM_THRESHOLD", "5"))
+_MIN_RATE_CAD = int(os.getenv("MIN_RATE_CAD", "3000"))
+_HOURLY_FLOOR_CAD = int(os.getenv("HOURLY_FLOOR_CAD", "150"))
 
 
 def _parse_budget(text: str) -> int | None:
+    """Extract a budget from raw text, handling $5K shorthand, ranges, and hourly."""
+    # K-notation shorthands: "$5K", "$150K contract", "10k budget", "rate: 3k"
+    for pat in [
+        r"\$\s*(\d+)\s*k\b",
+        r"\b(\d{2,4})\s*k\s*(?:budget|contract|usd|cad|freelance|remote)",
+        r"rate\s+(?:is|of|around)?\s*\$?\s*(\d{2,3})\s*k",
+    ]:
+        m = re.search(pat, text, re.IGNORECASE)
+        if m:
+            val = int(m.group(1)) * 1000
+            if val >= 500:
+                return val
+
+    # Standard dollar notation
     patterns = [
         r"\$\s*((?:\d{4,10}|\d{1,3}(?:,\d{3})*))(?:\.\d{2})?\s*(?:cad|usd)?",
         r"(\d{4,5})\s*(?:cad|usd|dollars)",
-        r"budget\s*(?:of\s*)?[:$]?\s*((?:\d{4,10}|\d{1,3}(?:,\d{3})*))",
+        r"budget\s*(?:of\s*)?[:$]?\s*\$?(\d[\d,]*)",
         r"rate\s*(?:of\s*)?[:$]?\s*((?:\d{4,10}|\d{1,3}(?:,\d{3})*))",
         r"\b\$(\d{2,3}(?:,\d{3})*)\s*(?:/hr|/hour|\s*(?:per|an?)\s*hour)",
     ]
@@ -35,6 +54,21 @@ def _parse_budget(text: str) -> int | None:
     return None
 
 
+def _is_aggregator_page(title: str) -> bool:
+    """Detect directory/listing pages that are not actual job postings.
+
+    Matches patterns like '234 Freelance Audio Engineer jobs in United States'
+    or 'Hire the 69 Best Remote...' that are search result pages, not leads.
+    """
+    if re.search(r"^\d+\s+.*?\b(?:jobs?|positions?)\s+(?:in|across|at)\b", title, re.IGNORECASE):
+        return True
+    if re.search(r"^\d+\s+.*?\b(?:results?|openings?)\b", title, re.IGNORECASE):
+        return True
+    if re.search(r"\bhire\s+the\s+\d+\s+best\b", title, re.IGNORECASE):
+        return True
+    return False
+
+
 def score_candidate(
     candidate: RawCandidate,
     niche: str,
@@ -42,6 +76,22 @@ def score_candidate(
     hourly_floor: int = _HOURLY_FLOOR_CAD,
 ) -> Lead:
     combined_text = f"{candidate.title} {candidate.snippet} {candidate.raw_text}"
+
+    # Step 0: Aggregator / listing-page guard
+    if _is_aggregator_page(candidate.title):
+        return Lead(
+            source=candidate.source,
+            tier=candidate.tier,
+            title=candidate.title,
+            company=candidate.company,
+            url=candidate.url,
+            raw_text=candidate.raw_text,
+            niche=niche,
+            signals={"aggregator_page": -50},
+            score=-50,
+            verdict="COLD",
+            status=LeadStatus.COLD,
+        )
 
     # Step 1: Hard skip
     if check_hard_skip(combined_text):

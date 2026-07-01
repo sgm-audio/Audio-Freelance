@@ -18,6 +18,7 @@ class PipelineState(TypedDict, total=False):
     tier2_candidates: list[RawCandidate]
     tier3_candidates: list[RawCandidate]
     tier4_candidates: list[RawCandidate]
+    tier5_candidates: list[RawCandidate]
     all_candidates: list[RawCandidate]
 
     # After dedup
@@ -29,6 +30,10 @@ class PipelineState(TypedDict, total=False):
     warm_leads: list[Lead]
     cold_leads: list[Lead]
     skipped_leads: list[Lead]
+
+    # Archival
+    archived_count: int
+    archive_path: str
 
     # Errors
     errors: list[str]

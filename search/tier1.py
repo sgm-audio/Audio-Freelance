@@ -2,15 +2,15 @@
 
 These queries target specific job listing pages, NOT forum discussions.
 Each query is tuned to find contract/freelance/employment posts with pay info.
+
+LinkedIn removed: anti-bot measures make scraping unreliable, signal-to-noise
+too low. Rely on direct ATS APIs (tier5) + deep fetch from other sources.
 """
 
 from search.base import RawCandidate, web_search
 
 QUERIES = {
     "plugin_dev": [
-        # LinkedIn: audio DSP / plugin developer contracts
-        'site:linkedin.com/jobs "audio dsp" OR "plugin developer" OR "audio engineer" contract OR freelance -intern -junior',
-        'site:linkedin.com/jobs "C++" "audio" OR "DSP" OR "plugin" contract OR freelance -intern',
         # Indeed: audio plugin development
         'site:indeed.com "audio plugin" OR "dsp engineer" OR "audio developer" contract OR freelance -intern',
         # ZipRecruiter: real audio DSP contracts
@@ -20,8 +20,6 @@ QUERIES = {
         '"DSP engineer" OR "audio DSP" "$" "contract" OR "freelance" OR "remote" -forum -reddit -discussion',
     ],
     "reaper_scripts": [
-        # LinkedIn: REAPER / DAW automation
-        'site:linkedin.com/jobs "REAPER" OR "reascript" OR "DAW" "developer" OR "script" contract OR freelance',
         # Indeed: REAPER scripting
         'site:indeed.com REAPER OR reascript OR "audio automation" contract OR freelance',
         # Upwork-style: paid REAPER scripting (from any board)
@@ -30,8 +28,6 @@ QUERIES = {
         'site:forum.cockos.com "jobs" OR "hiring" OR "commission" OR "paid" "script" OR "extension"',
     ],
     "rust_audio": [
-        # LinkedIn: Rust audio
-        'site:linkedin.com/jobs "rust" "audio" OR "dsp" OR "plugin" contract OR freelance OR remote',
         # Indeed: Rust audio
         'site:indeed.com "rust" "audio" OR "dsp" contract OR freelance',
         # GitHub: Rust audio bounty/contract issues
@@ -42,8 +38,6 @@ QUERIES = {
         '"nih-plug" OR "clap-rs" OR "rust vst" "contract" OR "freelance" OR "paid"',
     ],
     "audio_ml": [
-        # LinkedIn: ML audio
-        'site:linkedin.com/jobs "machine learning" OR "ML" OR "AI" "audio" OR "speech" OR "music" contract OR freelance -intern',
         # Indeed: ML audio
         'site:indeed.com "machine learning" "audio" OR "speech" contract OR freelance',
         # Research/engineering: on-device ML, audio inference
@@ -53,8 +47,6 @@ QUERIES = {
         '"audio AI" OR "music AI" OR "speech AI" "hiring" OR "contract" "engineer" -forum -reddit',
     ],
     "game_audio_dev": [
-        # LinkedIn: game audio
-        'site:linkedin.com/jobs "audio programmer" OR "audio engineer" "game" OR "gaming" contract OR freelance',
         # Indeed: game audio programming
         'site:indeed.com "audio programmer" OR "game audio" OR "wwise" OR "fmod" contract OR freelance',
         # GameAudio specific jobs

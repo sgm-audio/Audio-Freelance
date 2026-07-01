@@ -1,4 +1,4 @@
-"""Pipeline: search → dedup → score → route.
+"""Pipeline: search → dedup → deep-fetch → score → route.
 
 Uses direct async orchestration instead of LangGraph for reliability.
 LangGraph wrapper provided for future graph-based extensions.
@@ -12,14 +12,16 @@ from langgraph.graph import END, START, StateGraph
 
 from graph.state import PipelineState
 from leads.schema import Lead
-from leads.store import check_duplicate, upsert_lead
-from scoring.score import score_candidate
-from search import run_tier1, run_tier2, run_tier3, run_tier4
+from leads.store import archive_batch, check_duplicate, upsert_lead
+from scoring.profile import load_profile
+from scoring.profile_score import score_against_profile
+from search import run_tier1, run_tier2, run_tier3, run_tier4, run_tier5
 from search.base import RawCandidate
+from search.fetch import fetch_and_extract
 
 
 async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
-    """Run full pipeline: search → dedup → score.
+    """Run full pipeline: search → dedup → deep-fetch → score.
 
     Returns final PipelineState with all results.
     """
@@ -30,6 +32,7 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
         "tier2_candidates": [],
         "tier3_candidates": [],
         "tier4_candidates": [],
+        "tier5_candidates": [],
         "all_candidates": [],
         "deduped_candidates": [],
         "leads": [],
@@ -40,25 +43,32 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
         "errors": [],
     }
 
-    # ── Phase 1: Search all tiers ──
+    # ── Phase 1: Search all tiers (including ATS APIs in tier5) ──
     results = await asyncio.gather(
         run_tier1(niche),
         run_tier2(niche),
         run_tier3(niche),
         run_tier4(niche),
+        run_tier5(niche),
         return_exceptions=True,
     )
 
-    tier_keys = ["tier1_candidates", "tier2_candidates", "tier3_candidates", "tier4_candidates"]
+    tier_keys = [
+        "tier1_candidates",
+        "tier2_candidates",
+        "tier3_candidates",
+        "tier4_candidates",
+        "tier5_candidates",
+    ]
     all_candidates: list[RawCandidate] = []
 
     for key, result in zip(tier_keys, results):
         if isinstance(result, Exception):
             state["errors"].append(f"{key} failed: {result}")
-            state[key] = []
+            state[key] = []  # type: ignore[literal-required]
         else:
-            candidates = result[:max_per_tier]
-            state[key] = candidates
+            candidates = result[:max_per_tier]  # type: ignore[index]
+            state[key] = candidates  # type: ignore[literal-required]
             all_candidates.extend(candidates)
 
     state["all_candidates"] = all_candidates
@@ -79,15 +89,45 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
             deduped.append(c)
     state["deduped_candidates"] = deduped
 
-    # ── Phase 3: Score ──
+    # ── Phase 3: Deep fetch (fetch full job descriptions) ──
+    enriched: list[RawCandidate] = []
+    fetch_budget = 20  # max URLs to fetch per pipeline run
+    fetched_count = 0
+
+    for c in deduped:
+        # Skip if already has rich content (from ATS APIs)
+        if len(c.raw_text) > 500:
+            enriched.append(c)
+            continue
+
+        if fetched_count >= fetch_budget:
+            enriched.append(c)
+            continue
+
+        # Try to fetch and extract full content
+        try:
+            full_text = await fetch_and_extract(c.url, timeout=10)
+            if full_text and len(full_text) > len(c.raw_text):
+                c.raw_text = full_text[:2000]  # cap at 2000 chars
+                fetched_count += 1
+        except Exception:
+            pass  # keep original snippet
+
+        enriched.append(c)
+
+    # ── Phase 4: Score against user profile ──
+    profile = load_profile()
+
     leads: list[Lead] = []
     hot: list[Lead] = []
     warm: list[Lead] = []
     cold: list[Lead] = []
     skipped: list[Lead] = []
 
-    for c in deduped:
-        lead = score_candidate(c, niche)
+    cold_to_archive: list[Lead] = []
+
+    for c in enriched:
+        lead = score_against_profile(c, niche, profile)
         leads.append(lead)
         if lead.verdict == "HOT":
             hot.append(lead)
@@ -95,18 +135,35 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
             warm.append(lead)
         elif lead.verdict == "COLD":
             cold.append(lead)
+            cold_to_archive.append(lead)
         else:
             skipped.append(lead)
+            cold_to_archive.append(lead)
 
-        with contextlib.suppress(Exception):
-            # Continue even if storage fails - we still return the lead
-            upsert_lead(lead)
+        # Persist HOT/WARM to Chroma; COLD/SKIP go to cold archive instead
+        if lead.verdict in ("HOT", "WARM"):
+            with contextlib.suppress(Exception):
+                upsert_lead(lead)
+
+    # Archive cold/skipped leads to date-stamped JSONL
+    archived_count = 0
+    archive_path = ""
+    if cold_to_archive:
+        try:
+            archive_path = str(
+                archive_batch(cold_to_archive, tag="cold")
+            )
+            archived_count = len(cold_to_archive)
+        except Exception as e:
+            state["errors"].append(f"archive failed: {e}")
 
     state["leads"] = leads
     state["hot_leads"] = hot
     state["warm_leads"] = warm
     state["cold_leads"] = cold
     state["skipped_leads"] = skipped
+    state["archived_count"] = archived_count
+    state["archive_path"] = archive_path
 
     return state
 
@@ -147,6 +204,7 @@ async def search_all(state: PipelineState) -> dict[str, Any]:
         "tier2_candidates": result.get("tier2_candidates", []),
         "tier3_candidates": result.get("tier3_candidates", []),
         "tier4_candidates": result.get("tier4_candidates", []),
+        "tier5_candidates": result.get("tier5_candidates", []),
         "errors": result.get("errors", []),
     }
 

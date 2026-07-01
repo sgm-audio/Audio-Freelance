@@ -1,0 +1,27 @@
+# ── Audio Companies using Public ATS APIs ──
+# These companies use Greenhouse, Lever, or Ashby for their job boards.
+# The system polls these directly — no scraping, no aggregators.
+#
+# Add companies as you find them. The slugs are the company identifiers
+# used by each ATS (usually lowercase, no spaces).
+
+# Greenhouse: https://boards.greenhouse.io/{slug}
+greenhouse:
+  - izotope
+  - nativeinstruments
+  - output
+  - arturia
+  - soundtoys
+  - kilohearts
+  - splice
+  - bandlab
+  - epidemicsound
+  - soundcloud
+
+# Lever: https://jobs.lever.co/{slug}
+lever:
+  - eventide
+
+# Ashby: https://jobs.ashbyhq.com/{slug}
+ashby:
+  - david-ai
