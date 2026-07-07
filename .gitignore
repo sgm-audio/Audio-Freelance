@@ -8,6 +8,14 @@ build/
 
 # ChromaDB data
 leads/data/
+chroma.sqlite3
+
+# Open-code tool data
+token-optimizer/
+
+# Bun lockfile (project uses npm)
+frontend/bun.lock*
+frontend/.bun/
 
 # Proposals (generated)
 proposals/
