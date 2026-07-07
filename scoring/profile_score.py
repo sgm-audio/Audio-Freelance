@@ -84,7 +84,7 @@ def score_against_profile(
 
     # ── Step 3: Blocked companies guard ──
     if profile.blocked_companies:
-        company_text = ' '.join([candidate.company or '', combined_text])
+        company_text = " ".join([candidate.company or "", combined_text])
         for blocked in profile.blocked_companies:
             if blocked.lower() in company_text.lower():
                 return Lead(
@@ -95,9 +95,9 @@ def score_against_profile(
                     url=candidate.url,
                     raw_text=candidate.raw_text,
                     niche=niche,
-                    signals={'blocked_company': -999},
+                    signals={"blocked_company": -999},
                     score=0,
-                    verdict='SKIP',
+                    verdict="SKIP",
                     status=LeadStatus.SKIPPED,
                 )
 

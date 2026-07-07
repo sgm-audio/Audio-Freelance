@@ -30,7 +30,7 @@ TIER_4_QUERIES = {
         # Asian/Australian
         '"audio" OR "music" tech startup tokyo OR singapore OR sydney OR melbourne hiring OR jobs',
         # YC companies
-        'site:ycombinator.com/companies audio OR music OR speech OR dsp',
+        "site:ycombinator.com/companies audio OR music OR speech OR dsp",
         # VC-backed audio startups
         '"audio" OR "music" OR "speech" "series a" OR "seed funded" startup hiring engineer OR developer',
     ],
@@ -42,7 +42,7 @@ TIER_4_QUERIES = {
     "rust_audio": [
         '"rust" "audio" company OR startup hiring OR jobs OR careers',
         '"audio tooling" OR "audio infrastructure" rust hiring OR jobs',
-        'site:ycombinator.com/companies rust audio OR dsp',
+        "site:ycombinator.com/companies rust audio OR dsp",
     ],
     "audio_ml": [
         '"audio AI" OR "music AI" startup OR company hiring OR jobs OR careers',

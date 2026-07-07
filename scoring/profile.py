@@ -14,7 +14,6 @@ from typing import Any
 
 import yaml
 
-
 # ── Profile data class ──
 
 
@@ -129,7 +128,11 @@ class Profile:
 
 def get_profile_path() -> Path:
     """Return the path to profile.yaml."""
-    return Path(os.getenv("PROFILE_PATH", Path(__file__).resolve().parent.parent / "profile.yaml"))
+    return Path(
+        os.getenv(
+            "PROFILE_PATH", Path(__file__).resolve().parent.parent / "profile.yaml"
+        )
+    )
 
 
 def profile_exists() -> bool:

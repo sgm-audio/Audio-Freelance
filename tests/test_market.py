@@ -154,7 +154,9 @@ class TestMarketReport:
                 )
             ],
             tech_trends=[TechTrend(technology="CLAP", mention_count=3)],
-            pricing_benchmarks=[PricingBenchmark(niche="plugin_dev", contract_range_max=5000)],
+            pricing_benchmarks=[
+                PricingBenchmark(niche="plugin_dev", contract_range_max=5000)
+            ],
             hot_opportunities=["CLAP is trending"],
             summary="Test report",
         )

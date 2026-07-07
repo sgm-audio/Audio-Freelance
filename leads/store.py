@@ -20,7 +20,9 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 # ── Config from environment (with fallback defaults) ──
 
 CHROMA_COLLECTION_LEADS: str = os.getenv("CHROMA_COLLECTION_LEADS", "freelance_leads")
-CHROMA_COLLECTION_OUTREACH: str = os.getenv("CHROMA_COLLECTION_OUTREACH", "freelance_outreach_log")
+CHROMA_COLLECTION_OUTREACH: str = os.getenv(
+    "CHROMA_COLLECTION_OUTREACH", "freelance_outreach_log"
+)
 EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "nomic-embed-text")
 
 _raw_threshold = os.getenv("DEDUP_SIMILARITY_THRESHOLD", "0.92")
@@ -294,7 +296,9 @@ def update_status(lead_id: uuid.UUID | str, new_status: LeadStatus) -> None:
     # Log the transition as a tracking event
     old_lead = get_lead_by_id(lead_id_str)
     if old_lead is not None:
-        from leads.tracking import log_tracking_event  # ponytail: local import avoids circular
+        from leads.tracking import (
+            log_tracking_event,
+        )  # ponytail: local import avoids circular
 
         log_tracking_event(
             lead_id_str,

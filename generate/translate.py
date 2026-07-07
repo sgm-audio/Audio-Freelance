@@ -34,7 +34,9 @@ def translate_capability(
         "Runs on any laptop CPU — no GPU dependency, no API costs",
         "Your model weights, your IP — nothing leaves the binary",
     ]
-    pricing_anchor = "30-50% below a dedicated DSP-ML hire for a fixed-scope integration"
+    pricing_anchor = (
+        "30-50% below a dedicated DSP-ML hire for a fixed-scope integration"
+    )
 
     result = {
         "input": technical_description,

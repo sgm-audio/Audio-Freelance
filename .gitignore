@@ -9,6 +9,7 @@ build/
 # ChromaDB data
 leads/data/
 chroma.sqlite3
+[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*/
 
 # Open-code tool data
 token-optimizer/

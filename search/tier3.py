@@ -13,7 +13,7 @@ QUERIES = {
         '"music tech" OR "pro audio" "developer" OR "engineer" contract OR freelance OR hiring',
         '"audio plugin company" OR "plugin developer" hiring OR contract OR job',
         # Niche worldwide communities
-        'site:github.com/topics/audio-plugin job OR contract OR bounty OR hackathon',
+        "site:github.com/topics/audio-plugin job OR contract OR bounty OR hackathon",
         'site:github.com/topics/vst contract OR job OR bounty OR "help wanted"',
         '"audio plug-in" OR "audio plug in" developer freelance OR contract OR job -forum',
         # DSP/audio development communities

@@ -89,7 +89,11 @@ async def _tavily_search(query: str, max_results: int = 10) -> list[SearchResult
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
                 _TAVILY_URL,
-                json={"api_key": _TAVILY_API_KEY, "query": query, "max_results": max_results},
+                json={
+                    "api_key": _TAVILY_API_KEY,
+                    "query": query,
+                    "max_results": max_results,
+                },
             )
             resp.raise_for_status()
             data = resp.json()
