@@ -1,9 +1,13 @@
 """FastAPI route definitions for the freelance acquisition system."""
 
 import os
+import shutil
+import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from pydantic import BaseModel, Field
 
 from api.auth import require_api_key
 from debug.log import setup_logger
@@ -24,6 +28,34 @@ router = APIRouter(dependencies=[Depends(require_api_key)])
 public = APIRouter()  # no auth
 
 log = setup_logger(__name__)
+
+
+# ── Pydantic request models ──
+
+
+class ProfileUpdateRequest(BaseModel):
+    """Validation model for profile updates."""
+
+    model_config = {"extra": "forbid"}
+
+    identity: dict | None = None
+    skills: dict | None = None
+    preferences: dict | None = None
+    experience: dict | None = None
+    portfolio: dict | None = None
+
+
+class ScoreRequest(BaseModel):
+    source: str
+    title: str
+    url: str
+    snippet: str
+    niche: str = "plugin_dev"
+    company: str | None = None
+
+
+class LeadStatusUpdate(BaseModel):
+    new_status: str = Field(min_length=1)
 
 
 @public.get("/health")
@@ -69,19 +101,19 @@ async def get_lead(lead_id: str):
 
 
 @router.post("/leads/{lead_id}/status")
-async def change_lead_status(lead_id: str, new_status: str):
+async def change_lead_status(lead_id: str, body: LeadStatusUpdate):
     """Update a lead's status."""
     try:
-        status_enum = LeadStatus(new_status.upper())
+        status_enum = LeadStatus(body.new_status.upper())
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid status: {new_status}")
+        raise HTTPException(status_code=400, detail=f"Invalid status: {body.new_status}")
 
     try:
         update_status(lead_id, status_enum)
     except Exception as e:
         log.warning("update_status failed", extra={"lead_id": lead_id, "error": e})
         raise HTTPException(status_code=500, detail="Failed to update lead status")
-    return {"status": "updated", "lead_id": lead_id, "new_status": new_status}
+    return {"status": "updated", "lead_id": lead_id, "new_status": body.new_status}
 
 
 @router.post("/prospect/{niche}")
@@ -109,12 +141,8 @@ async def prospect_niche(niche: str):
             "archived": result.get("archived_count", 0),
             "archive_path": result.get("archive_path", ""),
             "errors": result.get("errors", []),
-            "hot_leads": [
-                lead.model_dump(mode="json") for lead in result.get("hot_leads", [])
-            ],
-            "warm_leads": [
-                lead.model_dump(mode="json") for lead in result.get("warm_leads", [])
-            ],
+            "hot_leads": [lead.model_dump(mode="json") for lead in result.get("hot_leads", [])],
+            "warm_leads": [lead.model_dump(mode="json") for lead in result.get("warm_leads", [])],
         }
     except Exception as e:
         log.warning("Pipeline failed", extra={"niche": niche, "error": e})
@@ -125,31 +153,24 @@ async def prospect_niche(niche: str):
 
 
 @router.post("/score")
-async def score_manual(
-    source: str,
-    title: str,
-    url: str,
-    snippet: str,
-    niche: str = "plugin_contract",
-    company: str | None = None,
-):
+async def score_manual(body: ScoreRequest):
     """Manually score a single raw candidate."""
-    if niche not in PREFERRED_NICHES:
+    if body.niche not in PREFERRED_NICHES:
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown niche '{niche}'",
+            detail=f"Unknown niche '{body.niche}'",
         )
 
     candidate = RawCandidate(
-        source=source,
-        title=title,
-        url=url,
-        snippet=snippet,
-        company=company,
-        raw_text=snippet,
+        source=body.source,
+        title=body.title,
+        url=body.url,
+        snippet=body.snippet,
+        company=body.company,
+        raw_text=body.snippet,
         tier=1,
     )
-    lead = score_candidate(candidate, niche)
+    lead = score_candidate(candidate, body.niche)
 
     try:
         upsert_lead(lead)
@@ -179,9 +200,7 @@ async def rate_work(task_description: str, estimated_hours: int):
 
 
 @router.post("/outreach/{lead_id}")
-async def generate_outreach_draft(
-    lead_id: str, template_key: str = "A_plugin_contract"
-):
+async def generate_outreach_draft(lead_id: str, template_key: str = "A_plugin_contract"):
     """Generate an outreach draft for a lead using a template."""
     from generate.outreach import generate_outreach
 
@@ -296,9 +315,7 @@ async def market_pricing():
                 "hourly_max": p.hourly_max,
                 "sample_count": p.sample_count,
             }
-            for p in sorted(
-                report.pricing_benchmarks, key=lambda x: -x.contract_range_max
-            )
+            for p in sorted(report.pricing_benchmarks, key=lambda x: -x.contract_range_max)
         ],
     }
 
@@ -557,11 +574,20 @@ async def get_profile():
 
 
 @router.post("/profile")
-async def update_profile(profile_data: dict):
+async def update_profile(profile_data: ProfileUpdateRequest):
     """Update the user profile."""
     from scoring.profile import _dict_to_profile, save_profile
 
-    profile = _dict_to_profile(profile_data)
+    try:
+        profile = _dict_to_profile(profile_data.model_dump())
+    except Exception as e:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Invalid profile data: {e}. "
+                "Expected keys: identity, skills, preferences, experience, portfolio."
+            ),
+        )
     save_profile(profile)
     return {"status": "saved", "profile": profile.to_dict()}
 
@@ -575,6 +601,39 @@ async def delete_profile():
     if path.exists():
         path.unlink()
     return {"status": "deleted"}
+
+
+@router.post("/profile/upload")
+async def upload_profile_file(file: UploadFile = File(...), file_type: str = "resume"):
+    """Upload resume or portfolio file. Stored in assets/portfolio/."""
+    if file.content_type and not file.content_type.startswith(
+        (
+            "application/pdf",
+            "image/",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument",
+        )
+    ):
+        raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+
+    if file.size and file.size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+
+    upload_dir = Path(__file__).resolve().parent.parent / "assets" / "portfolio"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_name = f"{uuid.uuid4()}_{file.filename}"
+    file_path = upload_dir / safe_name
+
+    with open(file_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    return {
+        "status": "uploaded",
+        "filename": file.filename,
+        "path": str(file_path.relative_to(Path(__file__).resolve().parent.parent)),
+        "type": file_type,
+    }
 
 
 # ── Companies (ATS tracking) ──

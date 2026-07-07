@@ -71,9 +71,7 @@ POSITIVE_SIGNALS: list[tuple[str, Pattern[str], int]] = [
         r"\b(?:audio|plugin|mix|mastering|sound|music)\b",
         2,
     ),
-    _compile(
-        "low_latency", r"\b(?:low\s*latency|<5ms|<1ms|real[\s-]?time\s*constraint)\b", 4
-    ),
+    _compile("low_latency", r"\b(?:low\s*latency|<5ms|<1ms|real[\s-]?time\s*constraint)\b", 4),
     _compile(
         "remote_pnw",
         r"\b(?:remote|vancouver|pacific\s*time|pst|pdt)\b",

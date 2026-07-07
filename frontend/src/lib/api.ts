@@ -1,15 +1,31 @@
 const API = "/api/v1";
 
+// ponytail: simple TTL cache — upgrade to React Query when traffic justifies it
+type CacheEntry = { data: unknown; ts: number };
+const _cache = new Map<string, CacheEntry>();
+const _TTL = 30_000; // 30s
+
+function _cacheGet<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const hit = _cache.get(key);
+  if (hit && Date.now() - hit.ts < _TTL) return Promise.resolve(hit.data as T);
+  return fetcher().then((data) => {
+    _cache.set(key, { data, ts: Date.now() });
+    return data;
+  });
+}
+
+export function clearFetchCache() {
+  _cache.clear();
+}
+
 async function get<T>(path: string, timeoutMs = 10000): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${API}${path}`, { signal: controller.signal });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    return res.json();
-  } finally {
-    clearTimeout(timer);
-  }
+  return _cacheGet(path, () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(`${API}${path}`, { signal: controller.signal })
+      .then((res) => { if (!res.ok) throw new Error(`${res.status} ${res.statusText}`); return res.json(); })
+      .finally(() => clearTimeout(timer));
+  });
 }
 
 async function post<T>(path: string, timeoutMs = 30000): Promise<T> {
@@ -179,7 +195,7 @@ export interface ProfileData {
   skills: { languages: string[]; frameworks: string[]; domains: string[]; specializations: string[] };
   preferences: { niches: string[]; excluded_niches: string[]; dealbreakers: string[]; blocked_companies: string[]; rate_floor: number; hourly_floor: number; contract_types: string[] };
   experience: { years: number | null; seniority: string[] };
-  portfolio: { github: string; website: string; notable_work: string[] };
+  portfolio: { github: string; website: string; notable_work: string[]; portfolio_files: { filename: string; path: string; type: string; uploaded_at: string }[] };
   completeness: number;
   is_empty: boolean;
 }

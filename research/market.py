@@ -123,9 +123,7 @@ def _parse_rate(text: str) -> tuple[int, int] | None:
             return (lo, hi)
 
     # Single budget: Budget $5,000
-    m = re.search(
-        r"(?:budget|rate|total)\s*(?:of\s*)?[:$]?\s*\$?(\d[\d,]*)", text, re.IGNORECASE
-    )
+    m = re.search(r"(?:budget|rate|total)\s*(?:of\s*)?[:$]?\s*\$?(\d[\d,]*)", text, re.IGNORECASE)
     if m:
         val = int(m.group(1).replace(",", ""))
         if 2000 <= val <= 200000:
@@ -247,9 +245,7 @@ async def run_market_scan() -> MarketReport:
         parts.append(f"Rising: {', '.join(t.technology for t in rising)}")
     if pricing:
         top = sorted(pricing, key=lambda p: -p.contract_range_max)[:3]
-        parts.append(
-            f"Top pay: {', '.join(f'{p.niche} (${p.contract_range_max:,})' for p in top)}"
-        )
+        parts.append(f"Top pay: {', '.join(f'{p.niche} (${p.contract_range_max:,})' for p in top)}")
     if opportunities:
         parts.append(f"{len(opportunities)} opportunities")
     summary = " | ".join(parts) if parts else "Scan complete."
@@ -299,9 +295,7 @@ async def generate_report() -> dict:
                 "hourly_max": p.hourly_max,
                 "sample_count": p.sample_count,
             }
-            for p in sorted(
-                report.pricing_benchmarks, key=lambda x: -x.contract_range_max
-            )
+            for p in sorted(report.pricing_benchmarks, key=lambda x: -x.contract_range_max)
         ],
         "hot_opportunities": report.hot_opportunities,
     }

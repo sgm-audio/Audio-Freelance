@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { fetchStatus, fetchMarket, fetchHealth, StatusResponse, MarketReport } from "@/lib/api";
 import AudioVis from "@/components/audio-vis";
 
@@ -40,17 +41,16 @@ export default function Dashboard() {
           Start the API server to see your leads, market intelligence, and opportunities.
         </p>
         <div className="text-left rounded-lg border border-border bg-card p-5 text-sm space-y-2">
-          <p className="font-medium">Terminal 1 — Start the backend:</p>
+          <p className="font-medium">Run both services:</p>
           <code className="block bg-muted rounded p-2 text-xs">
-            cd ~/Desktop/Dev/Github\ Repo\'s/Audio\ Freelance\ Dev\ System<br />
-            uv run python main.py
+            ./run.sh
           </code>
-          <p className="font-medium mt-4">Terminal 2 — Start the frontend:</p>
+          <p className="font-medium mt-4">Or start individually:</p>
           <code className="block bg-muted rounded p-2 text-xs">
-            cd frontend<br />npm run dev
+            make backend<br />make frontend
           </code>
           <p className="text-muted-foreground mt-4">
-            Then refresh this page.
+            FastAPI on :8080 · Next.js on :3000
           </p>
         </div>
       </div>
@@ -82,12 +82,39 @@ export default function Dashboard() {
       <AudioVis />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Leads" value={totalLeads} />
-        <StatCard label="Hot" value={hotCount} color="text-red-500" />
-        <StatCard label="Warm" value={counts.WARM ?? 0} color="text-amber-500" />
-        <StatCard label="Pursuing" value={pursuingCount} color="text-blue-500" />
-        <StatCard label="Contacted" value={(counts.CONTACTED ?? 0) + (counts.PROPOSAL_SENT ?? 0)} />
+        <StatCard label="Total Leads" value={totalLeads} total={totalLeads} />
+        <StatCard label="Hot" value={hotCount} total={totalLeads} color="text-red-500" />
+        <StatCard label="Warm" value={counts.WARM ?? 0} total={totalLeads} color="text-amber-500" />
+        <StatCard label="Pursuing" value={pursuingCount} total={totalLeads} color="text-blue-500" />
+        <StatCard label="Contacted" value={(counts.CONTACTED ?? 0) + (counts.PROPOSAL_SENT ?? 0)} total={totalLeads} />
       </div>
+
+      {(() => {
+        const statusData = [
+          { name: "Hot", value: hotCount, color: "#ef4444" },
+          { name: "Warm", value: counts.WARM ?? 0, color: "#f59e0b" },
+          { name: "Cold", value: counts.COLD ?? 0, color: "#3b82f6" },
+          { name: "Contacted", value: pursuingCount, color: "#8b5cf6" },
+          { name: "Won", value: counts.WON ?? 0, color: "#22c55e" },
+        ].filter(d => d.value > 0);
+        if (statusData.length === 0) return null;
+        return (
+          <div className="rounded-lg border border-border bg-card p-5">
+            <h2 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">Lead Status</h2>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3}>
+                  {statusData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} stroke="none" />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        );
+      })()}
 
       <div>
         <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Quick Actions</h2>
@@ -178,11 +205,15 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color?: string }) {
+function StatCard({ label, value, total, color }: { label: string; value: number; total: number; color?: string }) {
+  const pct = total > 0 ? (value / total) * 100 : 0;
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
       <p className={`text-2xl font-semibold mt-1 ${color ?? ""}`}>{value}</p>
+      <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
+        <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
+      </div>
     </div>
   );
 }

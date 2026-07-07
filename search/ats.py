@@ -73,9 +73,7 @@ async def fetch_greenhouse_jobs(company: str, timeout: int = 10) -> list[RawCand
                 job_url = job.get("absolute_url", "")
                 location = job.get("location", {}).get("name", "")
                 content = job.get("content", "")  # HTML
-                departments = ", ".join(
-                    d.get("name", "") for d in job.get("departments", [])
-                )
+                departments = ", ".join(d.get("name", "") for d in job.get("departments", []))
 
                 # Strip HTML for raw_text
                 raw_text = _strip_html(content)

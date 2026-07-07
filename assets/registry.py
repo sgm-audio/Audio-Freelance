@@ -95,9 +95,7 @@ def verify_draft_claims(
 
     # Find all asset IDs mentioned in the draft
     for asset_id, asset in registry.all().items():
-        if asset_id.lower() in draft_text.lower() and not registry.is_safe_to_claim(
-            asset_id
-        ):
+        if asset_id.lower() in draft_text.lower() and not registry.is_safe_to_claim(asset_id):
             violations.append(
                 f"Asset '{asset_id}' is '{asset.status}' but draft references it as shipped. "
                 f"Blocking until status is 'shipped'."

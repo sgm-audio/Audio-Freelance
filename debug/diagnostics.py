@@ -58,9 +58,7 @@ def run_diagnostics() -> dict:
             missing.append(key)
     if missing:
         keys = ", ".join(missing)
-        report.remediation.append(
-            f"Missing API keys: {keys}. Search will return 0 results."
-        )
+        report.remediation.append(f"Missing API keys: {keys}. Search will return 0 results.")
 
     return {
         "status": "degraded" if report.errors else "healthy",

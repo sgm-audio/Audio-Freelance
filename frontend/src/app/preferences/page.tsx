@@ -126,6 +126,59 @@ export default function PreferencesPage() {
       </div>
     </section>
 
+    {/* Portfolio Files */}
+    <section className="rounded-lg border border-border bg-card p-5">
+      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Portfolio Files</h2>
+      <p className="text-xs text-muted-foreground mb-3">Upload your resume or portfolio files (PDF, DOCX, images — max 10MB).</p>
+      <div className="rounded-lg border-2 border-dashed border-border p-6 text-center mb-3">
+        <p className="text-sm text-muted-foreground mb-2">Click to browse for files</p>
+        <input type="file" accept=".pdf,.doc,.docx,image/*"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("file_type", "resume");
+            try {
+              const res = await fetch("/api/v1/profile/upload", { method: "POST", body: formData });
+              if (res.ok) {
+                const data = await res.json();
+                setProfile({
+                  ...profile,
+                  portfolio: {
+                    ...profile.portfolio,
+                    portfolio_files: [...(profile.portfolio.portfolio_files || []), data],
+                  },
+                });
+              }
+            } catch {}
+          }}
+          className="text-sm"
+        />
+      </div>
+      {(profile.portfolio.portfolio_files || []).length > 0 && (
+        <div className="space-y-1">
+          {(profile.portfolio.portfolio_files || []).map((f, i) => (
+            <div key={i} className="flex items-center justify-between text-sm bg-card border border-border rounded-md px-3 py-2">
+              <span>{f.filename}</span>
+              <button
+                onClick={() => setProfile({
+                  ...profile,
+                  portfolio: {
+                    ...profile.portfolio,
+                    portfolio_files: (profile.portfolio.portfolio_files || []).filter((_, j) => j !== i),
+                  },
+                })}
+                className="text-xs text-muted-foreground hover:text-red-400"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+
     {/* Companies */}
     <section className="rounded-lg border border-border bg-card p-5">
       <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Tracked Companies</h2>

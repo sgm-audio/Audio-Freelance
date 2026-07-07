@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ThemeProvider } from "next-themes";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FirstBootDetector } from "./first-boot";
@@ -29,9 +30,9 @@ function Sidebar() {
   return (
     <nav className="w-56 shrink-0 border-r border-border bg-sidebar flex flex-col h-dvh sticky top-0">
       <div className="p-4 pb-0">
-        <a href="/" className="text-sm font-semibold tracking-tight flex items-center gap-2">
+        <Link href="/" prefetch={true} className="text-sm font-semibold tracking-tight flex items-center gap-2">
           <span className="text-lg">◆</span> aquire
-        </a>
+        </Link>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-1 text-sm">
         <NavItem href="/" label="Dashboard" />
@@ -56,11 +57,18 @@ function Sidebar() {
 }
 
 function NavItem({ href, label, external }: { href: string; label: string; external?: boolean }) {
-  const attrs = external ? { target: "_blank", rel: "noopener" } : {};
+  const cls = "flex items-center rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors";
+  if (external) {
+    return (
+      <a href={href} className={cls} target="_blank" rel="noopener">
+        {label}
+        <span className="ml-auto text-xs opacity-50">↗</span>
+      </a>
+    );
+  }
   return (
-    <a href={href} className="flex items-center rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" {...attrs}>
+    <Link href={href} prefetch={true} className={cls}>
       {label}
-      {external && <span className="ml-auto text-xs opacity-50">↗</span>}
-    </a>
+    </Link>
   );
 }
