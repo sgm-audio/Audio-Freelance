@@ -53,6 +53,7 @@ class Profile:
     github: str = ""
     website: str = ""
     notable_work: list[str] = field(default_factory=list)
+    portfolio_files: list[dict] = field(default_factory=list)
 
     def is_empty(self) -> bool:
         """True if no meaningful profile data has been set."""
@@ -117,6 +118,7 @@ class Profile:
                 "github": self.github,
                 "website": self.website,
                 "notable_work": self.notable_work,
+                "portfolio_files": self.portfolio_files,
             },
             "completeness": self.completeness(),
             "is_empty": self.is_empty(),
@@ -128,11 +130,7 @@ class Profile:
 
 def get_profile_path() -> Path:
     """Return the path to profile.yaml."""
-    return Path(
-        os.getenv(
-            "PROFILE_PATH", Path(__file__).resolve().parent.parent / "profile.yaml"
-        )
-    )
+    return Path(os.getenv("PROFILE_PATH", Path(__file__).resolve().parent.parent / "profile.yaml"))
 
 
 def profile_exists() -> bool:
@@ -190,6 +188,7 @@ def _dict_to_profile(data: dict[str, Any]) -> Profile:
         github=portfolio.get("github", "") or "",
         website=portfolio.get("website", "") or "",
         notable_work=portfolio.get("notable_work", []) or [],
+        portfolio_files=portfolio.get("portfolio_files", []) or [],
     )
 
 
@@ -225,5 +224,6 @@ def _profile_to_dict(profile: Profile) -> dict[str, Any]:
             "github": profile.github,
             "website": profile.website,
             "notable_work": profile.notable_work,
+            "portfolio_files": profile.portfolio_files,
         },
     }

@@ -5,6 +5,37 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Session 2026-07-07
+
+### Changed
+- **Code style** — applied ruff import sorting (`ruff check --fix`) and black formatting across 24 source files. No logic changes.
+- **.gitignore** — added patterns for stray ChromaDB segment directories, bun lockfiles, and `token-optimizer/` tool data.
+
+### Fixed
+- **Tier cap 4→5** — `run_tier5` was producing tier=5 leads rejected by `Lead` model (validator + `RawCandidate.__post_init__` both hardcoded to 4).
+- **Test isolation timing** — `conftest.py` used `monkeypatch.setenv` but `leads/store.py` reads `LEADS_ALLOW_TEST_LEADS` at module import time (before fixtures run). Fixed by setting `os.environ` directly at module level.
+
+## Session 2026-07-07 (afternoon)
+
+### Added
+- **UX polish** — skeleton loaders (`loading.tsx`) on all 5 routes; error boundaries (`error.tsx`) on all 9 routes with retry/dashboard fallback; Recharts donut chart (lead status distribution) on dashboard; horizontal bar chart (pricing by niche) on market; progress bars in StatCards; sparkline bars in trends table. All zero-dependency additions — Recharts already installed.
+- **Performance** — client-side TTL fetch cache (30s) in `api.ts` eliminates redundant API calls when switching tabs; sidebar converted from `<a>` to `<Link prefetch={true}>` for instant client-side navigation. `clearFetchCache()` exported for mutation invalidation.
+- **Portfolio file upload** — `POST /profile/upload` endpoint (PDF/DOCX/images, 10MB max, stored in `assets/portfolio/`). New "Portfolio" step in the 6-step setup wizard. File management section in Preferences.
+- **Request logging** — middleware logs every `/api/` request: `METHOD path → status (duration)`. Color-coded by severity.
+- **Security headers** — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` on all responses. `X-Auth-Status: disabled` + `X-Auth-Warning` headers when `API_KEY` unset.
+- **Input validation** — Pydantic models (`ProfileUpdateRequest`, `ScoreRequest`, `LeadStatusUpdate`) with `extra=forbid` on profile updates. Replaced raw `dict` and spread query params with typed body models.
+
+### Changed
+- **run.sh** — `set -euo pipefail`, pre-flight checks (uv, node, npm, .env, port conflicts 8080/3000), 60s health poll, `VERBOSE=1` mode, colored output.
+- **Startup auth warning** — replaced silent `warnings.warn()` with ASCII banner visible in terminal logs.
+- **Code style** — `ruff format` applied to 19 files (auto-formatted whitespace/quotes).
+- **Frontend error pages** — stale hardcoded paths replaced with `./run.sh` / `make backend` / `make frontend`.
+
+### Security
+- **API keys rotated** — Tavily, Serper, Firecrawl keys regenerated. Previous keys were never in git (`.env*` gitignored), but rotated out of caution. Rotation date recorded in `.env` header.
+
+---
+
 ## [Unreleased]
 
 ### Added

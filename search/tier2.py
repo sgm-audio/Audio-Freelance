@@ -78,10 +78,7 @@ async def _hn_algolia_search() -> list[RawCandidate]:
                 comment_text = hit.get("comment_text", "") or ""
                 if "who is hiring" in story_title:
                     lower = comment_text.lower()
-                    if any(
-                        kw in lower
-                        for kw in ["contract", "freelance", "part-time", "remote"]
-                    ):
+                    if any(kw in lower for kw in ["contract", "freelance", "part-time", "remote"]):
                         candidates.append(
                             RawCandidate(
                                 source="hn_algolia",

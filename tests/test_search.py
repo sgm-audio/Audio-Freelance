@@ -13,9 +13,7 @@ class TestIsBlockPage:
         assert is_block_page("Please verify you are human by completing the captcha")
 
     def test_normal_page_not_blocked(self):
-        assert not is_block_page(
-            "Normal content about audio plugins and DSP programming"
-        )
+        assert not is_block_page("Normal content about audio plugins and DSP programming")
 
 
 class TestSearchResult:

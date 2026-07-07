@@ -64,9 +64,7 @@ def get_all_tracking(limit: int = 200) -> list[dict]:
     """Return the most recent tracking events across all leads."""
     _ensure_dir()
     all_events: list[dict] = []
-    for p in sorted(
-        TRACKING_DIR.glob("*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True
-    ):
+    for p in sorted(TRACKING_DIR.glob("*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True):
         lead_id = p.stem
         for line in open(p):
             line = line.strip()

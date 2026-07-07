@@ -20,9 +20,7 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 # ── Config from environment (with fallback defaults) ──
 
 CHROMA_COLLECTION_LEADS: str = os.getenv("CHROMA_COLLECTION_LEADS", "freelance_leads")
-CHROMA_COLLECTION_OUTREACH: str = os.getenv(
-    "CHROMA_COLLECTION_OUTREACH", "freelance_outreach_log"
-)
+CHROMA_COLLECTION_OUTREACH: str = os.getenv("CHROMA_COLLECTION_OUTREACH", "freelance_outreach_log")
 EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "nomic-embed-text")
 
 _raw_threshold = os.getenv("DEDUP_SIMILARITY_THRESHOLD", "0.92")

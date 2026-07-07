@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """FastAPI entry point — serves dashboard + API + briefing dispatch."""
 
+import logging
 import os
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from string import Template
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -21,14 +23,15 @@ from api.routes import public, router
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(env_path)
 
-# ── Startup checks ──
+# ── Startup warning ──
 _api_key = os.getenv("API_KEY", "")
 if not _api_key:
-    import warnings
-
-    warnings.warn(
-        "⚠ API_KEY not set. All API endpoints are unprotected. "
-        "Set API_KEY in .env for production deployments."
+    logger = logging.getLogger("uvicorn")
+    logger.warning(
+        "=" * 60 + "\n"
+        "⚠  API_KEY not set — ALL API endpoints are unprotected.\n"
+        "   Set API_KEY in .env for production deployments.\n"
+        "   Response header X-Auth-Status: disabled added to every request.\n" + "=" * 60
     )
 
 # ── Auto-rotate cold leads on startup (laptop-friendly, no cron needed) ──
@@ -39,8 +42,6 @@ try:
     result = auto_rotate_if_needed(age_days=rotation_days)
     if result is not None:
         archived, deleted = result
-        import logging
-
         logging.getLogger("uvicorn").info(
             f"Auto-rotated cold leads: {archived} archived, {deleted} deleted."
         )
@@ -82,6 +83,49 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration = time.perf_counter() - start
+
+    path = request.url.path
+    if path.startswith("/api/"):
+        status = response.status_code
+        method = request.method
+        if status < 300:
+            level = "INFO"
+        elif status < 500:
+            level = "WARNING"
+        else:
+            level = "ERROR"
+
+        logger = logging.getLogger("uvicorn")
+        logger.log(
+            logging.getLevelName(level),
+            f"{method} {path} → {status} ({duration:.3f}s)",
+        )
+
+    return response
+
+
+@app.middleware("http")
+async def auth_warning_middleware(request: Request, call_next):
+    """Add auth-disabled warning headers and basic security headers."""
+    response = await call_next(request)
+
+    if not _api_key:
+        response.headers["X-Auth-Status"] = "disabled"
+        if request.url.path.startswith("/api/"):
+            response.headers["X-Auth-Warning"] = "API_KEY not configured — endpoints unprotected"
+
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+
+    return response
+
 
 app.include_router(public, prefix="/api/v1")
 app.include_router(router, prefix="/api/v1")

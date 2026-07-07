@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fetchMarket, MarketReport } from "@/lib/api";
 
 export default function MarketPage() {
@@ -22,8 +23,8 @@ export default function MarketPage() {
         <h1 className="text-2xl font-semibold tracking-tight mb-3">Backend Not Running</h1>
         <p className="text-muted-foreground mb-4">Start the backend to scan the market.</p>
         <code className="block bg-muted rounded p-2 text-xs text-left">
-          cd ~/Desktop/Dev/Github\ Repo\'s/Audio\ Freelance\ Dev\ System<br />
-          uv run python main.py
+          ./run.sh<br />
+          make backend<br />make frontend
         </code>
       </div>
     );
@@ -67,7 +68,14 @@ export default function MarketPage() {
                 {report.tech_trends.map((t) => (
                   <tr key={t.technology} className="border-b border-border last:border-0">
                     <td className="p-3">{t.technology}</td>
-                    <td className="p-3 text-right">{t.mentions}</td>
+                    <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="h-2 bg-muted rounded-full w-20 overflow-hidden">
+                          <div className="h-full bg-chart-1 rounded-full" style={{width: `${Math.min((t.mentions / (report.tech_trends[0]?.mentions || 1)) * 100, 100)}%`}} />
+                        </div>
+                        <span>{t.mentions}</span>
+                      </div>
+                    </td>
                     <td className="p-3 text-right">
                       <span className={`text-xs ${
                         t.direction === "rising" ? "text-green-500" :
@@ -83,6 +91,27 @@ export default function MarketPage() {
           )}
         </div>
       </div>
+
+      {report.pricing_benchmarks.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-5">
+          <h2 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">Pricing by Niche</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={report.pricing_benchmarks.map(p => ({
+              name: p.niche.replace("_", " "),
+              min: p.contract_range_min,
+              max: p.contract_range_max,
+              amt: p.contract_range_max,
+            }))} layout="vertical" margin={{ left: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" tickFormatter={(v) => `$${v.toLocaleString()}`} />
+              <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
+              <Tooltip formatter={(v) => v != null ? [`$${Number(v).toLocaleString()}`, "Range"] : ["—", "Range"]} />
+              <Bar dataKey="min" fill="var(--color-chart-2)" stackId="a" name="Min" />
+              <Bar dataKey="max" fill="var(--color-chart-1)" stackId="a" name="Max" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Pricing */}
       <div>

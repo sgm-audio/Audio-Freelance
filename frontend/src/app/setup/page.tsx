@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveProfile } from "@/lib/api";
 
-const STEPS = ["Welcome", "Skills", "Domains", "Rate", "Finish"];
+const STEPS = ["Welcome", "Skills", "Domains", "Rate", "Portfolio", "Finish"];
 
 const LANGUAGE_OPTIONS = ["c++", "rust", "python", "javascript", "c", "c#", "java", "go"];
 const FRAMEWORK_OPTIONS = ["juce", "nih-plug", "clap-rs", "vst3", "ara2", "clap", "au", "aax", "reaper", "wwise", "fmod"];
@@ -24,6 +24,7 @@ export default function SetupPage() {
   const [dealbreakers, setDealbreakers] = useState<string[]>([]);
   const [seniority, setSeniority] = useState<string[]>([]);
   const [niches, setNiches] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
 
   function toggle(arr: string[], set: (v: string[]) => void, item: string) {
     set(arr.includes(item) ? arr.filter(x => x !== item) : [...arr, item]);
@@ -37,7 +38,7 @@ export default function SetupPage() {
         skills: { languages, frameworks, domains, specializations: [] },
         preferences: { niches, excluded_niches: [], dealbreakers, rate_floor: parseInt(rateFloor)||0, hourly_floor: parseInt(hourlyFloor)||0, contract_types: [] },
         experience: { years: null, seniority },
-        portfolio: { github: "", website: "", notable_work: [] },
+        portfolio: { github: "", website: "", notable_work: [], portfolio_files: uploadedFiles },
       });
       router.push("/");
     } catch { setSaving(false); }
@@ -97,6 +98,45 @@ export default function SetupPage() {
       </div>}
 
       {step===4&&<div className="space-y-6">
+        <h1 className="text-2xl font-semibold">Upload Portfolio</h1>
+        <p className="text-xs text-muted-foreground">Upload your resume or portfolio files (PDF, DOCX, images — max 10MB each).</p>
+        <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
+          <p className="text-sm text-muted-foreground mb-3">Click to browse for files</p>
+          <input type="file" accept=".pdf,.doc,.docx,image/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const formData = new FormData();
+              formData.append("file", file);
+              formData.append("file_type", "resume");
+              try {
+                const res = await fetch("/api/v1/profile/upload", { method: "POST", body: formData });
+                if (res.ok) {
+                  const data = await res.json();
+                  setUploadedFiles([...uploadedFiles, data]);
+                }
+              } catch {}
+            }}
+            className="text-sm"
+          />
+        </div>
+        {uploadedFiles.length > 0 && (
+          <div className="space-y-1">
+            {uploadedFiles.map((f, i) => (
+              <div key={i} className="flex items-center justify-between text-sm bg-card border border-border rounded-md px-3 py-2">
+                <span>{f.filename}</span>
+                <button onClick={()=>setUploadedFiles(uploadedFiles.filter((_,j)=>j!==i))} className="text-xs text-muted-foreground hover:text-red-400">×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-between pt-4">
+          <button onClick={()=>setStep(3)} className="text-sm text-muted-foreground hover:text-foreground">Back</button>
+          <button onClick={()=>setStep(5)} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm">Next</button>
+        </div>
+      </div>}
+
+      {step===5&&<div className="space-y-6">
         <h1 className="text-2xl font-semibold">All Set!</h1>
         <div className="space-y-2 text-sm">
           {languages.length>0&&<p>Languages: <span className="text-muted-foreground">{languages.join(", ")}</span></p>}
@@ -106,10 +146,11 @@ export default function SetupPage() {
           {rateFloor&&<p>Min Rate: <span className="text-muted-foreground">${rateFloor} CAD</span></p>}
           {hourlyFloor&&<p>Min Hourly: <span className="text-muted-foreground">${hourlyFloor}/hr</span></p>}
           {dealbreakers.length>0&&<p>Dealbreakers: <span className="text-muted-foreground">{dealbreakers.join(", ")}</span></p>}
+          {uploadedFiles.length>0&&<p>Portfolio Files: <span className="text-muted-foreground">{uploadedFiles.map(f=>f.filename).join(", ")}</span></p>}
         </div>
         <p className="text-xs text-muted-foreground">Edit anytime in <strong>Preferences</strong>.</p>
         <div className="flex justify-between pt-4">
-          <button onClick={()=>setStep(3)} className="text-sm text-muted-foreground hover:text-foreground">Back</button>
+          <button onClick={()=>setStep(4)} className="text-sm text-muted-foreground hover:text-foreground">Back</button>
           <button onClick={handleFinish} disabled={saving} className="rounded-md bg-primary text-primary-foreground px-6 py-2 text-sm disabled:opacity-50">{saving?"Saving...":"Finish → Dashboard"}</button>
         </div>
       </div>}
