@@ -70,7 +70,7 @@ app = FastAPI(
     description=(
         "Automated multi-tier lead sourcing, scoring, outreach, and market intelligence pipeline."
     ),
-    version="0.1.0",
+    version="0.1.1",
 )
 
 app.state.limiter = limiter
