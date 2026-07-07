@@ -14,13 +14,21 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from leads.store import ensure_collections_initialized, get_all_leads, rotate_cold  # noqa: E402
+from leads.store import (
+    ensure_collections_initialized,
+    get_all_leads,
+    rotate_cold,
+)  # noqa: E402
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Rotate cold/warm leads to archive.")
-    parser.add_argument("--days", type=int, default=3, help="Age threshold in days (default: 3)")
-    parser.add_argument("--dry-run", action="store_true", help="Preview what would be rotated")
+    parser.add_argument(
+        "--days", type=int, default=3, help="Age threshold in days (default: 3)"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Preview what would be rotated"
+    )
     args = parser.parse_args()
 
     if not ensure_collections_initialized():
@@ -43,7 +51,9 @@ def main() -> None:
 
         print(f"Would rotate {len(to_rotate)} leads (cutoff: {cutoff.isoformat()}):")
         for lead in to_rotate[:20]:
-            print(f"  [{lead.status.value}] {lead.title[:80]} (since {lead.discovered_at.date()})")
+            print(
+                f"  [{lead.status.value}] {lead.title[:80]} (since {lead.discovered_at.date()})"
+            )
         if len(to_rotate) > 20:
             print(f"  ... and {len(to_rotate) - 20} more")
         return

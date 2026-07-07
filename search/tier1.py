@@ -18,16 +18,16 @@ QUERIES = {
         # European job boards
         'site:indeed.co.uk "audio dsp" OR "audio plugin" OR "audio engineer" contract OR freelance',
         'site:indeed.de "audio dsp" OR "audio entwicklung" OR "plugin entwickler" OR "dsp ingenieur"',
-        'site:indeed.fr ingenieur OR developpeur audio OR dsp OR plugin freelance OR contrat',
+        "site:indeed.fr ingenieur OR developpeur audio OR dsp OR plugin freelance OR contrat",
         'site:reed.co.uk "audio software" OR "dsp" OR "plugin" contract OR freelance',
         # Canadian/Australian boards
         'site:ca.indeed.com "audio" OR "dsp" OR "plugin" contract OR freelance',
         'site:seek.com.au "audio engineer" OR "audio developer" OR "dsp" contract OR freelance',
         # Niche audio job boards
-        'site:theaudioprogrammer.com job OR contract OR freelance OR hiring',
-        'site:kvr.com forum job OR hiring OR commission OR contract OR freelance audio plugin',
-        'site:forum.cockos.com job OR hiring OR commission OR paid script OR extension OR plugin',
-        'site:vi-control.net forum job OR hiring OR commission OR freelance audio OR composer OR plugin',
+        "site:theaudioprogrammer.com job OR contract OR freelance OR hiring",
+        "site:kvr.com forum job OR hiring OR commission OR contract OR freelance audio plugin",
+        "site:forum.cockos.com job OR hiring OR commission OR paid script OR extension OR plugin",
+        "site:vi-control.net forum job OR hiring OR commission OR freelance audio OR composer OR plugin",
         # Worldwide remote contracts
         'remote "audio dsp" OR "audio software" OR "plugin developer" contract OR freelance NOT us NOT uk',
         '"audio dsp consultant" OR "audio freelance engineer" OR "contract audio programmer"',
@@ -62,7 +62,7 @@ QUERIES = {
         'site:seek.com.au "rust" "audio" OR "dsp"',
         # EU job sites
         'site:stackoverflow.com/jobs "rust" "audio" OR "dsp" OR "plugin"',
-        'site:remoteok.com rust audio OR dsp OR plugin',
+        "site:remoteok.com rust audio OR dsp OR plugin",
     ],
     "audio_ml": [
         # Primary boards
@@ -79,7 +79,7 @@ QUERIES = {
         'site:seek.com.au "machine learning" audio OR speech OR music',
         'site:stackoverflow.com/jobs "machine learning" audio OR speech',
         # Conference job boards
-        'site:adc2025.org job OR hiring OR career',
+        "site:adc2025.org job OR hiring OR career",
     ],
     "game_audio_dev": [
         # Primary boards
@@ -97,7 +97,7 @@ QUERIES = {
         'remote "game audio" OR "audio programmer" OR "wwise" OR "fmod" contract OR freelance',
         # Indie game audio
         '"indie game" "audio" OR "sound" "contract" OR "freelance" OR "hiring" -forum -reddit',
-        'site:itch.io job OR hiring OR contract audio OR sound OR composer',
+        "site:itch.io job OR hiring OR contract audio OR sound OR composer",
     ],
 }
 

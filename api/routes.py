@@ -109,8 +109,12 @@ async def prospect_niche(niche: str):
             "archived": result.get("archived_count", 0),
             "archive_path": result.get("archive_path", ""),
             "errors": result.get("errors", []),
-            "hot_leads": [lead.model_dump(mode="json") for lead in result.get("hot_leads", [])],
-            "warm_leads": [lead.model_dump(mode="json") for lead in result.get("warm_leads", [])],
+            "hot_leads": [
+                lead.model_dump(mode="json") for lead in result.get("hot_leads", [])
+            ],
+            "warm_leads": [
+                lead.model_dump(mode="json") for lead in result.get("warm_leads", [])
+            ],
         }
     except Exception as e:
         log.warning("Pipeline failed", extra={"niche": niche, "error": e})
@@ -175,7 +179,9 @@ async def rate_work(task_description: str, estimated_hours: int):
 
 
 @router.post("/outreach/{lead_id}")
-async def generate_outreach_draft(lead_id: str, template_key: str = "A_plugin_contract"):
+async def generate_outreach_draft(
+    lead_id: str, template_key: str = "A_plugin_contract"
+):
     """Generate an outreach draft for a lead using a template."""
     from generate.outreach import generate_outreach
 
@@ -290,7 +296,9 @@ async def market_pricing():
                 "hourly_max": p.hourly_max,
                 "sample_count": p.sample_count,
             }
-            for p in sorted(report.pricing_benchmarks, key=lambda x: -x.contract_range_max)
+            for p in sorted(
+                report.pricing_benchmarks, key=lambda x: -x.contract_range_max
+            )
         ],
     }
 
@@ -324,9 +332,8 @@ async def market_opportunities():
 @router.get("/leads/cold")
 async def list_cold_leads(days: int = 7, niche: str | None = None):
     """List recently archived cold leads from archive JSONL files."""
-    from datetime import UTC, datetime, timedelta
-
     import json
+    from datetime import UTC, datetime, timedelta
 
     from leads.store import ARCHIVE_DIR
 
@@ -368,9 +375,8 @@ async def list_cold_leads(days: int = 7, niche: str | None = None):
 @router.get("/leads/cold/stats")
 async def cold_lead_stats():
     """Stats for archived cold leads: count by niche/source."""
-    from collections import Counter
-
     import json
+    from collections import Counter
 
     from leads.store import ARCHIVE_DIR
 
@@ -448,8 +454,8 @@ async def tracking_overview(limit: int = 50):
 @router.get("/tracking/{lead_id}")
 async def lead_tracking(lead_id: str):
     """All tracking events for a specific lead."""
-    from leads.tracking import get_tracking_history
     from leads.store import get_lead_by_id
+    from leads.tracking import get_tracking_history
 
     lead = get_lead_by_id(lead_id)
     if lead is None:
@@ -467,8 +473,8 @@ async def lead_tracking(lead_id: str):
 @router.get("/tracking/active")
 async def active_pursuits():
     """Leads currently in active pursuit (CONTACTED/REPLIED/PROPOSAL_SENT)."""
-    from leads.tracking import get_active_pursuit_lead_ids, get_tracking_history
     from leads.store import get_lead_by_id
+    from leads.tracking import get_active_pursuit_lead_ids, get_tracking_history
 
     active_ids = get_active_pursuit_lead_ids()
     pursuits = []
@@ -478,11 +484,13 @@ async def active_pursuits():
             continue
         events = get_tracking_history(lid)
         last_event = events[-1] if events else None
-        pursuits.append({
-            "lead": lead.model_dump(mode="json"),
-            "last_event": last_event,
-            "total_events": len(events),
-        })
+        pursuits.append(
+            {
+                "lead": lead.model_dump(mode="json"),
+                "last_event": last_event,
+                "total_events": len(events),
+            }
+        )
 
     pursuits.sort(key=lambda p: p["lead"]["last_updated"], reverse=True)
     return {"count": len(pursuits), "active": pursuits}
@@ -528,7 +536,7 @@ async def won_lost_summary():
 @public.get("/profile/status")
 async def profile_status():
     """Check if a profile exists (for first-boot detection)."""
-    from scoring.profile import profile_exists, load_profile
+    from scoring.profile import load_profile, profile_exists
 
     exists = profile_exists()
     profile = load_profile() if exists else None
@@ -551,7 +559,7 @@ async def get_profile():
 @router.post("/profile")
 async def update_profile(profile_data: dict):
     """Update the user profile."""
-    from scoring.profile import save_profile, _dict_to_profile
+    from scoring.profile import _dict_to_profile, save_profile
 
     profile = _dict_to_profile(profile_data)
     save_profile(profile)

@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 from dotenv import load_dotenv
+
 from leads.schema import Lead, LeadStatus, Verdict
 from scoring.signals import (
     NEGATIVE_SIGNALS,
@@ -60,7 +61,9 @@ def _is_aggregator_page(title: str) -> bool:
     Matches patterns like '234 Freelance Audio Engineer jobs in United States'
     or 'Hire the 69 Best Remote...' that are search result pages, not leads.
     """
-    if re.search(r"^\d+\s+.*?\b(?:jobs?|positions?)\s+(?:in|across|at)\b", title, re.IGNORECASE):
+    if re.search(
+        r"^\d+\s+.*?\b(?:jobs?|positions?)\s+(?:in|across|at)\b", title, re.IGNORECASE
+    ):
         return True
     if re.search(r"^\d+\s+.*?\b(?:results?|openings?)\b", title, re.IGNORECASE):
         return True

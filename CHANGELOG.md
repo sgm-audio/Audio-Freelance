@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **env-driven thresholds** — `HOT_THRESHOLD`, `WARM_THRESHOLD`, `MIN_RATE_CAD`, `HOURLY_FLOOR_CAD` now configurable via `.env`.
 
 ### Changed
+- **Code style** — applied ruff import sorting (`ruff check --fix`) and black formatting across 27 source files. No logic changes.
 - `POST /leads/rotate-cold` now records rotation timestamp for status tracking.
 - Companies list updated with verified Greenhouse/Lever/Ashby slugs.
 - **`update_status`** now logs every transition as a tracking event and archives the full record when moving to `DEAD`.

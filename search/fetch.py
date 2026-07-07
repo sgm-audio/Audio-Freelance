@@ -13,7 +13,6 @@ from html.parser import HTMLParser
 
 import httpx
 
-
 # ── URL quality filter ──
 
 

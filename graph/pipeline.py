@@ -150,9 +150,7 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
     archive_path = ""
     if cold_to_archive:
         try:
-            archive_path = str(
-                archive_batch(cold_to_archive, tag="cold")
-            )
+            archive_path = str(archive_batch(cold_to_archive, tag="cold"))
             archived_count = len(cold_to_archive)
         except Exception as e:
             state["errors"].append(f"archive failed: {e}")

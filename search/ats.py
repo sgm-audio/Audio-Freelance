@@ -15,7 +15,6 @@ import yaml
 
 from search.base import RawCandidate
 
-
 # ── Company list loader ──
 
 

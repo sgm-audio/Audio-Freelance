@@ -42,7 +42,9 @@ def generate_proposal(
 
     if estimated_tier not in PRICING_TIERS:
         estimated_tier = "medium"
-    tier_min, tier_max, tier_desc = PRICING_TIERS.get(estimated_tier, PRICING_TIERS["medium"])
+    tier_min, tier_max, tier_desc = PRICING_TIERS.get(
+        estimated_tier, PRICING_TIERS["medium"]
+    )
     anchor = RATE_ANCHORS.get(niche, RATE_ANCHORS["cpp_plugin_contract"])
 
     date_str = datetime.now(tz=UTC).strftime("%Y-%m-%d")

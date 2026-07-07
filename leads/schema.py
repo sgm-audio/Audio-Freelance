@@ -75,7 +75,9 @@ class Lead(BaseModel):
     @classmethod
     def validate_niche(cls, v: str) -> str:
         if v not in PREFERRED_NICHES:
-            raise ValueError(f"Unknown niche '{v}'. Must be one of: {', '.join(PREFERRED_NICHES)}")
+            raise ValueError(
+                f"Unknown niche '{v}'. Must be one of: {', '.join(PREFERRED_NICHES)}"
+            )
         return v
 
     @field_validator("url")
