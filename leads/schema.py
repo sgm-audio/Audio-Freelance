@@ -56,7 +56,7 @@ class Lead(BaseModel):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     source: str
-    tier: int = Field(ge=1, le=4)
+    tier: int = Field(ge=1, le=5)
     title: str
     company: str | None = None
     url: str
@@ -90,9 +90,9 @@ class Lead(BaseModel):
 
     @field_validator("tier")
     @classmethod
-    def tier_must_be_1_to_4(cls, v: int) -> int:
-        if v < 1 or v > 4:
-            raise ValueError(f"tier must be 1-4, got {v}")
+    def tier_must_be_1_to_5(cls, v: int) -> int:
+        if v < 1 or v > 5:
+            raise ValueError(f"tier must be 1-5, got {v}")
         return v
 
 
@@ -111,5 +111,5 @@ class RawCandidate:
             self.raw_text = self.snippet
         if self.tier < 1:
             self.tier = 1
-        elif self.tier > 4:
-            self.tier = 4
+        elif self.tier > 5:
+            self.tier = 5

@@ -62,7 +62,7 @@ class TestLeadModel:
         with pytest.raises(ValidationError):
             Lead(
                 source="test",
-                tier=5,
+                tier=6,
                 title="Bad Tier",
                 url="https://example.com",
                 raw_text="test",
@@ -156,7 +156,7 @@ class TestRawCandidate:
             snippet="test",
             tier=10,
         )
-        assert c.tier == 4  # clamped down to 4
+        assert c.tier == 5  # clamped down to 5
 
         c2 = RawCandidate(
             source="test",
