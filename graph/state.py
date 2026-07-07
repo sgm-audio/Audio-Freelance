@@ -1,6 +1,6 @@
 """Typed state for the LangGraph freelance pipeline."""
 
-from typing import TypedDict
+from typing import Any, NotRequired, TypedDict
 
 from leads.schema import Lead
 from search.base import RawCandidate
@@ -37,3 +37,10 @@ class PipelineState(TypedDict, total=False):
 
     # Errors
     errors: list[str]
+
+    # Phase 3 — generate + review
+    translations: NotRequired[dict[str, Any]]
+    outreach_drafts: NotRequired[dict[str, Any]]
+    review_queue: NotRequired[list[dict[str, Any]]]
+    notified: NotRequired[bool]
+    awaiting_approval: NotRequired[bool]
