@@ -5,67 +5,48 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Session 2026-07-07
-
-### Changed
-- **Code style** — applied ruff import sorting (`ruff check --fix`) and black formatting across 24 source files. No logic changes.
-- **.gitignore** — added patterns for stray ChromaDB segment directories, bun lockfiles, and `token-optimizer/` tool data.
-
-### Fixed
-- **Tier cap 4→5** — `run_tier5` was producing tier=5 leads rejected by `Lead` model (validator + `RawCandidate.__post_init__` both hardcoded to 4).
-- **Test isolation timing** — `conftest.py` used `monkeypatch.setenv` but `leads/store.py` reads `LEADS_ALLOW_TEST_LEADS` at module import time (before fixtures run). Fixed by setting `os.environ` directly at module level.
-
-## Session 2026-07-07 (afternoon)
-
-### Added
-- **UX polish** — skeleton loaders (`loading.tsx`) on all 5 routes; error boundaries (`error.tsx`) on all 9 routes with retry/dashboard fallback; Recharts donut chart (lead status distribution) on dashboard; horizontal bar chart (pricing by niche) on market; progress bars in StatCards; sparkline bars in trends table. All zero-dependency additions — Recharts already installed.
-- **Performance** — client-side TTL fetch cache (30s) in `api.ts` eliminates redundant API calls when switching tabs; sidebar converted from `<a>` to `<Link prefetch={true}>` for instant client-side navigation. `clearFetchCache()` exported for mutation invalidation.
-- **Portfolio file upload** — `POST /profile/upload` endpoint (PDF/DOCX/images, 10MB max, stored in `assets/portfolio/`). New "Portfolio" step in the 6-step setup wizard. File management section in Preferences.
-- **Request logging** — middleware logs every `/api/` request: `METHOD path → status (duration)`. Color-coded by severity.
-- **Security headers** — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` on all responses. `X-Auth-Status: disabled` + `X-Auth-Warning` headers when `API_KEY` unset.
-- **Input validation** — Pydantic models (`ProfileUpdateRequest`, `ScoreRequest`, `LeadStatusUpdate`) with `extra=forbid` on profile updates. Replaced raw `dict` and spread query params with typed body models.
-
-### Changed
-- **run.sh** — `set -euo pipefail`, pre-flight checks (uv, node, npm, .env, port conflicts 8080/3000), 60s health poll, `VERBOSE=1` mode, colored output.
-- **Startup auth warning** — replaced silent `warnings.warn()` with ASCII banner visible in terminal logs.
-- **Code style** — `ruff format` applied to 19 files (auto-formatted whitespace/quotes).
-- **Frontend error pages** — stale hardcoded paths replaced with `./run.sh` / `make backend` / `make frontend`.
-
-### Security
-- **API keys rotated** — Tavily, Serper, Firecrawl keys regenerated. Previous keys were never in git (`.env*` gitignored), but rotated out of caution. Rotation date recorded in `.env` header.
-
----
-
 ## [Unreleased]
 
+## [v0.1.1] - 2026-07-07
+
 ### Added
-- **Company blocklist** — block any company from appearing in leads. Block button on each lead card, managed via Preferences. Past employers, competitors, or companies with irrelevant recurring postings can be suppressed individually.
-- **Worldwide search coverage** — tier1-4 queries expanded from 15 to 60+ total. Now includes: European job boards (indeed.co.uk, indeed.de, indeed.fr, reed.co.uk), Australian board (seek.com.au), freelance platforms (upwork, freelancer, peopleperhour, guru), niche audio communities (KVR, VI-C, Reddit r/audioengineering, r/DSP, r/rust, r/MachineLearning, r/GameAudio, r/gamedev), game audio (gamesjobsdirect, itch.io), Asian audio companies, and VC-backed audio AI startups.
-- **Auto-rotation on startup** — no cron needed. Every time the app starts, it checks if ≥3 days since last rotation and auto-rotates cold leads. Laptop-friendly: works even with intermittent uptime.
-- **Rotation status endpoint** — `GET /leads/rotation-status` shows last rotation timestamp and hours since. Cold-leads page shows "Last rotated: Xh ago ⚡ due" indicator.
-- **Verified ATS company slugs** — 17 companies across Greenhouse/Lever/Ashby. Spotify (121 jobs, 76 audio-relevant), Splice, Universal Audio, David AI confirmed working. 13 more pre-loaded with correct slugs.
-- **`activate.sh`** — single-command venv entry: `./activate.sh` drops into a subshell; `exit` to leave. Canonical `source .venv/bin/activate` documented.
-- **Cold-lead archival** — COLD/SKIP leads are archived to `leads/data/archive/` JSONL instead of bloating the active ChromaDB store. Archive endpoint + frontend submenu.
-- **3-day rotation** — `POST /leads/rotate-cold` (explicit housekeeping) and `scripts/rotate_cold_leads.py` auto-archive COLD/WARM leads older than 3 days.
-- **Tracking system** — `leads/tracking.py`: JSONL-per-lead event log for status transitions, outreach, replies. New `/tracking` and `/tracking/active` API endpoints + frontend page with won/lost summary and win rate.
-- **Test isolation** — `tests/conftest.py` forces ephemeral ChromaDB directory via `LEADS_DATA_DIR` env var. Source blacklist in `upsert_lead` blocks `source="test"` in production.
-- **`scripts/purge_test_leads.py`** — one-shot removal of all test-source leads from the production store.
-- **Expanded scoring** — 9 new positive signals (`cxx_audio`, `dsp_any`, `real_time`, `contract_role`, `senior_role`, `audio_impl`, `audio_context`, etc.), `$5K` / `$150K` K-notation budget parsing, aggregator-page detection (directory listing pages like "234 jobs in..." get scored -50 and archived).
-- **env-driven thresholds** — `HOT_THRESHOLD`, `WARM_THRESHOLD`, `MIN_RATE_CAD`, `HOURLY_FLOOR_CAD` now configurable via `.env`.
+- **Company blocklist** — block any company from appearing in leads. Block button on each lead card, managed via Preferences.
+- **Worldwide search coverage** — tier1-4 queries expanded from 15 to 60+ total across European, Australian, freelance platform, niche audio community, game audio, and VC-backed audio AI sources.
+- **Auto-rotation on startup** — checks if ≥3 days since last rotation on every boot; auto-rotates cold leads. Laptop-friendly, no cron needed.
+- **Rotation status endpoint** — `GET /leads/rotation-status` with last rotation timestamp. Cold-leads page shows "Last rotated: Xh ago ⚡ due" indicator.
+- **Verified ATS company slugs** — 17 companies across Greenhouse/Lever/Ashby with confirmed working slugs.
+- **Cold-lead archival** — COLD/SKIP leads archived to `leads/data/archive/` JSONL instead of ChromaDB. Archive endpoint + frontend submenu.
+- **3-day rotation** — `POST /leads/rotate-cold` and `scripts/rotate_cold_leads.py` auto-archive stale leads.
+- **Tracking system** — JSONL-per-lead event log for status transitions, outreach, replies. `/tracking`, `/tracking/active`, `/tracking/won-lost` endpoints + frontend page with win rate.
+- **Test isolation** — ephemeral ChromaDB via `LEADS_DATA_DIR` env var. Source blacklist blocks `source="test"` in production.
+- **Expanded scoring** — 9 new positive signals, K-notation budget parsing, aggregator-page detection (-50 score + archive).
+- **Env-driven thresholds** — `HOT_THRESHOLD`, `WARM_THRESHOLD`, `MIN_RATE_CAD`, `HOURLY_FLOOR_CAD` configurable via `.env`.
+- **UX polish** — skeleton loaders on 5 routes, error boundaries on 9 routes, Recharts donut/bar charts, progress bars, sparkline bars. Zero new dependencies.
+- **Performance** — client-side TTL fetch cache (30s) in `api.ts`; sidebar `<Link prefetch={true}>` for instant client navigation.
+- **Portfolio file upload** — `POST /profile/upload` (PDF/DOCX/images, 10MB max, `assets/portfolio/`). New step in setup wizard, file manager in Preferences.
+- **Request logging** — middleware logs every `/api/` request with method, path, status, duration. Color-coded by severity.
+- **Security headers** — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`. Auth-disabled warnings via `X-Auth-Status` + `X-Auth-Warning` headers.
+- **Input validation** — Pydantic models (`ProfileUpdateRequest`, `ScoreRequest`, `LeadStatusUpdate`) with `extra=forbid`. Replaced raw dict and spread query params.
 
 ### Changed
-- **Code style** — applied ruff import sorting (`ruff check --fix`) and black formatting across 27 source files. No logic changes.
-- `POST /leads/rotate-cold` now records rotation timestamp for status tracking.
-- Companies list updated with verified Greenhouse/Lever/Ashby slugs.
-- **`update_status`** now logs every transition as a tracking event and archives the full record when moving to `DEAD`.
-- **Pipeline** no longer persists COLD/SKIP leads to ChromaDB — they go to `archive_batch` only.
-- **Dashboard** now shows "Pursuing" stat (CONTACTED + REPLIED + PROPOSAL_SENT) alongside existing counts.
-- **Sidebar** has new entries: Cold Leads, Tracking, Preferences.
+- **run.sh** — `set -euo pipefail`, pre-flight checks (uv, node, npm, .env, port 8080/3000), 60s health poll, `VERBOSE=1` mode, colored output.
+- **Startup auth warning** — ASCII banner in terminal logs instead of silent `warnings.warn()`.
+- **Code style** — ruff import sorting + format across project. `.gitignore` additions for ChromaDB segment dirs, bun lockfiles, `token-optimizer/`.
+- **Frontend error pages** — stale hardcoded paths replaced with `./run.sh` / `make backend` / `make frontend`.
+- `update_status` logs every transition as tracking event; archives on `DEAD`.
+- Pipeline no longer persists COLD/SKIP leads to ChromaDB — archive-only.
+- Dashboard shows "Pursuing" stat (CONTACTED + REPLIED + PROPOSAL_SENT).
+- Sidebar has new entries: Cold Leads, Tracking, Preferences.
 
 ### Fixed
-- Test leads (`source="test"`) no longer pollute the production ChromaDB on `pytest` runs.
+- **Tier cap 4→5** — `run_tier5` leads now pass `Lead` model validation.
+- **Test isolation timing** — `LEADS_ALLOW_TEST_LEADS` set at module level before `leads/store.py` import.
+- Test leads (`source="test"`) no longer pollute production ChromaDB.
 - Aggregator/directory pages no longer appear as scored leads.
-- Budget patterns now catch K-notation (`$5K`, `$150K contract`) in addition to numeric.
+- Budget patterns catch K-notation (`$5K`, `$150K contract`).
+
+### Security
+- **API keys rotated** — Tavily, Serper, Firecrawl keys regenerated. Previous keys were never in git, rotated out of caution.
 
 ## [0.1.0] - 2026-06-17
 

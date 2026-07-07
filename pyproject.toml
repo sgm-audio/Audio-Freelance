@@ -1,6 +1,6 @@
 [project]
 name = "audio-dev-freelance-system"
-version = "0.1.0"
+version = "0.1.1"
 description = "Automated freelance lead acquisition pipeline for audio DSP/plugin/realtime work"
 requires-python = ">=3.12"
 readme = "BUILD_PLAN.md"
