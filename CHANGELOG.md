@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **LangGraph orchestration** (Phase 3) — 5 new graph nodes: `generate_translate`, `generate_outreach`, `queue_for_review`, `notify_hot`, `await_human_send`. Full 6-node pipeline from search → score → generate → review.
+- **Extended diagnostics** (Phase 4) — per-source API connectivity checks (Tavily/Serper/Firecrawl), Chroma collection stats, error log sweep, 6 failure modes catalogue with remediation steps.
+- **Ops rituals** (Phase 6) — 4 executable scripts: `morning_ritual.sh` (prospect + review), `midday_check.sh` (approve drafts), `evening_triage.sh` (win/loss), `check_followups.sh` (overdue detection).
+- **OpenCode commands** — `/debug`, `/prospect`, `/transcribe`, `/rituals` slash commands wired to the system.
+
 ## [v0.1.1] - 2026-07-07
 
 ### Added

@@ -41,6 +41,11 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
         "cold_leads": [],
         "skipped_leads": [],
         "errors": [],
+        "translations": {},
+        "outreach_drafts": {},
+        "review_queue": [],
+        "notified": False,
+        "awaiting_approval": False,
     }
 
     # ── Phase 1: Search all tiers (including ATS APIs in tier5) ──
@@ -170,11 +175,24 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
 
 
 def build_pipeline() -> StateGraph:
-    """Build LangGraph pipeline (experimental — use run_pipeline for production)."""
+    """Build full LangGraph pipeline with search → score → generate → review workflow."""
     builder = StateGraph(PipelineState)
-    builder.add_node("run_pipeline", _langgraph_wrapper)
-    builder.add_edge(START, "run_pipeline")
-    builder.add_edge("run_pipeline", END)
+
+    builder.add_node("search_all", search_all)
+    builder.add_node("generate_translate", generate_translate)
+    builder.add_node("generate_outreach", generate_outreach)
+    builder.add_node("queue_for_review", queue_for_review)
+    builder.add_node("notify_hot", notify_hot)
+    builder.add_node("await_human_send", await_human_send)
+
+    builder.add_edge(START, "search_all")
+    builder.add_edge("search_all", "generate_translate")
+    builder.add_edge("generate_translate", "generate_outreach")
+    builder.add_edge("generate_outreach", "queue_for_review")
+    builder.add_edge("queue_for_review", "notify_hot")
+    builder.add_edge("notify_hot", "await_human_send")
+    builder.add_edge("await_human_send", END)
+
     return builder.compile()
 
 
@@ -214,3 +232,69 @@ def route_by_verdict(state: PipelineState) -> str:
     if state.get("warm_leads"):
         return "warm_path"
     return "cold_path"
+
+
+async def generate_translate(state: PipelineState) -> dict[str, Any]:
+    """LangGraph node: generate client-facing translations for HOT leads."""
+    from generate.translate import translate_capability
+
+    hot_leads = state.get("hot_leads", [])
+    translations = {}
+    for lead in hot_leads[:3]:  # ponytail: top 3 only
+        try:
+            result = translate_capability(lead.raw_text[:500])
+            translations[str(lead.id)] = result
+        except Exception:
+            translations[str(lead.id)] = {"error": "translation failed"}
+    return {"translations": translations}
+
+
+async def generate_outreach(state: PipelineState) -> dict[str, Any]:
+    """LangGraph node: generate outreach drafts for HOT leads."""
+    from generate.outreach import generate_outreach
+
+    hot_leads = state.get("hot_leads", [])
+    drafts = {}
+    for lead in hot_leads[:3]:
+        try:
+            result = generate_outreach(lead, template_key="A_plugin_contract")
+            drafts[str(lead.id)] = result
+        except Exception:
+            drafts[str(lead.id)] = {"error": "outreach generation failed"}
+    return {"outreach_drafts": drafts}
+
+
+async def queue_for_review(state: PipelineState) -> dict[str, Any]:
+    """LangGraph node: queue HOT leads with drafts for human review."""
+    hot_leads = state.get("hot_leads", [])
+    return {
+        "review_queue": [
+            {
+                "lead_id": str(lead.id),
+                "title": lead.title,
+                "company": lead.company,
+                "score": lead.score,
+                "has_draft": str(lead.id) in state.get("outreach_drafts", {}),
+            }
+            for lead in hot_leads
+        ]
+    }
+
+
+async def notify_hot(state: PipelineState) -> dict[str, Any]:
+    """LangGraph node: notify about HOT leads (logs + future Slack/MCP hook)."""
+    import logging
+
+    logger = logging.getLogger("uvicorn")
+    hot_count = len(state.get("hot_leads", []))
+    if hot_count > 0:
+        logger.info(f"HOT leads found: {hot_count}. Review queue ready.")
+    return {"notified": hot_count > 0}
+
+
+async def await_human_send(state: PipelineState) -> dict[str, Any]:
+    """LangGraph node: marks pipeline as awaiting human approval before sending."""
+    return {
+        "awaiting_approval": True,
+        "message": "Review outreach drafts and approve before sending.",
+    }
