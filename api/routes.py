@@ -1,5 +1,6 @@
 """FastAPI route definitions for the freelance acquisition system."""
 
+import contextlib
 import os
 import shutil
 import uuid
@@ -556,10 +557,8 @@ async def batch_reply_triage(replies: list[dict]):
         lead_id = r.get("lead_id", "")
         lead = None
         context = None
-        try:
+        with contextlib.suppress(Exception):
             lead = get_lead_by_id(lead_id)
-        except Exception:
-            pass
         if lead:
             context = {
                 "status": lead.status.value,
