@@ -1,9 +1,9 @@
 """Rate generator — pricing tiers with floor check."""
 
-import os
+from config import settings
 
-MIN_RATE_CAD = int(os.getenv("MIN_RATE_CAD", "3000"))
-HOURLY_FLOOR_CAD = int(os.getenv("HOURLY_FLOOR_CAD", "150"))
+MIN_RATE_CAD = settings.min_rate_cad
+HOURLY_FLOOR_CAD = settings.hourly_floor_cad
 
 
 def generate_rate(

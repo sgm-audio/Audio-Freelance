@@ -5,50 +5,37 @@ All configurable values load from .env with fallback defaults.
 
 import contextlib
 import json
-import os
 import re
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
-
+from config import settings
 from leads.schema import Lead, LeadStatus
 
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+CHROMA_COLLECTION_LEADS: str = settings.chroma_collection_leads
+CHROMA_COLLECTION_OUTREACH: str = settings.chroma_collection_outreach
+EMBEDDING_MODEL: str = settings.embedding_model
+DEDUP_SIMILARITY_THRESHOLD: float = settings.dedup_similarity_threshold
 
-# ── Config from environment (with fallback defaults) ──
-
-CHROMA_COLLECTION_LEADS: str = os.getenv("CHROMA_COLLECTION_LEADS", "freelance_leads")
-CHROMA_COLLECTION_OUTREACH: str = os.getenv("CHROMA_COLLECTION_OUTREACH", "freelance_outreach_log")
-EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "nomic-embed-text")
-
-_raw_threshold = os.getenv("DEDUP_SIMILARITY_THRESHOLD", "0.92")
-try:
-    DEDUP_SIMILARITY_THRESHOLD: float = float(_raw_threshold)
-except ValueError:
-    DEDUP_SIMILARITY_THRESHOLD = 0.92
-
-_DATA_DIR = Path(
-    os.getenv(
-        "LEADS_DATA_DIR",
-        str(Path(__file__).resolve().parent / "data" / "chroma"),
-    )
+_DATA_DIR = (
+    Path(settings.leads_data_dir)
+    if settings.leads_data_dir
+    else Path(__file__).resolve().parent / "data" / "chroma"
 )
 _DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-ARCHIVE_DIR = Path(
-    os.getenv(
-        "LEADS_ARCHIVE_DIR",
-        str(Path(__file__).resolve().parent / "data" / "archive"),
-    )
+ARCHIVE_DIR = (
+    Path(settings.leads_archive_dir)
+    if settings.leads_archive_dir
+    else Path(__file__).resolve().parent / "data" / "archive"
 )
 ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
 
 # ponytail: source blacklist prevents test pollution in production
 _SOURCE_BLACKLIST: set[str] = {"test"}
 # Allow explicit override for test runners
-_allow_test_source: bool = bool(os.getenv("LEADS_ALLOW_TEST_LEADS"))
+_allow_test_source: bool = settings.leads_allow_test_leads
 
 _leads_collection = None
 _outreach_collection = None

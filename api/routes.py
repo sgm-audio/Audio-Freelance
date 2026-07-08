@@ -1,7 +1,6 @@
 """FastAPI route definitions for the freelance acquisition system."""
 
 import contextlib
-import os
 import shutil
 import uuid
 from datetime import UTC, datetime
@@ -11,6 +10,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from api.auth import require_api_key
+from config import settings
 from debug.log import setup_logger
 from graph.pipeline import run_pipeline
 from leads.schema import PREFERRED_NICHES, LeadStatus
@@ -453,7 +453,7 @@ async def rotation_status():
     return {
         "last_rotation": last.isoformat() if last else None,
         "hours_ago": round((now - last).total_seconds() / 3600, 1) if last else None,
-        "rotation_due_days": int(os.getenv("COLD_ROTATION_DAYS", "3")),
+        "rotation_due_days": settings.cold_rotation_days,
     }
 
 

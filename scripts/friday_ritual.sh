@@ -120,6 +120,11 @@ echo ""
 echo "8. Overdue follow-ups..."
 bash scripts/check_followups.sh 2>/dev/null || echo "   Could not check."
 
+# 9. Run backup
+echo ""
+echo "9. Running backup..."
+bash scripts/backup.sh --retain 7 2>/dev/null || echo "   Backup failed"
+
 echo ""
 echo "=== Friday Review Complete ==="
 echo "Actions:"

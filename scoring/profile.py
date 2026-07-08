@@ -7,12 +7,13 @@ user adds information.
 Inclusive design: empty fields mean "no filter", not "missing data".
 """
 
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from config import settings
 
 # ── Profile data class ──
 
@@ -130,7 +131,11 @@ class Profile:
 
 def get_profile_path() -> Path:
     """Return the path to profile.yaml."""
-    return Path(os.getenv("PROFILE_PATH", Path(__file__).resolve().parent.parent / "profile.yaml"))
+    return (
+        Path(settings.profile_path)
+        if settings.profile_path
+        else Path(__file__).resolve().parent.parent / "profile.yaml"
+    )
 
 
 def profile_exists() -> bool:

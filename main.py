@@ -2,14 +2,12 @@
 """FastAPI entry point — serves dashboard + API + briefing dispatch."""
 
 import logging
-import os
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 from string import Template
 
 import uvicorn
-from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -18,13 +16,10 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.routes import public, router
-
-# Load .env before anything else
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(env_path)
+from config import settings
 
 # ── Startup warning ──
-_api_key = os.getenv("API_KEY", "")
+_api_key = settings.api_key
 if not _api_key:
     logger = logging.getLogger("uvicorn")
     logger.warning(
@@ -38,7 +33,7 @@ if not _api_key:
 try:
     from leads.store import auto_rotate_if_needed
 
-    rotation_days = int(os.getenv("COLD_ROTATION_DAYS", "3"))
+    rotation_days = settings.cold_rotation_days
     result = auto_rotate_if_needed(age_days=rotation_days)
     if result is not None:
         archived, deleted = result
@@ -61,9 +56,9 @@ ALLOWED_ORIGINS = [
 ]
 
 # Allow overriding via env var (comma-separated)
-extra = os.getenv("CORS_ORIGINS", "")
-if extra:
-    ALLOWED_ORIGINS.extend([o.strip() for o in extra.split(",") if o.strip()])
+extra_list = settings.as_cors_list()
+if extra_list:
+    ALLOWED_ORIGINS.extend(extra_list)
 
 app = FastAPI(
     title="Audio-Dev Freelance Acquisition System",
@@ -178,8 +173,8 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "main:app",
-        host=os.getenv("HOST", "127.0.0.1"),
-        port=int(os.getenv("PORT", "8080")),
+        host=settings.host,
+        port=settings.port,
         log_level="info",
         reload=False,
     )

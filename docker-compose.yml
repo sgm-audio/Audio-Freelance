@@ -1,5 +1,8 @@
 version: "3.9"
 
+# ── Production override: docker compose -f docker-compose.yml -f docker-compose.prod.yml up ──
+# Uses pre-built GHCR images instead of local builds.
+
 services:
   # ── Embedding service (optional) ──
   ollama:
@@ -30,6 +33,7 @@ services:
 
   # ── FastAPI backend ──
   backend:
+    image: ghcr.io/scottmills306/audio-freelance/backend:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -51,6 +55,7 @@ services:
 
   # ── Next.js frontend ──
   frontend:
+    image: ghcr.io/scottmills306/audio-freelance/frontend:latest
     build:
       context: frontend
       dockerfile: Dockerfile

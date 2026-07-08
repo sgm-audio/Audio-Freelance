@@ -3,16 +3,13 @@
 This module runs health checks against external services and reports actionable remediation steps.
 """
 
-import os
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import httpx
-from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-
+from config import settings
 
 # ── shared helpers ──
 
@@ -112,8 +109,12 @@ def run_diagnostics() -> dict:
 
     # 3. Check API keys (presence only, no enumeration)
     missing = []
-    for key in ["TAVILY_API_KEY", "SERPER_API_KEY", "FIRECRAWL_API_KEY"]:
-        if not os.getenv(key, ""):
+    for key, val in [
+        ("TAVILY_API_KEY", settings.tavily_api_key),
+        ("SERPER_API_KEY", settings.serper_api_key),
+        ("FIRECRAWL_API_KEY", settings.firecrawl_api_key),
+    ]:
+        if not val:
             missing.append(key)
     if missing:
         keys = ", ".join(missing)

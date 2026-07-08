@@ -2,15 +2,15 @@
 
 Usage:
     from api.auth import require_api_key
-    @router.get("/leads", dependencies=[Depends(require_api_key)])
+    @router.get("/leads", dependencies=[Depends(require_api_key)]
 
 If API_KEY env var is not set, auth is disabled (local dev mode).
 Set API_KEY in .env to enable authentication for all non-public endpoints.
 """
 
-import os
-
 from fastapi import Header, HTTPException
+
+from config import settings
 
 
 async def require_api_key(authorization: str | None = Header(None)):
@@ -18,7 +18,7 @@ async def require_api_key(authorization: str | None = Header(None)):
 
     Skips auth if API_KEY is not configured (local dev mode).
     """
-    api_key = os.getenv("API_KEY", "")
+    api_key = settings.api_key
     if not api_key:
         return  # no key configured = open access (local dev)
 

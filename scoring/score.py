@@ -1,11 +1,8 @@
 """Main scoring pipeline: candidate → scored lead with verdict."""
 
-import os
 import re
-from pathlib import Path
 
-from dotenv import load_dotenv
-
+from config import settings
 from leads.schema import Lead, LeadStatus, Verdict
 from scoring.signals import (
     NEGATIVE_SIGNALS,
@@ -15,13 +12,10 @@ from scoring.signals import (
 )
 from search.base import RawCandidate
 
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-
-# Thresholds configurable via .env (fallback to reality-tested defaults)
-_HOT_THRESHOLD = int(os.getenv("HOT_THRESHOLD", "10"))
-_WARM_THRESHOLD = int(os.getenv("WARM_THRESHOLD", "5"))
-_MIN_RATE_CAD = int(os.getenv("MIN_RATE_CAD", "3000"))
-_HOURLY_FLOOR_CAD = int(os.getenv("HOURLY_FLOOR_CAD", "150"))
+_HOT_THRESHOLD = settings.hot_threshold
+_WARM_THRESHOLD = settings.warm_threshold
+_MIN_RATE_CAD = settings.min_rate_cad
+_HOURLY_FLOOR_CAD = settings.hourly_floor_cad
 
 
 def _parse_budget(text: str) -> int | None:
