@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Extended diagnostics** (Phase 4) — per-source API connectivity checks (Tavily/Serper/Firecrawl), Chroma collection stats, error log sweep, 6 failure modes catalogue with remediation steps.
 - **Ops rituals** (Phase 6) — 4 executable scripts: `morning_ritual.sh` (prospect + review), `midday_check.sh` (approve drafts), `evening_triage.sh` (win/loss), `check_followups.sh` (overdue detection).
 - **OpenCode commands** — `/debug`, `/prospect`, `/transcribe`, `/rituals` slash commands wired to the system.
+- **Friday ritual** — weekly wrap-up script: diagnostics, pipeline stats, win/loss rates, WARM review, market trends, rotation status, overdue follow-ups.
+- **Reply triage** — `generate/triage.py` keyword-based reply classifier (proposal/rate/decline/dead). `POST /tracking/triage` and batch endpoint for classifying lead replies.
+- **Test coverage** (Phase 7) — 16 new tests: 9 for LangGraph pipeline nodes, 7 for diagnostics module. All graph nodes + diagnostics checks covered.
 
 ## [v0.1.1] - 2026-07-07
 

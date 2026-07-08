@@ -513,6 +513,77 @@ async def active_pursuits():
     return {"count": len(pursuits), "active": pursuits}
 
 
+@router.post("/tracking/triage")
+async def reply_triage(reply_text: str, lead_id: str):
+    """Classify a lead reply and recommend next action."""
+    from generate.triage import classify_reply
+
+    lead = get_lead_by_id(lead_id)
+    context = None
+    if lead:
+        context = {
+            "status": lead.status.value,
+            "score": lead.score,
+            "niche": lead.niche,
+            "company": lead.company,
+        }
+
+    result = classify_reply(reply_text, context)
+    result.lead_id = lead_id
+    if lead:
+        result.lead_title = lead.title
+        result.lead_company = lead.company or ""
+
+    return {
+        "lead_id": result.lead_id,
+        "lead_title": result.lead_title,
+        "lead_company": result.lead_company,
+        "classification": result.classification,
+        "confidence": result.confidence,
+        "reasoning": result.reasoning,
+        "suggested_response": result.suggested_response,
+        "suggested_action": result.suggested_action,
+    }
+
+
+@router.post("/tracking/triage/batch")
+async def batch_reply_triage(replies: list[dict]):
+    """Classify multiple replies at once."""
+    from generate.triage import classify_reply
+
+    results = []
+    for r in replies:
+        lead_id = r.get("lead_id", "")
+        lead = None
+        context = None
+        try:
+            lead = get_lead_by_id(lead_id)
+        except Exception:
+            pass
+        if lead:
+            context = {
+                "status": lead.status.value,
+                "score": lead.score,
+                "niche": lead.niche,
+                "company": lead.company,
+            }
+        result = classify_reply(r.get("reply_text", ""), context)
+        result.lead_id = lead_id
+        if lead:
+            result.lead_title = lead.title
+            result.lead_company = lead.company or ""
+        results.append(
+            {
+                "lead_id": result.lead_id,
+                "lead_title": result.lead_title,
+                "classification": result.classification,
+                "confidence": result.confidence,
+                "suggested_action": result.suggested_action,
+            }
+        )
+    return {"count": len(results), "results": results}
+
+
 @router.get("/tracking/won-lost")
 async def won_lost_summary():
     """Summary of won and lost leads, for pipeline effectiveness tracking."""
