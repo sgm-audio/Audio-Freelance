@@ -77,22 +77,51 @@ make build      # Production frontend build
 
 ## Architecture
 
+```mermaid
+graph TB
+    User[👤 User] -->|HTTP :3000| Frontend[Next.js Dashboard]
+    Frontend -->|/api/v1/* proxy| Backend[FastAPI :8080]
+
+    Backend -->|embeddings| Ollama[Ollama<br/>nomic-embed-text]
+    Backend -->|CRUD + dedup| ChromaDB[(ChromaDB<br/>Vector Store)]
+    Backend -->|search queries| SearchAPIs[Search APIs]
+
+    SearchAPIs --> Tavily[Tavily<br/>Primary]
+    SearchAPIs --> Serper[Serper<br/>Fallback]
+    SearchAPIs --> Firecrawl[Firecrawl<br/>Fallback]
+
+    Backend --> ATS[ATS APIs]
+    ATS --> Greenhouse[Greenhouse]
+    ATS --> Lever[Lever]
+    ATS --> Ashby[Ashby]
+
+    subgraph Pipeline[DAG Pipeline]
+        Search[5-Tier Search] --> Dedup[ChromaDB Dedup]
+        Dedup --> Score[Signal Scoring]
+        Score --> Generate[LLM Outreach]
+        Generate --> Review[Review Queue]
+    end
+
+    Backend --> Pipeline
+
+    subgraph Monitoring
+        Metrics[Prometheus /metrics]
+        Sentry[Sentry Error Tracking]
+        Health[Health Checks]
+        Backup[Daily Backup]
+    end
+
+    Backend --> Monitoring
 ```
-audio-freelance/
-├── main.py              # FastAPI server + dashboard
-├── api/routes.py        # REST endpoints
-├── leads/               # Data layer (Pydantic models + ChromaDB)
-├── search/              # Multi-tier search (Tiers 1-4)
-├── scoring/             # Signal detection + lead scoring
-├── research/            # Market intelligence engine
-├── generate/            # Outreach + proposal generators
-├── assets/              # Portfolio claim registry
-├── debug/               # Diagnostics
-└── frontend/            # Next.js dashboard
-    ├── src/app/         # Pages (dashboard, leads, market, opportunities)
-    ├── src/lib/api.ts   # Typed API client
-    └── src/components/  # UI components (shadcn)
-```
+
+### Data Flow
+
+1. **Prospect**: User clicks "Prospect plugin_dev" → `POST /api/v1/prospect/{niche}` → Pipeline runs 5 search tiers in parallel → Dedup via ChromaDB embeddings → Score against user profile → Store HOT/WARM in ChromaDB, archive COLD/SKIP
+2. **Dashboard**: `GET /api/v1/status` + `GET /api/v1/market` → Aggregated lead counts, technology trends, pricing benchmarks
+3. **Outreach**: `POST /api/v1/outreach/{lead_id}` → LLM generates draft from template → Logged to outreach collection
+4. **Triage**: `POST /api/v1/tracking/triage` → Keyword classifier → Suggested action (proposal/rate/archive/dead)
+5. **Backup**: `scripts/backup.sh --retain 7` → Tars ChromaDB + archives + tracking + profile → Prunes old backups
+6. **Metrics**: Prometheus scrapes `GET /api/v1/metrics` every 15s → Counters for pipeline runs, leads discovered, API requests
 
 ### Search Tiers
 
@@ -102,6 +131,111 @@ audio-freelance/
 | Tier 2 | Weekly | We Work Remotely, RemoteOK, Wellfound, HN Algolia |
 | Tier 3 | Niche | Audio Programmer, GitHub bounties, music-tech boards |
 | Tier 4 | Outbound | Plugin companies, YC audio startups, AI-audio startups |
+
+## Environment Variables
+
+All configuration is centralized in `config.py` (pydantic-settings). Copy `.env.example` to `.env` and fill in required values.
+
+### Required
+
+| Variable | Description | Example |
+|---|---|---|
+| `TAVILY_API_KEY` | Tavily search API key | `tvly-dev-...` |
+| `SERPER_API_KEY` | Serper (Google) search API key | `abc123...` |
+| `FIRECRAWL_API_KEY` | Firecrawl web scraping API key | `fc-...` |
+
+### Optional — Authentication
+
+| Variable | Default | Description |
+|---|---|---|
+| `API_KEY` | `""` (open access) | Bearer token for API auth. Leave empty for local dev. |
+| `GITHUB_TOKEN` | `""` | GitHub personal access token for API queries |
+
+### Optional — Ollama
+
+| Variable | Default | Description |
+|---|---|---|
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama server URL for embeddings |
+
+### Optional — ChromaDB
+
+| Variable | Default | Description |
+|---|---|---|
+| `CHROMA_COLLECTION_LEADS` | `freelance_leads` | Collection name for lead storage |
+| `CHROMA_COLLECTION_OUTREACH` | `freelance_outreach_log` | Collection name for outreach logs |
+| `EMBEDDING_MODEL` | `nomic-embed-text` | Ollama model for embeddings |
+| `DEDUP_SIMILARITY_THRESHOLD` | `0.92` | Cosine similarity threshold for dedup |
+| `LEADS_DATA_DIR` | `""` | Override ChromaDB data directory |
+| `LEADS_ARCHIVE_DIR` | `""` | Override archive directory |
+| `LEADS_TRACKING_DIR` | `""` | Override tracking directory |
+| `LEADS_ALLOW_TEST_LEADS` | `false` | Allow test-source leads in production |
+
+### Optional — Search
+
+| Variable | Default | Description |
+|---|---|---|
+| `PREFERRED_NICHES` | `plugin_dev,reaper_scripts,rust_audio,audio_ml,game_audio_dev` | Comma-separated niches to search |
+| `MIN_RATE_CAD` | `3000` | Minimum project rate in CAD |
+| `HOURLY_FLOOR_CAD` | `150` | Minimum hourly rate in CAD |
+
+### Optional — Scoring
+
+| Variable | Default | Description |
+|---|---|---|
+| `HOT_THRESHOLD` | `10` | Score threshold for HOT verdict |
+| `WARM_THRESHOLD` | `5` | Score threshold for WARM verdict |
+
+### Optional — Operations
+
+| Variable | Default | Description |
+|---|---|---|
+| `COLD_ROTATION_DAYS` | `3` | Days before COLD leads are auto-rotated |
+| `LOG_LEVEL` | `INFO` | Logging level (DEBUG, INFO, WARNING, ERROR) |
+| `HOST` | `127.0.0.1` | Server bind address |
+| `PORT` | `8080` | Server port |
+| `CORS_ORIGINS` | `""` | Comma-separated additional CORS origins |
+| `PROFILE_PATH` | `""` | Override profile file path |
+| `COMPANIES_PATH` | `""` | Override companies data path |
+
+### Optional — Observability
+
+| Variable | Default | Description |
+|---|---|---|
+| `SENTRY_DSN` | `""` | Sentry DSN for error tracking (disabled if empty) |
+| `ENVIRONMENT` | `development` | Deployment environment (development/production) |
+
+## Production Readiness
+
+### What's Production-Grade
+
+| Capability | Status |
+|---|---|
+| Centralized config (pydantic-settings) | ✅ |
+| Structured JSON logging (structlog) | ✅ |
+| Request correlation IDs | ✅ |
+| Error tracking (Sentry, optional) | ✅ |
+| Prometheus metrics | ✅ |
+| API rate limiting (60 req/min) | ✅ |
+| Bearer token auth | ✅ |
+| CORS + security headers | ✅ |
+| Automated backups (retention: 7) | ✅ |
+| Data integrity checks | ✅ |
+| Docker images (GHCR) | ✅ |
+| Docker Compose (dev + prod profiles) | ✅ |
+| CI pipeline (lint + test + build + docker) | ✅ |
+| 81 unit tests | ✅ |
+| Input validation (Pydantic) | ✅ |
+| API documentation (OpenAPI at /docs) | ✅ |
+
+### Not Yet Implemented
+
+| Gap | Why Not |
+|---|---|
+| Frontend tests | Legacy — frontend is Next.js without test framework |
+| E2E tests | Requires running full stack with external APIs |
+| One-click cloud deploy | Needs fly.io/Railway account setup |
+| Multi-user / RBAC | Solo tool — not a SaaS product |
+| HTTPS in dev | Expected at reverse proxy level (nginx/Caddy) |
 
 ## API
 

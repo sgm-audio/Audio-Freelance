@@ -138,7 +138,7 @@ async def auth_warning_middleware(request: Request, call_next):
     if not _api_key:
         response.headers["X-Auth-Status"] = "disabled"
         if request.url.path.startswith("/api/"):
-            response.headers["X-Auth-Warning"] = "API_KEY not configured — endpoints unprotected"
+            response.headers["X-Auth-Warning"] = "API_KEY not configured -- endpoints unprotected"
 
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
