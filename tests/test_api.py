@@ -4,12 +4,29 @@ Tests the FastAPI app through TestClient (no real HTTP server).
 Validates that every route accepts requests and returns expected shapes.
 """
 
+import shutil
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
 from main import app
 
 client = TestClient(app)
+
+# Profile path for save/restore during destructive tests
+_PROFILE_PATH = Path(__file__).resolve().parent.parent / "profile.yaml"
+
+
+@pytest.fixture
+def save_restore_profile():
+    """Save real profile before destructive tests, restore after."""
+    backup = _PROFILE_PATH.with_suffix(".yaml.bak")
+    if _PROFILE_PATH.exists():
+        shutil.copy2(_PROFILE_PATH, backup)
+    yield
+    if backup.exists():
+        shutil.move(str(backup), str(_PROFILE_PATH))
 
 
 class TestHealthAndStatus:
@@ -251,19 +268,19 @@ class TestProfile:
         data = resp.json()
         assert isinstance(data, dict)
 
-    def test_update_profile_empty(self):
-        """POST /api/v1/profile with empty body."""
+    def test_update_profile_empty(self, save_restore_profile):
+        """POST /api/v1/profile with empty body. Safe — profile saved/restored."""
         resp = client.post("/api/v1/profile", json={})
         assert resp.status_code in (200, 422)
 
-    def test_delete_profile(self):
-        """DELETE /api/v1/profile removes profile."""
+    def test_delete_profile(self, save_restore_profile):
+        """DELETE /api/v1/profile removes profile. Safe — profile saved/restored."""
         resp = client.delete("/api/v1/profile")
         assert resp.status_code == 200
         data = resp.json()
         assert data.get("status") == "deleted"
 
-    def test_upload_no_file(self):
+    def test_upload_no_file(self, save_restore_profile):
         """POST /api/v1/profile/upload without file returns 422."""
         resp = client.post("/api/v1/profile/upload")
         assert resp.status_code == 422

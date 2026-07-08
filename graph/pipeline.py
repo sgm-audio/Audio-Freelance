@@ -237,7 +237,18 @@ def route_by_verdict(state: PipelineState) -> str:
 
 
 async def generate_translate(state: PipelineState) -> dict[str, Any]:
-    """LangGraph node: generate client-facing translations for HOT leads."""
+    """Generate client-facing translations for HOT leads.
+
+    Translates the technical description of each HOT lead into a non-technical
+    value proposition using the asset registry for evidence.
+
+    Args:
+        state: PipelineState with hot_leads populated from search+score phase.
+
+    Returns:
+        dict with 'translations' key mapping lead_id → translation dict.
+        Failed translations are {lead_id: {"error": "translation failed"}}.
+    """
     from generate.translate import translate_capability
 
     hot_leads = state.get("hot_leads", [])
@@ -252,7 +263,18 @@ async def generate_translate(state: PipelineState) -> dict[str, Any]:
 
 
 async def generate_outreach(state: PipelineState) -> dict[str, Any]:
-    """LangGraph node: generate outreach drafts for HOT leads."""
+    """Generate outreach draft emails for HOT leads.
+
+    Uses the A_plugin_contract template and asset registry to generate
+    personalized outreach drafts for the top 3 HOT leads.
+
+    Args:
+        state: PipelineState with hot_leads populated.
+
+    Returns:
+        dict with 'outreach_drafts' key mapping lead_id → draft dict.
+        Failed drafts are {lead_id: {"error": "outreach generation failed"}}.
+    """
     from generate.outreach import generate_outreach
 
     hot_leads = state.get("hot_leads", [])
@@ -267,7 +289,18 @@ async def generate_outreach(state: PipelineState) -> dict[str, Any]:
 
 
 async def queue_for_review(state: PipelineState) -> dict[str, Any]:
-    """LangGraph node: queue HOT leads with drafts for human review."""
+    """Build a review queue from HOT leads with draft status.
+
+    Creates a structured list of HOT leads indicating which have outreach
+    drafts ready for human review and approval.
+
+    Args:
+        state: PipelineState with hot_leads and outreach_drafts populated.
+
+    Returns:
+        dict with 'review_queue' key containing list of dicts with
+        lead_id, title, company, score, and has_draft flag.
+    """
     hot_leads = state.get("hot_leads", [])
     return {
         "review_queue": [
@@ -284,7 +317,17 @@ async def queue_for_review(state: PipelineState) -> dict[str, Any]:
 
 
 async def notify_hot(state: PipelineState) -> dict[str, Any]:
-    """LangGraph node: notify about HOT leads (logs + future Slack/MCP hook)."""
+    """Log HOT lead counts and prepare for notification.
+
+    Currently logs to uvicorn logger. Designed as a hook point for future
+    Slack MCP, email, or push notification integration.
+
+    Args:
+        state: PipelineState with hot_leads populated.
+
+    Returns:
+        dict with 'notified' key (True if any HOT leads exist).
+    """
     import logging
 
     logger = logging.getLogger("uvicorn")
@@ -295,7 +338,17 @@ async def notify_hot(state: PipelineState) -> dict[str, Any]:
 
 
 async def await_human_send(state: PipelineState) -> dict[str, Any]:
-    """LangGraph node: marks pipeline as awaiting human approval before sending."""
+    """Set the pipeline to await human approval before sending outreach.
+
+    Marks the pipeline as requiring manual review of generated drafts.
+    Placed as the final node in the graph — pipeline pauses here.
+
+    Args:
+        state: PipelineState with all preceding phases complete.
+
+    Returns:
+        dict with 'awaiting_approval' (True) and human-readable 'message'.
+    """
     return {
         "awaiting_approval": True,
         "message": "Review outreach drafts and approve before sending.",

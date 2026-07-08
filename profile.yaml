@@ -5,42 +5,16 @@ identity:
   remote_ok: true
   relocation_ok: false
 skills:
-  languages:
-  - c++
-  - python
-  - javascript
-  frameworks:
-  - juce
-  - clap-rs
-  - vst3
-  - ara2
-  - clap
-  - reaper
-  - wwise
-  - fmod
-  - nih-plug
-  domains:
-  - real-time audio dsp
-  - plugin development
-  - audio ml
-  - reaper scripting
-  - game audio
-  - speech processing
-  - music production
+  languages: []
+  frameworks: []
+  domains: []
   specializations: []
 preferences:
-  niches:
-  - plugin_dev
-  - reaper_scripts
-  - rust_audio
-  - audio_ml
-  - game_audio_dev
+  niches: []
   excluded_niches: []
-  dealbreakers:
-  - for exposure
-  - sweat equity
-  rate_floor: 100
-  hourly_floor: 25
+  dealbreakers: []
+  rate_floor: 0
+  hourly_floor: 0
   contract_types: []
 experience:
   years: null
@@ -49,3 +23,4 @@ portfolio:
   github: ''
   website: ''
   notable_work: []
+  portfolio_files: []

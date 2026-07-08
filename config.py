@@ -87,4 +87,4 @@ class Settings(BaseSettings):
 
 
 # Singleton — crashes at import time if tavily_api_key etc are missing
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]  # pydantic-settings loads from .env
