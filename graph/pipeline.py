@@ -116,7 +116,9 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
                 c.raw_text = full_text[:2000]  # cap at 2000 chars
                 fetched_count += 1
         except Exception:
-            pass  # keep original snippet
+            import logging
+
+            logging.getLogger("graph").debug("Deep fetch failed, keeping original snippet.")
 
         enriched.append(c)
 

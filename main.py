@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """FastAPI entry point — serves dashboard + API + briefing dispatch."""
 
-import logging
 import time
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from string import Template
@@ -15,18 +15,20 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from api.metrics import api_request_duration, api_requests
 from api.routes import public, router
 from config import settings
+from debug.log import get_logger, set_correlation_id, setup_logging
+
+setup_logging(log_level=settings.log_level)
 
 # ── Startup warning ──
 _api_key = settings.api_key
 if not _api_key:
-    logger = logging.getLogger("uvicorn")
-    logger.warning(
-        "=" * 60 + "\n"
-        "⚠  API_KEY not set — ALL API endpoints are unprotected.\n"
-        "   Set API_KEY in .env for production deployments.\n"
-        "   Response header X-Auth-Status: disabled added to every request.\n" + "=" * 60
+    log = get_logger("main")
+    log.warning(
+        "api_key_not_set",
+        detail="ALL API endpoints are unprotected. Set API_KEY in .env.",
     )
 
 # ── Auto-rotate cold leads on startup (laptop-friendly, no cron needed) ──
@@ -37,11 +39,11 @@ try:
     result = auto_rotate_if_needed(age_days=rotation_days)
     if result is not None:
         archived, deleted = result
-        logging.getLogger("uvicorn").info(
-            f"Auto-rotated cold leads: {archived} archived, {deleted} deleted."
-        )
+        log = get_logger("main")
+        log.info("auto_rotate_cold_leads", archived=archived, deleted=deleted)
 except Exception:
-    pass  # Rotation is best-effort — never block startup
+    log = get_logger("main")
+    log.warning("auto_rotate_failed", detail="best-effort, continuing")
 
 # ── Rate limiter ──
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
@@ -59,6 +61,17 @@ ALLOWED_ORIGINS = [
 extra_list = settings.as_cors_list()
 if extra_list:
     ALLOWED_ORIGINS.extend(extra_list)
+
+# ── Sentry error tracking ──
+if settings.sentry_dsn:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.environment,
+        traces_sample_rate=1.0 if settings.environment == "development" else 0.1,
+        profiles_sample_rate=0.1,
+    )
 
 app = FastAPI(
     title="Audio-Dev Freelance Acquisition System",
@@ -80,28 +93,39 @@ app.add_middleware(
 )
 
 
+# ── Correlation ID middleware (must come before request logging) ──
+
+
+@app.middleware("http")
+async def correlation_id_middleware(request: Request, call_next):
+    """Attach a unique correlation ID to every request."""
+    cid = request.headers.get("X-Correlation-ID", str(uuid.uuid4())[:8])
+    set_correlation_id(cid)
+    response = await call_next(request)
+    response.headers["X-Correlation-ID"] = cid
+    return response
+
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
+    """Log every HTTP request with method, path, status, and duration."""
+    log = get_logger("api")
     start = time.perf_counter()
     response = await call_next(request)
     duration = time.perf_counter() - start
 
     path = request.url.path
     if path.startswith("/api/"):
-        status = response.status_code
-        method = request.method
-        if status < 300:
-            level = "INFO"
-        elif status < 500:
-            level = "WARNING"
-        else:
-            level = "ERROR"
-
-        logger = logging.getLogger("uvicorn")
-        logger.log(
-            logging.getLevelName(level),
-            f"{method} {path} → {status} ({duration:.3f}s)",
+        log.info(
+            "request",
+            method=request.method,
+            path=path,
+            status=response.status_code,
+            duration=round(duration, 3),
         )
+
+        api_requests.labels(method=request.method, path=path).inc()
+        api_request_duration.labels(method=request.method).observe(duration)
 
     return response
 

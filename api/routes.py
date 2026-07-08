@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from api.auth import require_api_key
+from api.metrics import leads_discovered, leads_stored, ollama_available, pipeline_runs
 from config import settings
 from debug.log import setup_logger
 from graph.pipeline import run_pipeline
@@ -63,11 +64,22 @@ class LeadStatusUpdate(BaseModel):
 async def health_check():
     """Health check endpoint."""
     ollama_ok = check_ollama_available()
+    ollama_available.set(1 if ollama_ok else 0)
     return {
         "status": "ok",
         "ollama": ollama_ok,
         "timestamp": datetime.now(tz=UTC).isoformat(),
     }
+
+
+@public.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint."""
+    from fastapi.responses import Response
+
+    from api.metrics import metrics_response
+
+    return Response(content=metrics_response(), media_type="text/plain")
 
 
 @router.get("/leads")
@@ -131,6 +143,11 @@ async def prospect_niche(niche: str):
 
     try:
         result = await run_pipeline(niche)
+        pipeline_runs.labels(niche=niche).inc()
+        for verdict, key in [("HOT", "hot"), ("WARM", "warm"), ("COLD", "cold")]:
+            count = len(result.get(f"{key}_leads", []))
+            if count > 0:
+                leads_discovered.labels(verdict=verdict).inc(count)
         return {
             "niche": niche,
             "total_candidates": len(result.get("all_candidates", [])),
@@ -250,6 +267,8 @@ async def pipeline_status():
             counts[status.value] = len(leads)
         except Exception:
             counts[status.value] = 0
+
+    leads_stored.set(sum(counts.values()))
 
     return {
         "lead_counts": counts,
