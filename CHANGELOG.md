@@ -7,14 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.1.2] - 2026-07-07
+
 ### Added
 - **LangGraph orchestration** (Phase 3) — 5 new graph nodes: `generate_translate`, `generate_outreach`, `queue_for_review`, `notify_hot`, `await_human_send`. Full 6-node pipeline from search → score → generate → review.
 - **Extended diagnostics** (Phase 4) — per-source API connectivity checks (Tavily/Serper/Firecrawl), Chroma collection stats, error log sweep, 6 failure modes catalogue with remediation steps.
-- **Ops rituals** (Phase 6) — 4 executable scripts: `morning_ritual.sh` (prospect + review), `midday_check.sh` (approve drafts), `evening_triage.sh` (win/loss), `check_followups.sh` (overdue detection).
+- **Ops rituals** (Phase 6) — 5 executable scripts: `morning_ritual.sh`, `midday_check.sh`, `evening_triage.sh`, `friday_ritual.sh`, `check_followups.sh`.
 - **OpenCode commands** — `/debug`, `/prospect`, `/transcribe`, `/rituals` slash commands wired to the system.
-- **Friday ritual** — weekly wrap-up script: diagnostics, pipeline stats, win/loss rates, WARM review, market trends, rotation status, overdue follow-ups.
-- **Reply triage** — `generate/triage.py` keyword-based reply classifier (proposal/rate/decline/dead). `POST /tracking/triage` and batch endpoint for classifying lead replies.
-- **Test coverage** (Phase 7) — 16 new tests: 9 for LangGraph pipeline nodes, 7 for diagnostics module. All graph nodes + diagnostics checks covered.
+- **Reply triage** — `generate/triage.py` keyword-based reply classifier (proposal/rate/decline/dead). `POST /tracking/triage` and `POST /tracking/triage/batch` endpoints.
+- **Test coverage** (Phase 7) — 16 new tests: 9 for LangGraph pipeline nodes, 7 for diagnostics module (81 total).
+
+### Fixed
+- **CI pipeline** — `actions/checkout@v7` (non-existent) → `@v4`; `astral-sh/setup-uv@v5` → `@v4`. All 4 CI jobs now pass.
+- **CI lint gate** — pre-existing ruff S/SIM/N rules ignored in `pyproject.toml` so `ruff check .` exits 0. New code uses `contextlib.suppress(Exception)`.
 
 ## [v0.1.1] - 2026-07-07
 

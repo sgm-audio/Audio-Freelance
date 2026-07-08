@@ -1,6 +1,5 @@
 """Tests for Phase 4 diagnostics module."""
 
-
 from debug.diagnostics import (
     DiagnosticReport,
     check_chroma_health,
