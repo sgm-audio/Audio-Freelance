@@ -3,34 +3,18 @@
 Loads configurable values from .env with sensible defaults.
 """
 
-import os
 import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
-from pathlib import Path
 from typing import Literal
 
-from dotenv import load_dotenv
 from pydantic import BaseModel, Field, field_validator
 
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+from config import settings
 
-
-def _parse_niches(raw: str | None) -> list[str]:
-    if not raw:
-        return [
-            "plugin_dev",
-            "reaper_scripts",
-            "rust_audio",
-            "audio_ml",
-            "game_audio_dev",
-        ]
-    return [n.strip() for n in raw.split(",") if n.strip()]
-
-
-PREFERRED_NICHES: list[str] = _parse_niches(os.getenv("PREFERRED_NICHES"))
+PREFERRED_NICHES: list[str] = settings.as_niche_list()
 
 
 class LeadStatus(StrEnum):

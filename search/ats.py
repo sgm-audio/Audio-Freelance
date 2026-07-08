@@ -7,12 +7,12 @@ sources for audio companies.
 All three APIs are public and require no authentication.
 """
 
-import os
 from pathlib import Path
 
 import httpx
 import yaml
 
+from config import settings
 from search.base import RawCandidate
 
 # ── Company list loader ──
@@ -20,11 +20,10 @@ from search.base import RawCandidate
 
 def get_companies_path() -> Path:
     """Return the path to companies.yaml."""
-    return Path(
-        os.getenv(
-            "COMPANIES_PATH",
-            str(Path(__file__).resolve().parent.parent / "data" / "companies.yaml"),
-        )
+    return (
+        Path(settings.companies_path)
+        if settings.companies_path
+        else Path(__file__).resolve().parent.parent / "data" / "companies.yaml"
     )
 
 

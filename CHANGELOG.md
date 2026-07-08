@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Centralized configuration** — single `config.py` with `pydantic-settings`. All 20+ env vars validated at import time. Removed 6 scattered `load_dotenv()` calls. Required keys (Tavily/Serper/Firecrawl) crash immediately if missing — no more silent zero-result searches.
+- **Automated backup** — `scripts/backup.sh` tars ChromaDB, archives, tracking, and profile. `--retain N` (default 7), `--verify` flag. Integrated into Friday ritual.
+- **Data integrity check** — `scripts/check_integrity.sh` validates ChromaDB SQLite integrity, JSONL parse validity, and profile YAML structure.
+- **Docker CI job** — builds + pushes backend and frontend images to GHCR on every `master` push and tag. `docker-compose.prod.yml` override with restart policies, healthchecks, and CPU-only Ollama.
+
+### Changed
+- **Docker Compose** — `image:` fields on backend/frontend services enable GHCR pull with local `build:` fallback.
+- **13 files** refactored to use centralized `config.settings` instead of scattered `os.getenv()`.
+
 ## [v0.1.2] - 2026-07-07
 
 ### Added

@@ -1,13 +1,11 @@
 """Shared search utilities with Tavily → Serper → Firecrawl fallback chain."""
 
-import os
 from dataclasses import dataclass
 
 import httpx
-from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-load_dotenv()
+from config import settings
 
 
 @dataclass
@@ -47,9 +45,9 @@ _BLOCK_SIGNATURES = [
     "automated access",
 ]
 
-_TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
-_SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
-_FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY", "")
+_TAVILY_API_KEY = settings.tavily_api_key
+_SERPER_API_KEY = settings.serper_api_key
+_FIRECRAWL_API_KEY = settings.firecrawl_api_key
 
 
 def _is_key_valid(key: str, min_len: int = 20) -> bool:

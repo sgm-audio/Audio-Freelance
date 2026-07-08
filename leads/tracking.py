@@ -5,15 +5,15 @@ object per line.  No new deps, stdlib-only.
 """
 
 import json
-import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-TRACKING_DIR = Path(
-    os.getenv(
-        "LEADS_TRACKING_DIR",
-        str(Path(__file__).resolve().parent / "data" / "tracking"),
-    )
+from config import settings
+
+TRACKING_DIR = (
+    Path(settings.leads_tracking_dir)
+    if settings.leads_tracking_dir
+    else Path(__file__).resolve().parent / "data" / "tracking"
 )
 
 # ── internal helpers ──

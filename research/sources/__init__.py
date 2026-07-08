@@ -3,10 +3,9 @@
 Each source module provides query lists and async functions that return MarketSignal lists.
 """
 
-import os
-
 import httpx
 
+from config import settings
 from search.base import web_search
 
 # ── Query catalog ──
@@ -137,7 +136,7 @@ async def search_github() -> list["MarketSignal"]:  # noqa: F821
     signals: list[MarketSignal] = []
     url = "https://api.github.com/search/repositories"
     headers = {}
-    token = os.getenv("GITHUB_TOKEN", "")
+    token = settings.github_token
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
