@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from api.auth import require_api_key
 from api.metrics import leads_discovered, leads_stored, ollama_available, pipeline_runs
 from config import settings
-from debug.log import setup_logger
+from debug.log import get_logger
 from graph.pipeline import run_pipeline
 from leads.schema import PREFERRED_NICHES, LeadStatus
 from leads.store import (
@@ -29,7 +29,7 @@ from search.base import RawCandidate
 router = APIRouter(dependencies=[Depends(require_api_key)])
 public = APIRouter()  # no auth
 
-log = setup_logger(__name__)
+log = get_logger(__name__)
 
 
 # ── Pydantic request models ──
@@ -97,6 +97,119 @@ async def list_leads(status: str | None = None):
     return {
         "count": len(leads),
         "leads": [lead.model_dump(mode="json") for lead in leads],
+    }
+
+
+# ── Cold-lead archive ──
+
+
+@router.get("/leads/cold")
+async def list_cold_leads(days: int = 7, niche: str | None = None):
+    """List recently archived cold leads from archive JSONL files."""
+    import json
+    from datetime import UTC, datetime, timedelta
+
+    from leads.store import ARCHIVE_DIR
+
+    cutoff = datetime.now(tz=UTC) - timedelta(days=days)
+    leads: list[dict] = []
+
+    if not ARCHIVE_DIR.exists():
+        return {"count": 0, "leads": []}
+
+    for f in sorted(ARCHIVE_DIR.glob("cold_*.jsonl"), reverse=True):
+        try:
+            with open(f) as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    data = json.loads(line)
+                    if niche and data.get("niche") != niche:
+                        continue
+                    disc = data.get("discovered_at", "")
+                    if disc:
+                        try:
+                            dt = datetime.fromisoformat(disc)
+                            if dt < cutoff:
+                                continue
+                        except (ValueError, TypeError):
+                            pass
+                    leads.append(data)
+                    if len(leads) >= 200:
+                        break
+        except Exception:
+            continue
+        if len(leads) >= 200:
+            break
+
+    return {"count": len(leads), "leads": leads}
+
+
+@router.get("/leads/cold/stats")
+async def cold_lead_stats():
+    """Stats for archived cold leads: count by niche/source."""
+    import json
+    from collections import Counter
+
+    from leads.store import ARCHIVE_DIR
+
+    niche_counts: Counter = Counter()
+    source_counts: Counter = Counter()
+    total = 0
+
+    if ARCHIVE_DIR.exists():
+        for f in ARCHIVE_DIR.glob("cold_*.jsonl"):
+            try:
+                with open(f) as fh:
+                    for line in fh:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        data = json.loads(line)
+                        niche_counts[data.get("niche", "unknown")] += 1
+                        source_counts[data.get("source", "unknown")] += 1
+                        total += 1
+            except Exception:
+                continue
+
+    return {
+        "total_archived": total,
+        "by_niche": dict(niche_counts.most_common()),
+        "by_source": dict(source_counts.most_common()),
+    }
+
+
+@router.post("/leads/rotate-cold")
+async def rotate_cold_leads(days: int = 3):
+    """Explicit housekeeping: rotate COLD/WARM leads older than N days to archive."""
+    from leads.store import _touch_rotation, ensure_collections_initialized, rotate_cold
+
+    if not ensure_collections_initialized():
+        raise HTTPException(status_code=503, detail="ChromaDB not available")
+
+    archived, deleted = rotate_cold(age_days=days)
+    _touch_rotation()  # Record timestamp so auto-rotation doesn't double-fire
+    return {
+        "archived": archived,
+        "deleted": deleted,
+        "message": f"Rotated {archived} leads to archive ({deleted} removed from active store).",
+    }
+
+
+@router.get("/leads/rotation-status")
+async def rotation_status():
+    """Check when the last rotation happened and if one is due."""
+    from datetime import UTC, datetime
+
+    from leads.store import get_last_rotation
+
+    last = get_last_rotation()
+    now = datetime.now(tz=UTC)
+    return {
+        "last_rotation": last.isoformat() if last else None,
+        "hours_ago": round((now - last).total_seconds() / 3600, 1) if last else None,
+        "rotation_due_days": settings.cold_rotation_days,
     }
 
 
@@ -363,119 +476,6 @@ async def market_opportunities():
     }
 
 
-# ── Cold-lead archive ──
-
-
-@router.get("/leads/cold")
-async def list_cold_leads(days: int = 7, niche: str | None = None):
-    """List recently archived cold leads from archive JSONL files."""
-    import json
-    from datetime import UTC, datetime, timedelta
-
-    from leads.store import ARCHIVE_DIR
-
-    cutoff = datetime.now(tz=UTC) - timedelta(days=days)
-    leads: list[dict] = []
-
-    if not ARCHIVE_DIR.exists():
-        return {"count": 0, "leads": []}
-
-    for f in sorted(ARCHIVE_DIR.glob("cold_*.jsonl"), reverse=True):
-        try:
-            with open(f) as fh:
-                for line in fh:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    data = json.loads(line)
-                    if niche and data.get("niche") != niche:
-                        continue
-                    disc = data.get("discovered_at", "")
-                    if disc:
-                        try:
-                            dt = datetime.fromisoformat(disc)
-                            if dt < cutoff:
-                                continue
-                        except (ValueError, TypeError):
-                            pass
-                    leads.append(data)
-                    if len(leads) >= 200:
-                        break
-        except Exception:
-            continue
-        if len(leads) >= 200:
-            break
-
-    return {"count": len(leads), "leads": leads}
-
-
-@router.get("/leads/cold/stats")
-async def cold_lead_stats():
-    """Stats for archived cold leads: count by niche/source."""
-    import json
-    from collections import Counter
-
-    from leads.store import ARCHIVE_DIR
-
-    niche_counts: Counter = Counter()
-    source_counts: Counter = Counter()
-    total = 0
-
-    if ARCHIVE_DIR.exists():
-        for f in ARCHIVE_DIR.glob("cold_*.jsonl"):
-            try:
-                with open(f) as fh:
-                    for line in fh:
-                        line = line.strip()
-                        if not line:
-                            continue
-                        data = json.loads(line)
-                        niche_counts[data.get("niche", "unknown")] += 1
-                        source_counts[data.get("source", "unknown")] += 1
-                        total += 1
-            except Exception:
-                continue
-
-    return {
-        "total_archived": total,
-        "by_niche": dict(niche_counts.most_common()),
-        "by_source": dict(source_counts.most_common()),
-    }
-
-
-@router.post("/leads/rotate-cold")
-async def rotate_cold_leads(days: int = 3):
-    """Explicit housekeeping: rotate COLD/WARM leads older than N days to archive."""
-    from leads.store import _touch_rotation, ensure_collections_initialized, rotate_cold
-
-    if not ensure_collections_initialized():
-        raise HTTPException(status_code=503, detail="ChromaDB not available")
-
-    archived, deleted = rotate_cold(age_days=days)
-    _touch_rotation()  # Record timestamp so auto-rotation doesn't double-fire
-    return {
-        "archived": archived,
-        "deleted": deleted,
-        "message": f"Rotated {archived} leads to archive ({deleted} removed from active store).",
-    }
-
-
-@router.get("/leads/rotation-status")
-async def rotation_status():
-    """Check when the last rotation happened and if one is due."""
-    from datetime import UTC, datetime
-
-    from leads.store import get_last_rotation
-
-    last = get_last_rotation()
-    now = datetime.now(tz=UTC)
-    return {
-        "last_rotation": last.isoformat() if last else None,
-        "hours_ago": round((now - last).total_seconds() / 3600, 1) if last else None,
-        "rotation_due_days": settings.cold_rotation_days,
-    }
-
-
 # ── Tracking & pursuits ──
 
 
@@ -486,25 +486,6 @@ async def tracking_overview(limit: int = 50):
 
     events = get_all_tracking(limit=limit)
     return {"count": len(events), "events": events}
-
-
-@router.get("/tracking/{lead_id}")
-async def lead_tracking(lead_id: str):
-    """All tracking events for a specific lead."""
-    from leads.store import get_lead_by_id
-    from leads.tracking import get_tracking_history
-
-    lead = get_lead_by_id(lead_id)
-    if lead is None:
-        raise HTTPException(status_code=404, detail="Lead not found")
-
-    events = get_tracking_history(lead_id)
-    return {
-        "lead_id": lead_id,
-        "lead_title": lead.title,
-        "lead_status": lead.status.value,
-        "events": events,
-    }
 
 
 @router.get("/tracking/active")
@@ -633,6 +614,25 @@ async def won_lost_summary():
             "lost": dict(niche_lost),
         },
         "timestamp": datetime.now(tz=UTC).isoformat(),
+    }
+
+
+@router.get("/tracking/{lead_id}")
+async def lead_tracking(lead_id: str):
+    """All tracking events for a specific lead."""
+    from leads.store import get_lead_by_id
+    from leads.tracking import get_tracking_history
+
+    lead = get_lead_by_id(lead_id)
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    events = get_tracking_history(lead_id)
+    return {
+        "lead_id": lead_id,
+        "lead_title": lead.title,
+        "lead_status": lead.status.value,
+        "events": events,
     }
 
 

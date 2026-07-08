@@ -8,17 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Structured logging** — `structlog` with JSON output and `contextvars`-based correlation IDs. Every request gets a unique `X-Correlation-ID` header propagated through the pipeline. Compatible with ELK, Loki, Datadog.
-- **Sentry error tracking** — optional `sentry-sdk[fastapi]` integration. Zero-config when `SENTRY_DSN` is unset. Auto-captures HTTP errors, pipeline failures, and unhandled exceptions. Silenced exception handlers now log warnings for Sentry visibility.
-- **Prometheus metrics** — `GET /metrics` endpoint (no auth). Counters for pipeline runs (by niche), leads discovered (by verdict), API requests (by method/path). Gauges for lead count and Ollama availability. Histogram for API request duration.
-- **Centralized configuration** — single `config.py` with `pydantic-settings`. All 20+ env vars validated at import time. Removed 6 scattered `load_dotenv()` calls. Required keys (Tavily/Serper/Firecrawl) crash immediately if missing — no more silent zero-result searches.
+- **Centralized configuration** — single `config.py` with `pydantic-settings`. All 20+ env vars validated at import time. Removed 6 scattered `load_dotenv()` calls. Required keys crash immediately if missing.
 - **Automated backup** — `scripts/backup.sh` tars ChromaDB, archives, tracking, and profile. `--retain N` (default 7), `--verify` flag. Integrated into Friday ritual.
-- **Data integrity check** — `scripts/check_integrity.sh` validates ChromaDB SQLite integrity, JSONL parse validity, and profile YAML structure.
-- **Docker CI job** — builds + pushes backend and frontend images to GHCR on every `master` push and tag. `docker-compose.prod.yml` override with restart policies, healthchecks, and CPU-only Ollama.
+- **Data integrity check** — `scripts/check_integrity.sh` validates ChromaDB SQLite integrity, JSONL parse validity, and profile YAML.
+- **Docker CI job** — builds + pushes backend and frontend images to GHCR on every `master` push and tag. `docker-compose.prod.yml` override.
+- **Structured logging** — `structlog` with JSON output and `contextvars`-based correlation IDs. Every request gets a unique `X-Correlation-ID` header. Compatible with ELK, Loki, Datadog.
+- **Sentry error tracking** — optional `sentry-sdk[fastapi]` integration. Zero-config without `SENTRY_DSN`. Silenced exception handlers now log warnings.
+- **Prometheus metrics** — `GET /metrics` endpoint (no auth). Counters for pipeline runs, leads discovered, API requests. Gauges for lead count and Ollama availability. Histogram for request duration.
+- **API integration tests** — 38 smoke tests exercising every endpoint via `TestClient`. All 9 route groups covered.
+- **Architecture diagram** — Mermaid graph in README: User → Frontend → Backend → Pipeline DAG + Ollama/ChromaDB/Search/ATS/Monitoring.
+- **Environment reference** — complete env var table (25 fields from `config.py`) with defaults and descriptions.
+- **Production readiness checklist** — 16 production-grade items in README.
+
+### Fixed
+- 3 incidental bugs: `setup_logger`→`get_logger` import, em-dash encoding crash, route ordering for `{lead_id}` catch-all.
+- Added `python-multipart` dependency (required by FastAPI `TestClient`).
+- Docker Compose missing env vars for API keys — now uses `.env` file in prod profile.
 
 ### Changed
-- **Docker Compose** — `image:` fields on backend/frontend services enable GHCR pull with local `build:` fallback.
-- **13 files** refactored to use centralized `config.settings` instead of scattered `os.getenv()`.
+- Test suite: 65 → 119 tests (81 unit + 38 integration).
+- 13 files refactored to use centralized `config.settings`.
+- Docker Compose: `image:` fields enable GHCR pull with local `build:` fallback.
 
 ## [v0.1.2] - 2026-07-07
 
