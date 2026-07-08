@@ -373,7 +373,11 @@ def rotate_cold(age_days: int = 3) -> tuple[int, int]:
                 _leads_collection.delete(ids=[str(lead.id)])
                 deleted += 1
             except Exception:
-                pass
+                import logging
+
+                logging.getLogger("leads.store").warning(
+                    "Failed to delete lead during rotation.", exc_info=True
+                )
 
     return archived, deleted
 

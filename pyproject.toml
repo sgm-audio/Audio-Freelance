@@ -18,7 +18,11 @@ dependencies = [
     "ollama>=0.4.0",
     "pyyaml>=6.0",
     "tenacity>=9.0",
+    "prometheus-client>=0.20",
     "slowapi>=0.1.10",
+    "sentry-sdk[fastapi]>=2.0",
+    "structlog>=24.0",
+    "python-json-logger>=3.0",
 ]
 
 [project.optional-dependencies]

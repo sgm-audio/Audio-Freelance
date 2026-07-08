@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Structured logging** — `structlog` with JSON output and `contextvars`-based correlation IDs. Every request gets a unique `X-Correlation-ID` header propagated through the pipeline. Compatible with ELK, Loki, Datadog.
+- **Sentry error tracking** — optional `sentry-sdk[fastapi]` integration. Zero-config when `SENTRY_DSN` is unset. Auto-captures HTTP errors, pipeline failures, and unhandled exceptions. Silenced exception handlers now log warnings for Sentry visibility.
+- **Prometheus metrics** — `GET /metrics` endpoint (no auth). Counters for pipeline runs (by niche), leads discovered (by verdict), API requests (by method/path). Gauges for lead count and Ollama availability. Histogram for API request duration.
 - **Centralized configuration** — single `config.py` with `pydantic-settings`. All 20+ env vars validated at import time. Removed 6 scattered `load_dotenv()` calls. Required keys (Tavily/Serper/Firecrawl) crash immediately if missing — no more silent zero-result searches.
 - **Automated backup** — `scripts/backup.sh` tars ChromaDB, archives, tracking, and profile. `--retain N` (default 7), `--verify` flag. Integrated into Friday ritual.
 - **Data integrity check** — `scripts/check_integrity.sh` validates ChromaDB SQLite integrity, JSONL parse validity, and profile YAML structure.

@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     # ── CORS ──
     cors_origins: str = ""
 
+    # ── Sentry ──
+    sentry_dsn: str = ""
+    environment: str = "development"
+
     # ── Server ──
     host: str = "127.0.0.1"
     port: int = 8080
