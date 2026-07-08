@@ -5,6 +5,7 @@
 
 <p align="center">
   <a href="#features">Features</a> ·
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#api">API</a> ·
@@ -39,6 +40,27 @@ Built for audio DSP engineers, plugin developers, and audio ML engineers who wan
 **Outreach Generator** — Templated outreach drafts (A-D) with asset registry claim validation. Proposal generator with pricing tiers and IP licensing notes. Ready-to-send application materials for live opportunities.
 
 **Dashboard** — Next.js 16 dark-mode dashboard with lead management, market trends, pricing benchmarks, and one-click prospecting. Theme toggle, keyboard navigable.
+
+## Screenshots
+
+| Dashboard | Market Intelligence | Lead Pipeline |
+|---|---|---|
+| ![Dashboard](frontend/public/screenshots/dashboard.png) | ![Market](frontend/public/screenshots/market.png) | ![Pipeline](frontend/public/screenshots/pipeline.png) |
+
+### Capturing Screenshots
+
+```bash
+# 1. Start the app
+./run.sh
+
+# 2. Take screenshots (Firefox)
+firefox --screenshot frontend/public/screenshots/dashboard.png http://localhost:3000/
+firefox --screenshot frontend/public/screenshots/market.png http://localhost:3000/market
+firefox --screenshot frontend/public/screenshots/pipeline.png http://localhost:3000/tracking
+
+# 3. Or use Chrome headless
+google-chrome --headless --screenshot=frontend/public/screenshots/dashboard.png --window-size=1280,800 http://localhost:3000/
+```
 
 ## Quick Start
 
@@ -233,7 +255,7 @@ All configuration is centralized in `config.py` (pydantic-settings). Copy `.env.
 |---|---|
 | Frontend tests | Legacy — frontend is Next.js without test framework |
 | E2E tests | Requires running full stack with external APIs |
-| One-click cloud deploy | Needs fly.io/Railway account setup |
+| One-click cloud deploy | ✅ Fly.io `fly.toml` + CD workflow (needs Fly account + `FLY_API_TOKEN` secret) |
 | Multi-user / RBAC | Solo tool — not a SaaS product |
 | HTTPS in dev | Expected at reverse proxy level (nginx/Caddy) |
 
@@ -274,6 +296,64 @@ The `research/market.py` engine searches 6 signal categories in parallel:
 ### Tracked Technologies
 
 CLAP, ARA 2, Mamba/SSM, Rust Audio, ONNX, LibTorch, REAPER, Web Audio, Neural Audio Codecs, Source Separation, FAUST, JUCE, RTNeural, MIR.
+
+## Deployment
+
+### One-Click (Fly.io)
+
+```bash
+# 1. Install Fly CLI
+curl -L https://fly.io/install.sh | sh
+
+# 2. Create app (first time only)
+fly apps create audio-freelance
+
+# 3. Set secrets
+fly secrets set TAVILY_API_KEY=your-key
+fly secrets set SERPER_API_KEY=your-key
+fly secrets set FIRECRAWL_API_KEY=your-key
+fly secrets set API_KEY=your-auth-key  # optional
+
+# 4. Deploy
+fly deploy
+
+# Open dashboard
+fly open
+```
+
+The app includes a `fly.toml` with sensible defaults (Seattle region, 1GB RAM, auto-stop on idle).
+
+### GitHub Actions CD
+
+Pushing a version tag (`v0.1.3`, `v1.0.0`) triggers automatic deployment via GitHub Actions. Requires `FLY_API_TOKEN` secret in repo settings.
+
+```bash
+# Generate token
+fly tokens create deploy -x 999999h
+
+# Add to GitHub repo secrets
+gh secret set FLY_API_TOKEN --body "your-fly-token"
+
+# Deploy by pushing a tag
+git tag v0.1.3 && git push origin v0.1.3
+```
+
+### Docker Compose (Self-Hosted)
+
+```bash
+# Clone and configure
+cp .env.example .env
+# Fill in API keys in .env
+
+# Start full stack (dev)
+docker compose up -d
+
+# Start full stack (production overrides)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# View logs
+docker compose logs -f backend
+```
 
 ## License
 

@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture diagram** — Mermaid graph in README: User → Frontend → Backend → Pipeline DAG + Ollama/ChromaDB/Search/ATS/Monitoring.
 - **Environment reference** — complete env var table (25 fields from `config.py`) with defaults and descriptions.
 - **Production readiness checklist** — 16 production-grade items in README.
+- **Fly.io deploy** — `fly.toml` config (Seattle region, auto-stop, HTTPS). CD workflow deploys on `v*` tags. Deployment docs in README.
+- **Frontend e2e tests** — Playwright smoke tests (dashboard render, sidebar nav, theme toggle). Run with `npm run test:e2e`.
+- **Screenshots gallery** — placeholder table in README with headless capture instructions for Firefox/Chrome.
 
 ### Fixed
 - 3 incidental bugs: `setup_logger`→`get_logger` import, em-dash encoding crash, route ordering for `{lead_id}` catch-all.
