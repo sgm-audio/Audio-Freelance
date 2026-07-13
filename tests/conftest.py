@@ -18,6 +18,12 @@ _SAVED_DATA_DIR = os.environ.get("LEADS_DATA_DIR")
 os.environ["LEADS_ALLOW_TEST_LEADS"] = "1"
 os.environ["LEADS_DATA_DIR"] = ""  # cleared; fixture sets per-test tmp_path
 
+# config.Settings requires these at import time; supply dummies so the suite
+# runs without a .env (e.g. in CI). Real values from the environment still win.
+os.environ.setdefault("TAVILY_API_KEY", "test-key")
+os.environ.setdefault("SERPER_API_KEY", "test-key")
+os.environ.setdefault("FIRECRAWL_API_KEY", "test-key")
+
 
 def _restore_env():
     """Restore env vars to pre-test values."""

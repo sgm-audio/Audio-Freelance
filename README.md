@@ -64,16 +64,34 @@ google-chrome --headless --screenshot=frontend/public/screenshots/dashboard.png 
 
 ## Quick Start
 
+Works on macOS, Linux, and Windows — the launcher (`run.py`) is plain Python with no extra dependencies.
+
+**macOS / Linux**
+
 ```bash
 # Install backend + frontend dependencies
 make install
 
 # Start both servers
-./run.sh
-# or: make dev
+python run.py
+# or: ./run.sh / make dev
+```
+
+**Windows (PowerShell or cmd)**
+
+```powershell
+# Install backend + frontend dependencies
+uv sync
+cd frontend; npm install; cd ..
+
+# Start both servers
+python run.py
+# or: .\run.bat
 ```
 
 Then open **http://localhost:3000**
+
+The launcher runs pre-flight checks (uv, Node, `.env`, free ports) before starting anything — `python run.py --check` runs just the checks, `--verbose` shows server output.
 
 ### Prerequisites
 
@@ -83,10 +101,22 @@ Then open **http://localhost:3000**
 - Search API keys (Tavily, Serper, or Firecrawl) — set in `.env`
 
 ```bash
-cp .env.example .env
+cp .env.example .env          # Windows: copy .env.example .env
 # Add your API keys
 ollama pull nomic-embed-text
 ```
+
+### Virtualenv Shell
+
+To drop into the uv-managed venv for one-off commands:
+
+| Platform | Command |
+|---|---|
+| macOS / Linux | `./activate.sh` |
+| Windows PowerShell | `.\activate.ps1` |
+| Windows cmd | `activate.bat` |
+
+Type `exit` to leave.
 
 ### Individual Commands
 
