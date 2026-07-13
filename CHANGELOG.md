@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Windows support** — cross-platform `run.py` launcher (pre-flight checks, backend + frontend startup, whole-tree shutdown on all platforms; `--check` and `--verbose` flags). `run.bat`, `activate.ps1`, `activate.bat` wrappers. Windows Quick Start in README. `run.sh`/`activate.sh` remain for POSIX.
 - **Centralized configuration** — single `config.py` with `pydantic-settings`. All 20+ env vars validated at import time. Removed 6 scattered `load_dotenv()` calls. Required keys crash immediately if missing.
 - **Automated backup** — `scripts/backup.sh` tars ChromaDB, archives, tracking, and profile. `--retain N` (default 7), `--verify` flag. Integrated into Friday ritual.
 - **Data integrity check** — `scripts/check_integrity.sh` validates ChromaDB SQLite integrity, JSONL parse validity, and profile YAML.
