@@ -1,5 +1,7 @@
 """Tests for Phase 4 diagnostics module."""
 
+import httpx
+
 from debug.diagnostics import (
     DiagnosticReport,
     check_chroma_health,
@@ -27,9 +29,13 @@ def test_check_search_api_unreachable():
     assert result is False
 
 
-def test_check_search_api_reachable():
-    """Phase 4: check_search_api returns True for reachable host."""
-    result = check_search_api("Test", "https://httpbin.org/get", timeout=10)
+def test_check_search_api_reachable(monkeypatch):
+    """Phase 4: check_search_api returns True for reachable host (no real network)."""
+    monkeypatch.setattr(
+        "debug.diagnostics.httpx.get",
+        lambda url, timeout: httpx.Response(200, request=httpx.Request("GET", url)),
+    )
+    result = check_search_api("Test", "https://example.com/get", timeout=10)
     assert result is True
 
 
