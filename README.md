@@ -392,5 +392,5 @@ MIT — see [LICENSE](LICENSE).
 ---
 
 <p align="center">
-  Built by <a href="https://github.com/scottmills306">@scottmills306</a>
+  Built by <a href="https://github.com/sgm-audio">@sgm-audio</a>
 </p>

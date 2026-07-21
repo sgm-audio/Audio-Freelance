@@ -33,7 +33,7 @@ services:
 
   # ── FastAPI backend ──
   backend:
-    image: ghcr.io/scottmills306/audio-freelance/backend:latest
+    image: ghcr.io/sgm-audio/audio-freelance/backend:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -55,7 +55,7 @@ services:
 
   # ── Next.js frontend ──
   frontend:
-    image: ghcr.io/scottmills306/audio-freelance/frontend:latest
+    image: ghcr.io/sgm-audio/audio-freelance/frontend:latest
     build:
       context: frontend
       dockerfile: Dockerfile
