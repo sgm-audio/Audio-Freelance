@@ -26,9 +26,15 @@ importers:
       '@sgm-outreach/ingest':
         specifier: workspace:*
         version: link:../ingest
+      '@sgm-outreach/ops':
+        specifier: workspace:*
+        version: link:../ops
       '@sgm-outreach/score':
         specifier: workspace:*
         version: link:../score
+      '@sgm-outreach/send':
+        specifier: workspace:*
+        version: link:../send
     devDependencies:
       '@types/node':
         specifier: ^22.20.1
@@ -106,11 +112,49 @@ importers:
         specifier: ^3.0.9
         version: 3.2.7(@types/node@22.20.1)
 
+  packages/ops:
+    dependencies:
+      '@sgm-outreach/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.1
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.7(@types/node@22.20.1)
+
   packages/score:
     dependencies:
       '@sgm-outreach/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.1
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.7(@types/node@22.20.1)
+
+  packages/send:
+    dependencies:
+      '@sgm-outreach/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.20.1

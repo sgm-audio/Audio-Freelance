@@ -430,21 +430,27 @@ export function insertDraft(
   return draft;
 }
 
-/** Insert or refresh a suppression row (fail-closed send gate). */
-export function addSuppression(
+export function getDraftById(db: OutreachDb, draftId: string): Draft | null {
+  const row = db.prepare("SELECT * FROM drafts WHERE id = ?").get(draftId);
+  return row ? DraftSchema.parse(row) : null;
+}
+
+export function updateDraft(
   db: OutreachDb,
-  email: string,
-  reason: string,
-  at = new Date().toISOString(),
-): void {
-  const normalized = email.trim().toLowerCase();
-  if (!normalized.includes("@")) {
-    throw new Error(`Invalid suppression email: ${email}`);
-  }
+  draftId: string,
+  patch: { subject?: string | null; body?: string },
+): Draft {
+  const existing = getDraftById(db, draftId);
+  if (!existing) throw new Error(`Draft not found: ${draftId}`);
+  const draft = DraftSchema.parse({
+    ...existing,
+    subject: patch.subject !== undefined ? patch.subject : existing.subject,
+    body: patch.body !== undefined ? patch.body : existing.body,
+  });
   db.prepare(
-    `INSERT INTO suppressions (email, reason, at) VALUES (?, ?, ?)
-     ON CONFLICT(email) DO UPDATE SET reason = excluded.reason, at = excluded.at`,
-  ).run(normalized, reason.trim() || "suppressed", at);
+    `UPDATE drafts SET subject = @subject, body = @body WHERE id = @id`,
+  ).run({ id: draft.id, subject: draft.subject, body: draft.body });
+  return draft;
 }
 
 export function transitionLead(
