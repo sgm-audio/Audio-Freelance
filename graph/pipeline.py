@@ -12,12 +12,54 @@ from langgraph.graph import END, START, StateGraph
 
 from graph.state import PipelineState
 from leads.schema import Lead
-from leads.store import archive_batch, check_duplicate, upsert_lead
+from leads.store import (
+    archive_batch,
+    canonicalize_url,
+    check_duplicate,
+    embed_text,
+    texts_are_near_dup,
+    upsert_lead,
+)
 from scoring.profile import load_profile
 from scoring.profile_score import score_against_profile
 from search import run_tier1, run_tier2, run_tier3, run_tier4, run_tier5
-from search.base import RawCandidate
+from search.base import RawCandidate, extract_contact_path
 from search.fetch import fetch_and_extract
+
+
+def dedupe_candidates(candidates: list[RawCandidate], niche: str) -> list[RawCandidate]:
+    """Within-run URL + near-text dedup, then Chroma store duplicate check."""
+    deduped: list[RawCandidate] = []
+    seen_urls: set[str] = set()
+    seen_texts: list[str] = []
+
+    for c in candidates:
+        url_key = canonicalize_url(c.url)
+        if url_key and url_key in seen_urls:
+            continue
+
+        temp = Lead(
+            source=c.source,
+            tier=c.tier,
+            title=c.title,
+            url=c.url,
+            raw_text=c.raw_text or c.snippet,
+            niche=niche,
+            contact_path=c.contact_path,
+        )
+        text = embed_text(temp)
+        if any(texts_are_near_dup(text, prev) for prev in seen_texts):
+            continue
+
+        if check_duplicate(temp) is not None:
+            continue
+
+        if url_key:
+            seen_urls.add(url_key)
+        seen_texts.append(text)
+        deduped.append(c)
+
+    return deduped
 
 
 async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
@@ -78,20 +120,8 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
 
     state["all_candidates"] = all_candidates
 
-    # ── Phase 2: Dedup ──
-    deduped: list[RawCandidate] = []
-    for c in all_candidates:
-        temp = Lead(
-            source=c.source,
-            tier=c.tier,
-            title=c.title,
-            url=c.url,
-            raw_text=c.raw_text or c.snippet,
-            niche=niche,
-        )
-        dup_id = check_duplicate(temp)
-        if dup_id is None:
-            deduped.append(c)
+    # ── Phase 2: Within-run URL + text dedup, then Chroma store dedup ──
+    deduped = dedupe_candidates(all_candidates, niche)
     state["deduped_candidates"] = deduped
 
     # ── Phase 3: Deep fetch (fetch full job descriptions) ──
@@ -102,10 +132,14 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
     for c in deduped:
         # Skip if already has rich content (from ATS APIs)
         if len(c.raw_text) > 500:
+            if not c.contact_path:
+                c.contact_path = extract_contact_path(c.raw_text, c.snippet)
             enriched.append(c)
             continue
 
         if fetched_count >= fetch_budget:
+            if not c.contact_path:
+                c.contact_path = extract_contact_path(c.raw_text, c.snippet)
             enriched.append(c)
             continue
 
@@ -115,10 +149,16 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
             if full_text and len(full_text) > len(c.raw_text):
                 c.raw_text = full_text[:2000]  # cap at 2000 chars
                 fetched_count += 1
+            if not c.contact_path:
+                c.contact_path = extract_contact_path(
+                    full_text or "", c.raw_text, c.snippet
+                )
         except Exception:
             import logging
 
             logging.getLogger("graph").debug("Deep fetch failed, keeping original snippet.")
+            if not c.contact_path:
+                c.contact_path = extract_contact_path(c.raw_text, c.snippet)
 
         enriched.append(c)
 

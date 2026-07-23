@@ -1,0 +1,72 @@
+{
+  "auroradsp.example": {
+    "facts": [
+      { "fact": "Aurora DSP ships the Orbit spatial-audio plugin for macOS and Windows.", "evidence_url": "https://auroradsp.example/" },
+      { "fact": "Aurora DSP says its team has 12 people and builds C++ audio tools in Vancouver.", "evidence_url": "https://auroradsp.example/about" }
+    ],
+    "signals": { "team_size": 12, "shipping_evidence": true, "hiring_signal": false, "segment_hints": ["plugins", "spatial-audio"] }
+  },
+  "beatforge.example": {
+    "facts": [
+      { "fact": "BeatForge 4 is available on the App Store.", "evidence_url": "https://beatforge.example/" },
+      { "fact": "BeatForge describes an eight-person team making mobile instruments.", "evidence_url": "https://beatforge.example/about" }
+    ],
+    "signals": { "team_size": 8, "shipping_evidence": true, "hiring_signal": false, "segment_hints": ["ios-audio", "music-app"] }
+  },
+  "circuitwave.example": {
+    "facts": [
+      { "fact": "CircuitWave says its CW-2 hardware synthesizer is shipping worldwide.", "evidence_url": "https://circuitwave.example/" },
+      { "fact": "CircuitWave builds ARM firmware and low-latency DSP with a 20-person team.", "evidence_url": "https://circuitwave.example/about" }
+    ],
+    "signals": { "team_size": 20, "shipping_evidence": true, "hiring_signal": false, "segment_hints": ["embedded-audio", "hardware"] }
+  },
+  "driftlabs.example": {
+    "facts": [
+      { "fact": "Drift Labs offers an AI-assisted mastering product called Drift Master.", "evidence_url": "https://driftlabs.example/" },
+      { "fact": "Drift Labs says its six-person research team runs models on-device.", "evidence_url": "https://driftlabs.example/about" }
+    ],
+    "signals": { "team_size": 6, "shipping_evidence": true, "hiring_signal": false, "segment_hints": ["ai-audio", "on-device-ml"] }
+  },
+  "echostack.example": {
+    "facts": [
+      { "fact": "EchoStack SDK 2.1 supports Unreal and Unity.", "evidence_url": "https://echostack.example/" },
+      { "fact": "EchoStack describes a 15-person remote team focused on interactive sound.", "evidence_url": "https://echostack.example/about" }
+    ],
+    "signals": { "team_size": 15, "shipping_evidence": true, "hiring_signal": false, "segment_hints": ["game-audio", "middleware"] }
+  },
+  "fluxnote.example": {
+    "facts": [
+      { "fact": "FluxNote Cloud launched an offline playback engine.", "evidence_url": "https://fluxnote.example/" },
+      { "fact": "FluxNote says ten developers and composers work across Canada.", "evidence_url": "https://fluxnote.example/about" }
+    ],
+    "signals": { "team_size": 10, "shipping_evidence": true, "hiring_signal": false, "segment_hints": ["music-notation", "audio-engine"] }
+  },
+  "groovekit.example": {
+    "facts": [
+      { "fact": "GrooveKit Studio ships in VST3, AU, and AAX formats.", "evidence_url": "https://groovekit.example/" },
+      { "fact": "GrooveKit is hiring a contract C++ audio developer for its nine-person team.", "evidence_url": "https://groovekit.example/about" }
+    ],
+    "signals": { "team_size": 9, "shipping_evidence": true, "hiring_signal": true, "segment_hints": ["plugins", "hiring"] }
+  },
+  "harmonicai.example": {
+    "facts": [
+      { "fact": "Harmonic AI says Harmony Engine runs locally without uploading recordings.", "evidence_url": "https://harmonicai.example/" },
+      { "fact": "Harmonic AI describes a team of 14 ML and audio engineers.", "evidence_url": "https://harmonicai.example/about" }
+    ],
+    "signals": { "team_size": 14, "shipping_evidence": true, "hiring_signal": false, "segment_hints": ["generative-music", "on-device-ml"] }
+  },
+  "impulseworks.example": {
+    "facts": [
+      { "fact": "Impulse Works says its IR Field recorder began shipping in May.", "evidence_url": "https://impulseworks.example/" },
+      { "fact": "Impulse Works has a seven-person acoustics and embedded-systems team.", "evidence_url": "https://impulseworks.example/about" }
+    ],
+    "signals": { "team_size": 7, "shipping_evidence": true, "hiring_signal": false, "segment_hints": ["audio-hardware", "embedded-audio"] }
+  },
+  "jambridge.example": {
+    "facts": [
+      { "fact": "JamBridge Desktop supports remote sessions with up to 16 musicians.", "evidence_url": "https://jambridge.example/" },
+      { "fact": "JamBridge says it has 11 network and audio engineers in North America.", "evidence_url": "https://jambridge.example/about" }
+    ],
+    "signals": { "team_size": 11, "shipping_evidence": true, "hiring_signal": false, "segment_hints": ["real-time-audio", "network-audio"] }
+  }
+}

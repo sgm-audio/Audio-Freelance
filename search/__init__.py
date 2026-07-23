@@ -6,7 +6,7 @@ from search.ats import (
     fetch_greenhouse_jobs,
     fetch_lever_jobs,
 )
-from search.base import RawCandidate, SearchResult, web_search
+from search.base import RawCandidate, SearchResult, extract_contact_path, web_search
 from search.fetch import fetch_and_extract, is_aggregator_url, is_job_url
 from search.tier1 import run as run_tier1
 from search.tier2 import run as run_tier2
@@ -18,6 +18,7 @@ __all__ = [
     "RawCandidate",
     "SearchResult",
     "web_search",
+    "extract_contact_path",
     "run_tier1",
     "run_tier2",
     "run_tier3",

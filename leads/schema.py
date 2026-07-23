@@ -89,6 +89,7 @@ class RawCandidate:
     company: str | None = None
     raw_text: str = ""
     tier: int = 1
+    contact_path: str | None = None
 
     def __post_init__(self):
         if not self.raw_text:

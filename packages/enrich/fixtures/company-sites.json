@@ -1,0 +1,72 @@
+{
+  "auroradsp.example": {
+    "pages": {
+      "/": "<html><head><title>Aurora DSP</title></head><body><h1>Real-time spatial audio plugins</h1><p>Our Orbit plugin ships for macOS and Windows.</p></body></html>",
+      "/about": "<html><body><h1>About Aurora DSP</h1><p>Our 12-person team builds C++ audio tools in Vancouver.</p></body></html>",
+      "/contact": "<html><body><h1>Contact</h1><p>Email hello@auroradsp.example for business inquiries.</p></body></html>"
+    }
+  },
+  "beatforge.example": {
+    "pages": {
+      "/": "<html><head><title>BeatForge</title></head><body><h1>Beat-making on iOS</h1><p>BeatForge 4 is available now on the App Store.</p></body></html>",
+      "/about": "<html><body><h1>Our studio</h1><p>Eight musicians and engineers make our mobile instruments.</p></body></html>",
+      "/contact": "<html><body><h1>Contact us</h1><p>Partnerships: partnerships@beatforge.example</p></body></html>"
+    }
+  },
+  "circuitwave.example": {
+    "pages": {
+      "/": "<html><head><title>CircuitWave Audio</title></head><body><h1>Embedded audio platforms</h1><p>The CW-2 hardware synthesizer is shipping worldwide.</p></body></html>",
+      "/about": "<html><body><h1>Engineering</h1><p>We design ARM firmware and low-latency DSP with a team of 20.</p></body></html>",
+      "/contact": "<html><body><h1>Talk to us</h1><p>Business email: sales@circuitwave.example</p></body></html>"
+    }
+  },
+  "driftlabs.example": {
+    "pages": {
+      "/": "<html><head><title>Drift Labs</title></head><body><h1>AI-assisted mastering</h1><p>Drift Master is used by independent producers.</p></body></html>",
+      "/about": "<html><body><h1>About</h1><p>Our six-person research team runs models entirely on-device.</p></body></html>",
+      "/contact": "<html><body><h1>Contact</h1><p>Reach the founders at founders@driftlabs.example.</p></body></html>"
+    }
+  },
+  "echostack.example": {
+    "pages": {
+      "/": "<html><head><title>EchoStack</title></head><body><h1>Audio middleware for games</h1><p>EchoStack SDK 2.1 supports Unreal and Unity.</p></body></html>",
+      "/about": "<html><body><h1>Company</h1><p>Our 15-person remote team specializes in interactive sound.</p></body></html>",
+      "/contact": "<html><body><h1>Contact</h1><p>Licensing questions: licensing@echostack.example</p></body></html>"
+    }
+  },
+  "fluxnote.example": {
+    "pages": {
+      "/": "<html><head><title>FluxNote</title></head><body><h1>Collaborative music notation</h1><p>FluxNote Cloud launched its offline playback engine this year.</p></body></html>",
+      "/about": "<html><body><h1>About FluxNote</h1><p>Ten developers and composers work across Canada.</p></body></html>",
+      "/contact": "<html><body><h1>Contact</h1><p>Say hello at hello@fluxnote.example.</p></body></html>"
+    }
+  },
+  "groovekit.example": {
+    "pages": {
+      "/": "<html><head><title>GrooveKit</title></head><body><h1>Smart drum instruments</h1><p>GrooveKit Studio ships as VST3, AU, and AAX.</p></body></html>",
+      "/about": "<html><body><h1>Team</h1><p>We are hiring a contract C++ audio developer to join our nine-person team.</p></body></html>",
+      "/contact": "<html><body><h1>Work with us</h1><p>Email jobs@groovekit.example about engineering roles.</p></body></html>"
+    }
+  },
+  "harmonicai.example": {
+    "pages": {
+      "/": "<html><head><title>Harmonic AI</title></head><body><h1>Private generative music tools</h1><p>Harmony Engine runs locally without uploading recordings.</p></body></html>",
+      "/about": "<html><body><h1>Research team</h1><p>Fourteen ML and audio engineers build our products.</p></body></html>",
+      "/contact": "<html><body><h1>Contact</h1><p>Enterprise inquiries: enterprise@harmonicai.example</p></body></html>"
+    }
+  },
+  "impulseworks.example": {
+    "pages": {
+      "/": "<html><head><title>Impulse Works</title></head><body><h1>Room capture made portable</h1><p>The IR Field recorder began shipping in May.</p></body></html>",
+      "/about": "<html><body><h1>About us</h1><p>Our seven-person team combines acoustics and embedded systems.</p></body></html>",
+      "/contact": "<html><body><h1>Contact</h1><p>Dealers can email dealers@impulseworks.example.</p></body></html>"
+    }
+  },
+  "jambridge.example": {
+    "pages": {
+      "/": "<html><head><title>JamBridge</title></head><body><h1>Low-latency remote rehearsal</h1><p>JamBridge Desktop supports sessions with up to 16 musicians.</p></body></html>",
+      "/about": "<html><body><h1>Our team</h1><p>Eleven network and audio engineers are based in North America.</p></body></html>",
+      "/contact": "<html><body><h1>Contact JamBridge</h1><p>Studio plans: studios@jambridge.example</p></body></html>"
+    }
+  }
+}

@@ -3,14 +3,16 @@
 import re
 
 from config import settings
-from leads.schema import Lead, LeadStatus, Verdict
+from leads.schema import Lead, LeadStatus
 from scoring.signals import (
     NEGATIVE_SIGNALS,
     POSITIVE_SIGNALS,
     check_hard_skip,
+    classify_verdict,
     extract_signals,
+    is_aggregator_page,
 )
-from search.base import RawCandidate
+from search.base import RawCandidate, extract_contact_path
 
 _HOT_THRESHOLD = settings.hot_threshold
 _WARM_THRESHOLD = settings.warm_threshold
@@ -20,7 +22,6 @@ _HOURLY_FLOOR_CAD = settings.hourly_floor_cad
 
 def _parse_budget(text: str) -> int | None:
     """Extract a budget from raw text, handling $5K shorthand, ranges, and hourly."""
-    # K-notation shorthands: "$5K", "$150K contract", "10k budget", "rate: 3k"
     for pat in [
         r"\$\s*(\d+)\s*k\b",
         r"\b(\d{2,4})\s*k\s*(?:budget|contract|usd|cad|freelance|remote)",
@@ -32,7 +33,6 @@ def _parse_budget(text: str) -> int | None:
             if val >= 500:
                 return val
 
-    # Standard dollar notation
     patterns = [
         r"\$\s*((?:\d{4,10}|\d{1,3}(?:,\d{3})*))(?:\.\d{2})?\s*(?:cad|usd)?",
         r"(\d{4,5})\s*(?:cad|usd|dollars)",
@@ -49,19 +49,10 @@ def _parse_budget(text: str) -> int | None:
     return None
 
 
-def _is_aggregator_page(title: str) -> bool:
-    """Detect directory/listing pages that are not actual job postings.
-
-    Matches patterns like '234 Freelance Audio Engineer jobs in United States'
-    or 'Hire the 69 Best Remote...' that are search result pages, not leads.
-    """
-    if re.search(r"^\d+\s+.*?\b(?:jobs?|positions?)\s+(?:in|across|at)\b", title, re.IGNORECASE):
-        return True
-    if re.search(r"^\d+\s+.*?\b(?:results?|openings?)\b", title, re.IGNORECASE):
-        return True
-    if re.search(r"\bhire\s+the\s+\d+\s+best\b", title, re.IGNORECASE):
-        return True
-    return False
+def _resolve_contact(candidate: RawCandidate) -> str | None:
+    return candidate.contact_path or extract_contact_path(
+        candidate.raw_text, candidate.snippet, candidate.title
+    )
 
 
 def score_candidate(
@@ -71,71 +62,8 @@ def score_candidate(
     hourly_floor: int = _HOURLY_FLOOR_CAD,
 ) -> Lead:
     combined_text = f"{candidate.title} {candidate.snippet} {candidate.raw_text}"
-
-    # Step 0: Aggregator / listing-page guard
-    if _is_aggregator_page(candidate.title):
-        return Lead(
-            source=candidate.source,
-            tier=candidate.tier,
-            title=candidate.title,
-            company=candidate.company,
-            url=candidate.url,
-            raw_text=candidate.raw_text,
-            niche=niche,
-            signals={"aggregator_page": -50},
-            score=-50,
-            verdict="COLD",
-            status=LeadStatus.COLD,
-        )
-
-    # Step 1: Hard skip
-    if check_hard_skip(combined_text):
-        return Lead(
-            source=candidate.source,
-            tier=candidate.tier,
-            title=candidate.title,
-            company=candidate.company,
-            url=candidate.url,
-            raw_text=candidate.raw_text,
-            niche=niche,
-            signals={"hard_skip": -999},
-            score=0,
-            verdict="SKIP",
-            status=LeadStatus.SKIPPED,
-        )
-
-    # Step 2: Extract signals
-    signals: dict[str, int] = {}
-    for name, points in extract_signals(combined_text, POSITIVE_SIGNALS).items():
-        signals[name] = points
-    for name, points in extract_signals(combined_text, NEGATIVE_SIGNALS).items():
-        signals[name] = points
-
-    # Step 3: Budget
-    budget = _parse_budget(combined_text)
-    if budget is not None:
-        if budget >= min_rate:
-            signals["budget_above_floor"] = 10
-        else:
-            signals["budget_below_floor"] = -15
-
-    # Step 4: Verdict
-    total = sum(signals.values())
-
-    if total >= _HOT_THRESHOLD:
-        verdict: Verdict = "HOT"
-        status = LeadStatus.HOT
-    elif total >= _WARM_THRESHOLD:
-        verdict = "WARM"
-        status = LeadStatus.WARM
-    elif total > -500:
-        verdict = "COLD"
-        status = LeadStatus.COLD
-    else:
-        verdict = "SKIP"
-        status = LeadStatus.SKIPPED
-
-    return Lead(
+    contact = _resolve_contact(candidate)
+    base = dict(
         source=candidate.source,
         tier=candidate.tier,
         title=candidate.title,
@@ -143,6 +71,50 @@ def score_candidate(
         url=candidate.url,
         raw_text=candidate.raw_text,
         niche=niche,
+        contact_path=contact,
+    )
+
+    if is_aggregator_page(candidate.title):
+        return Lead(
+            **base,
+            signals={"aggregator_page": -50},
+            score=-50,
+            verdict="COLD",
+            status=LeadStatus.COLD,
+        )
+
+    if check_hard_skip(combined_text):
+        return Lead(
+            **base,
+            signals={"hard_skip": -999},
+            score=0,
+            verdict="SKIP",
+            status=LeadStatus.SKIPPED,
+        )
+
+    signals: dict[str, int] = {}
+    for name, points in extract_signals(combined_text, POSITIVE_SIGNALS).items():
+        signals[name] = points
+    for name, points in extract_signals(combined_text, NEGATIVE_SIGNALS).items():
+        signals[name] = points
+
+    budget = _parse_budget(combined_text)
+    if budget is not None:
+        if budget >= min_rate:
+            signals["budget_above_floor"] = 10
+        else:
+            signals["budget_below_floor"] = -15
+
+    total = sum(signals.values())
+    verdict, status = classify_verdict(
+        signals,
+        total,
+        hot_threshold=_HOT_THRESHOLD,
+        warm_threshold=_WARM_THRESHOLD,
+    )
+
+    return Lead(
+        **base,
         signals=signals,
         score=total,
         verdict=verdict,

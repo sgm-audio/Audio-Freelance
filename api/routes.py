@@ -331,16 +331,28 @@ async def rate_work(task_description: str, estimated_hours: int):
 
 
 @router.post("/outreach/{lead_id}")
-async def generate_outreach_draft(lead_id: str, template_key: str = "A_plugin_contract"):
-    """Generate an outreach draft for a lead using a template."""
-    from generate.outreach import generate_outreach
+async def generate_outreach_draft(
+    lead_id: str,
+    template_key: str | None = None,
+):
+    """Generate an outreach draft for a lead (draft only — never auto-sends)."""
+    from generate.outreach import TEMPLATES, generate_outreach, template_for_niche
 
     lead = get_lead_by_id(lead_id)
     if lead is None:
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    result = generate_outreach(lead, template_key)
-    return result
+    key = template_key or template_for_niche(lead.niche)
+    if key not in TEMPLATES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown template '{key}'. Available: {', '.join(TEMPLATES)}",
+        )
+
+    try:
+        return generate_outreach(lead, key)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/proposal")

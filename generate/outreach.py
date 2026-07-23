@@ -73,6 +73,55 @@ P.S. {benchmark_link}""",
 }
 
 
+def _default_context(lead: Lead) -> dict:
+    """Fill template placeholders from lead fields + shipped asset proof.
+
+    Drafts are for human edit — greeting defaults to 'there' when no contact name exists.
+    """
+    registry = _get_registry()
+    shipped = [a for a in registry.all().values() if a.status == "shipped"]
+    proof = shipped[0] if shipped else None
+    niche = lead.niche.replace("_", " ")
+    company = lead.company or "your team"
+    title = lead.title or niche
+    observation = (lead.raw_text or title).strip()
+    if len(observation) > 160:
+        observation = observation[:157] + "..."
+    link = proof.proof if proof else lead.url
+    asset_proof = proof.pitch_value if proof else "shipped real-time audio tooling"
+
+    return {
+        "name": "there",
+        "company": company,
+        "format": "VST3/CLAP",
+        "tech": niche,
+        "context": title,
+        "asset_proof": asset_proof,
+        "demo_link": link,
+        "daw": "REAPER",
+        "specific_repetitive_task": title,
+        "script_demo_link": link,
+        "platform": "PC/console",
+        "game": title,
+        "benchmark_link": link,
+        "product_area": niche,
+        "specific_observation_about_their_product_or_recent_post": observation
+        or f"your work at {company}",
+    }
+
+
+def template_for_niche(niche: str) -> str:
+    """Pick a default template key from lead niche."""
+    mapping = {
+        "plugin_dev": "A_plugin_contract",
+        "rust_audio": "A_plugin_contract",
+        "reaper_scripts": "B_reaper_automation",
+        "game_audio_dev": "C_game_audio",
+        "audio_ml": "D_cold_outbound",
+    }
+    return mapping.get(niche, "A_plugin_contract")
+
+
 def generate_outreach(
     lead: Lead,
     template_key: str = "A_plugin_contract",
@@ -83,17 +132,15 @@ def generate_outreach(
     Validates all asset claims against the registry before returning.
     Logs the draft to the outreach ChromaDB collection.
     """
-    if context is None:
-        context = {}
-
     template = TEMPLATES.get(template_key)
     if template is None:
         raise ValueError(
             f"Unknown template '{template_key}'. Available: {', '.join(TEMPLATES.keys())}"
         )
 
-    # Fill template with context
-    draft = template.format(**context)
+    # Caller overrides win over lead-derived defaults
+    filled = {**_default_context(lead), **(context or {})}
+    draft = template.format(**filled)
 
     # Pre-flight claim validation
     registry = _get_registry()

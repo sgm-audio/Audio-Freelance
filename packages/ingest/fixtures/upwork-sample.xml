@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Upwork Saved Search — Audio DSP</title>
+    <item>
+      <title>Real-time C++ DSP engineer for VST3 plugin</title>
+      <link>https://www.upwork.com/jobs/~0123456789abcdef</link>
+      <guid>upwork-job-001</guid>
+      <description>Need a freelancer for real-time audio DSP in C++ / JUCE. VST and AUv3 targets.</description>
+    </item>
+    <item>
+      <title>Logo design for bakery</title>
+      <link>https://www.upwork.com/jobs/~logo-bakery</link>
+      <guid>upwork-job-002</guid>
+      <description>Simple logo, no music or sound design work.</description>
+    </item>
+    <item>
+      <title>iOS AUv3 synth engine (Rust or C++)</title>
+      <link>https://www.upwork.com/jobs/~auv3-ios</link>
+      <guid>upwork-job-003</guid>
+      <description>Contract: build on-device audio engine with real-time constraints.</description>
+    </item>
+  </channel>
+</rss>

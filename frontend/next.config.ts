@@ -8,10 +8,11 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   async rewrites() {
+    // Only proxy /api/v1/* to FastAPI so Next handlers like /api/outreach stay local
     return [
       {
-        source: "/api/:path*",
-        destination: `http://${API_HOST}:8080/api/:path*`,
+        source: "/api/v1/:path*",
+        destination: `http://${API_HOST}:8080/api/v1/:path*`,
       },
     ];
   },
