@@ -135,12 +135,23 @@ export async function sendApprovedLead(
     text,
   });
 
-  transitionLead(db, lead.id, "SENT", {
+  // Followup drafts land in FOLLOWUP_*/NURTURE; initial outreach → SENT.
+  const nextState =
+    draft.model === "followup-day4"
+      ? ("FOLLOWUP_1" as const)
+      : draft.model === "followup-day10"
+        ? ("FOLLOWUP_2" as const)
+        : draft.model === "followup-day60"
+          ? ("NURTURE" as const)
+          : ("SENT" as const);
+
+  transitionLead(db, lead.id, nextState, {
     resend_id: result.id,
     to,
     intended_to: intended,
     staging,
     subject,
+    draft_model: draft.model,
   });
 
   return {

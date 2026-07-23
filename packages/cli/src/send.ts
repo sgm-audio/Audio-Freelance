@@ -42,7 +42,20 @@ export async function runSendCommand(argv: string[]): Promise<void> {
   mkdirSync(dirname(dbPath), { recursive: true });
   const db = openAndMigrate(dbPath);
   try {
-    const config = loadSendConfig();
+    let config;
+    try {
+      config = loadSendConfig();
+    } catch (err) {
+      console.error(
+        "BLOCKER: send config invalid.",
+        err instanceof Error ? err.message : err,
+      );
+      console.error(
+        "Need: RESEND_API_KEY (or SGM_OUTREACH_UNSUB_SECRET ≥8 chars), and if SGM_OUTREACH_STAGING=1 also SGM_OUTREACH_SINK_EMAIL.",
+      );
+      process.exitCode = 1;
+      return;
+    }
     if (listenUnsub) {
       startUnsubscribeServer({
         db,
