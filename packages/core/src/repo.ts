@@ -18,7 +18,11 @@ import {
   type LeadState,
   type Suppression,
 } from "./schemas.js";
-import { assertTransition, isTerminal } from "./state-machine.js";
+import {
+  assertTransition,
+  canTransition,
+  isTerminal,
+} from "./state-machine.js";
 
 /** Normalize a company website/domain for dedupe. Returns null if unusable. */
 export function normalizeDomain(raw: string): string | null {
@@ -373,7 +377,7 @@ export function unsubscribeEmail(
       for (const row of leads) {
         const state = LeadStateSchema.parse(row.state);
         if (isTerminal(state)) continue;
-        if (state === "UNSUBSCRIBED") continue;
+        if (!canTransition(state, "UNSUBSCRIBED")) continue;
         transitionLead(db, row.id, "UNSUBSCRIBED", {
           reason: "unsubscribe",
           email: normalized,
