@@ -39,6 +39,8 @@ packages/*/dist/
 packages/*/node_modules/
 data/outreach.sqlite
 data/outreach.sqlite-*
+data/run-*.log
+data/run-launcher-*.txt
 inbox/*.csv
 !inbox/.gitkeep
 !inbox/README.md
