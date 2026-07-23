@@ -10,6 +10,7 @@ M0–M2 package sources restored under `packages/{core,ingest,enrich,score,cli}`
 | M1 ingest | Done |
 | M2 enrich + score | Done |
 | M0 CLI: status / pause / resume / ingest / enrich / score | Done |
+| **M4 send** (`packages/send`, `sgm-outreach send`) | Done (sibling) |
 | **M5 metrics** (`sgm-outreach metrics`) | Done — `packages/ops` |
 | **M5 webhooks** (reply → HUMAN, bounce → BOUNCED + suppression) | Done — `sgm-outreach webhook` |
 | **M5 dry-run** (10 leads, staging mocks, suppression proof) | Done — `sgm-outreach dry-run` / `scripts/outreach-dry-run.mjs` |
@@ -22,9 +23,8 @@ M0–M2 package sources restored under `packages/{core,ingest,enrich,score,cli}`
 |---|---|
 | M3 draft (`packages/draft`) | Empty scaffold — implement |
 | M3 approve (`packages/approve`) | Empty scaffold — implement |
-| M4 send (Resend + CASL + unsubscribe) | Not started |
-| M4 LinkedIn / Upwork paste queues | Not started |
-| M4 follow-up cadence | Not started |
+| M4 LinkedIn / Upwork paste queues | Not started / sibling |
+| M4 follow-up cadence | Not started / sibling |
 | Full SoT restore | `OUTREACH_BUILD_SPEC.md` is currently a stub — recover from backup if needed |
 
 ## Operator entry

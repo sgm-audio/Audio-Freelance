@@ -3,6 +3,7 @@ import { runDryRunCommand } from "./dry-run.js";
 import { runEnrichCommand, runScoreCommand } from "./enrich.js";
 import { runAddCompanyCommand, runIngestCommand } from "./ingest.js";
 import { runMetricsCommand } from "./metrics.js";
+import { runSendCommand } from "./send.js";
 import {
   formatStatus,
   loadStatus,
@@ -22,6 +23,7 @@ Commands:
   add-company    Manually add a company + NEW lead
   enrich         Scrape + LLM facts + contacts (NEW → ENRICHED)
   score          Deterministic scoring (ENRICHED → SCORED)
+  send           Send APPROVED email leads via Resend (CASL + suppressions)
   metrics        Sent / replies / bounces by day + segment
   webhook        Reply/bounce receiver (serve | handle)
   dry-run        Staging dry-run: 10 fixture leads, mock send, suppression proof
@@ -47,6 +49,12 @@ enrich options:
 score options:
   --limit <n>       Max ENRICHED leads to score (default: 100)
   --db <path>       SQLite path
+
+send options:
+  --limit <n>       Max APPROVED email leads to send (default: 50)
+  --db <path>       SQLite path
+  --listen-unsub    Also serve GET /unsubscribe (port via --port, default 8791)
+  --port <n>        Unsubscribe listen port
 
 metrics options:
   --days <n>        Lookback window (default: 30)
@@ -96,6 +104,10 @@ async function main(argv: string[]): Promise<void> {
     }
     case "score": {
       runScoreCommand(argv);
+      return;
+    }
+    case "send": {
+      await runSendCommand(argv);
       return;
     }
     case "metrics": {

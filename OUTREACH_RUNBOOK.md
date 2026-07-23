@@ -28,7 +28,7 @@ docker compose --profile outreach up outreach
 | Score | `pnpm sgm-outreach score` | Deterministic; no LLM |
 | Draft | TBD — `packages/draft` (M3) | Email drafts only; LinkedIn = draft/paste, never auto-send |
 | Approve | TBD — `packages/approve` (M3) | Human gate → `PENDING_APPROVAL` / `APPROVED` |
-| Send | TBD — `packages/send` (M4) | Email via Resend; suppression + pause fail closed |
+| Send | `pnpm sgm-outreach send` | Email via Resend; suppression + pause fail closed |
 | Follow-up | TBD — `packages/followup` (M4) | Cadence drafts back through approval |
 
 Status / kill switch (live now):

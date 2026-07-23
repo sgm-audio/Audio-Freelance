@@ -242,10 +242,12 @@ export function handleWebhookPayload(
   const simple = SimpleWebhookSchema.safeParse(raw);
   if (simple.success) {
     if (simple.data.kind === "reply") {
-      return handleReply(db, simple.data.email, simple.data.lead_id);
+      return simple.data.lead_id
+        ? handleReply(db, simple.data.email, simple.data.lead_id)
+        : handleReply(db, simple.data.email);
     }
     return handleBounce(db, simple.data.email, {
-      leadId: simple.data.lead_id,
+      ...(simple.data.lead_id ? { leadId: simple.data.lead_id } : {}),
       reason: simple.data.reason ?? "bounce",
     });
   }
@@ -261,7 +263,10 @@ export function handleWebhookPayload(
       error: `Ignored Resend event type: ${resend.data.type}`,
     };
   }
-  const email = pickEmailFromResend(resend.data.type, resend.data.data);
+  const email = pickEmailFromResend(resend.data.type, {
+    ...(resend.data.data.to ? { to: resend.data.data.to } : {}),
+    ...(resend.data.data.from ? { from: resend.data.data.from } : {}),
+  });
   if (!email) {
     return { ok: false, error: "Webhook missing email address" };
   }
