@@ -1,11 +1,51 @@
 """Shared search utilities with Tavily → Serper → Firecrawl fallback chain."""
 
+import re
 from dataclasses import dataclass
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from config import settings
+
+_MAILTO_RE = re.compile(r"mailto:([^\s\"'<>?]+)", re.IGNORECASE)
+_EMAIL_RE = re.compile(
+    r"(?<![/\w.-])([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b"
+)
+# Skip noise emails from CDNs, trackers, placeholders
+_EMAIL_SKIP_SUBSTR = (
+    "example.com",
+    "sentry.io",
+    "wixpress",
+    "schema.org",
+    "godaddy",
+    "2x.png",
+    ".png",
+    ".jpg",
+    ".gif",
+    ".svg",
+)
+
+
+def extract_contact_path(*parts: str, apply_url: str | None = None) -> str | None:
+    """Best-effort contact path: mailto/email from text, else ATS apply URL."""
+    for part in parts:
+        if not part:
+            continue
+        m = _MAILTO_RE.search(part)
+        if m:
+            return f"mailto:{m.group(1).rstrip('.,;')}"
+        for em in _EMAIL_RE.finditer(part):
+            email = em.group(1).rstrip(".,;")
+            low = email.lower()
+            if any(s in low for s in _EMAIL_SKIP_SUBSTR):
+                continue
+            return email
+    if apply_url:
+        url = apply_url.strip()
+        if url.startswith("http://") or url.startswith("https://"):
+            return url
+    return None
 
 
 @dataclass
@@ -29,6 +69,7 @@ class RawCandidate:
     company: str | None = None
     raw_text: str = ""
     tier: int = 1
+    contact_path: str | None = None
 
     def __post_init__(self):
         if not self.raw_text:

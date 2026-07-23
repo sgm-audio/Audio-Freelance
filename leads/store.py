@@ -8,7 +8,9 @@ import json
 import re
 import uuid
 from datetime import UTC, datetime, timedelta
+from difflib import SequenceMatcher
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from config import settings
 from leads.schema import Lead, LeadStatus
@@ -40,6 +42,49 @@ _allow_test_source: bool = settings.leads_allow_test_leads
 _leads_collection = None
 _outreach_collection = None
 _initialized = False
+
+_TRACKING_QUERY_KEYS = frozenset({"fbclid", "gclid", "mc_cid", "mc_eid", "ref", "source"})
+
+
+def canonicalize_url(url: str) -> str:
+    """Normalize URL for within-run / cross-source dedup keys."""
+    url = (url or "").strip()
+    if not url:
+        return ""
+    try:
+        p = urlparse(url)
+    except Exception:
+        return url.lower()
+    scheme = (p.scheme or "https").lower()
+    netloc = (p.netloc or "").lower()
+    if netloc.startswith("www."):
+        netloc = netloc[4:]
+    path = (p.path or "").rstrip("/")
+    kept = [
+        (k, v)
+        for k, v in parse_qsl(p.query, keep_blank_values=True)
+        if not k.lower().startswith("utm_") and k.lower() not in _TRACKING_QUERY_KEYS
+    ]
+    query = urlencode(kept)
+    return urlunparse((scheme, netloc, path, "", query, ""))
+
+
+def texts_are_near_dup(
+    a: str,
+    b: str,
+    threshold: float | None = None,
+) -> bool:
+    """Cheap within-run semantic near-dup check on embed_text strings.
+
+    # ponytail: SequenceMatcher ratio, not chroma cosine — upgrade to batch
+    # embeddings if false positives climb above noise.
+    """
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    thresh = DEDUP_SIMILARITY_THRESHOLD if threshold is None else threshold
+    return SequenceMatcher(None, a, b).ratio() >= thresh
 
 
 def check_ollama_available() -> bool:

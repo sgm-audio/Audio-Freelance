@@ -67,7 +67,35 @@ services:
     depends_on:
       - backend
 
+  # ── SGM Outreach Engine (OUTREACH_BUILD_SPEC) — profile: outreach ──
+  outreach:
+    profiles: ["outreach"]
+    build:
+      context: .
+      dockerfile: packages/cli/Dockerfile
+    environment:
+      - SGM_OUTREACH_DB=/data/outreach.sqlite
+      - NODE_ENV=production
+    volumes:
+      - outreach_data:/data
+      - ./inbox:/app/inbox:ro
+      - ./config:/app/config:ro
+    command: ["node", "packages/cli/dist/bin.js", "status"]
+
+  n8n:
+    profiles: ["outreach"]
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_PORT=5678
+      - GENERIC_TIMEZONE=America/Vancouver
+    volumes:
+      - n8n_data:/home/node/.n8n
+
 volumes:
   ollama_data:
   chroma_data:
   lead_data:
+  outreach_data:
+  n8n_data:
