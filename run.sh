@@ -54,19 +54,19 @@ else
   echo -e "${YELLOW}[WARN]${NC} ollama not found — AI features will fail"
 fi
 
-# .env
+# .env (optional for boot — API keys only)
 if [ -f "$ROOT/.env" ]; then
   vlog "${GREEN}[OK]${NC} .env exists"
 else
-  echo -e "${RED}[MISSING]${NC} .env file not found — copy .env.example if it exists"
-  failures=$((failures + 1))
+  echo -e "${YELLOW}[WARN]${NC} .env missing — copy .env.example for API keys; frontend will still start"
 fi
 
-# frontend node_modules
-if [ -d "$ROOT/frontend/node_modules" ]; then
-  vlog "${GREEN}[OK]${NC} frontend/node_modules exists"
+# frontend Next.js binary (hard requirement)
+if [ -f "$ROOT/frontend/node_modules/next/dist/bin/next" ]; then
+  vlog "${GREEN}[OK]${NC} frontend Next.js binary present"
 else
-  echo -e "${YELLOW}[WARN]${NC} frontend/node_modules missing — run: cd frontend && npm install"
+  echo -e "${RED}[MISSING]${NC} frontend deps — run: cd frontend && npm install"
+  failures=$((failures + 1))
 fi
 
 # port conflict detection
