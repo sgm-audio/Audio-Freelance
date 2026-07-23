@@ -15,14 +15,42 @@ importers:
         specifier: ^3.0.9
         version: 3.2.7(@types/node@22.20.1)
 
-  packages/cli:
+  packages/approve:
     dependencies:
       '@sgm-outreach/core':
         specifier: workspace:*
         version: link:../core
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.1
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.7(@types/node@22.20.1)
+
+  packages/cli:
+    dependencies:
+      '@sgm-outreach/approve':
+        specifier: workspace:*
+        version: link:../approve
+      '@sgm-outreach/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sgm-outreach/draft':
+        specifier: workspace:*
+        version: link:../draft
       '@sgm-outreach/enrich':
         specifier: workspace:*
         version: link:../enrich
+      '@sgm-outreach/followup':
+        specifier: workspace:*
+        version: link:../followup
       '@sgm-outreach/ingest':
         specifier: workspace:*
         version: link:../ingest
@@ -68,6 +96,25 @@ importers:
         specifier: ^3.0.9
         version: 3.2.7(@types/node@22.20.1)
 
+  packages/draft:
+    dependencies:
+      '@sgm-outreach/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.1
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.7(@types/node@22.20.1)
+
   packages/enrich:
     dependencies:
       '@sgm-outreach/core':
@@ -76,6 +123,25 @@ importers:
       playwright:
         specifier: ^1.61.1
         version: 1.61.1
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.1
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.7(@types/node@22.20.1)
+
+  packages/followup:
+    dependencies:
+      '@sgm-outreach/core':
+        specifier: workspace:*
+        version: link:../core
       zod:
         specifier: ^3.25.76
         version: 3.25.76

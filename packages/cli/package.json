@@ -11,8 +11,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@sgm-outreach/approve": "workspace:*",
     "@sgm-outreach/core": "workspace:*",
+    "@sgm-outreach/draft": "workspace:*",
     "@sgm-outreach/enrich": "workspace:*",
+    "@sgm-outreach/followup": "workspace:*",
     "@sgm-outreach/ingest": "workspace:*",
     "@sgm-outreach/ops": "workspace:*",
     "@sgm-outreach/score": "workspace:*",
