@@ -8,15 +8,18 @@ seniority, and contract type.
 
 import re
 
-from leads.schema import Lead, LeadStatus, Verdict
+from config import settings
+from leads.schema import Lead, LeadStatus
 from scoring.profile import Profile
 from scoring.signals import (
     NEGATIVE_SIGNALS,
     POSITIVE_SIGNALS,
     check_hard_skip,
+    classify_verdict,
     extract_signals,
+    is_aggregator_page,
 )
-from search.base import RawCandidate
+from search.base import RawCandidate, extract_contact_path
 
 
 def _text_lower(*parts: str) -> str:
@@ -49,17 +52,34 @@ def score_against_profile(
     """
     combined_text = _text_lower(candidate.title, candidate.snippet, candidate.raw_text)
     signals: dict[str, int] = {}
+    contact = candidate.contact_path or extract_contact_path(
+        candidate.raw_text, candidate.snippet, candidate.title
+    )
+    base = dict(
+        source=candidate.source,
+        tier=candidate.tier,
+        title=candidate.title,
+        company=candidate.company,
+        url=candidate.url,
+        raw_text=candidate.raw_text,
+        niche=niche,
+        contact_path=contact,
+    )
+
+    # ── Step 0: Aggregator / listing-page guard (same as score_candidate) ──
+    if is_aggregator_page(candidate.title):
+        return Lead(
+            **base,
+            signals={"aggregator_page": -50},
+            score=-50,
+            verdict="COLD",
+            status=LeadStatus.COLD,
+        )
 
     # ── Step 1: Hard skip on dealbreakers (profile-driven) ──
     if profile.dealbreakers and _any_match(combined_text, profile.dealbreakers):
         return Lead(
-            source=candidate.source,
-            tier=candidate.tier,
-            title=candidate.title,
-            company=candidate.company,
-            url=candidate.url,
-            raw_text=candidate.raw_text,
-            niche=niche,
+            **base,
             signals={"dealbreaker": -999},
             score=0,
             verdict="SKIP",
@@ -69,13 +89,7 @@ def score_against_profile(
     # ── Step 2: Hard skip on excluded niches ──
     if profile.excluded_niches and niche in profile.excluded_niches:
         return Lead(
-            source=candidate.source,
-            tier=candidate.tier,
-            title=candidate.title,
-            company=candidate.company,
-            url=candidate.url,
-            raw_text=candidate.raw_text,
-            niche=niche,
+            **base,
             signals={"excluded_niche": -999},
             score=0,
             verdict="SKIP",
@@ -88,13 +102,7 @@ def score_against_profile(
         for blocked in profile.blocked_companies:
             if blocked.lower() in company_text.lower():
                 return Lead(
-                    source=candidate.source,
-                    tier=candidate.tier,
-                    title=candidate.title,
-                    company=candidate.company,
-                    url=candidate.url,
-                    raw_text=candidate.raw_text,
-                    niche=niche,
+                    **base,
                     signals={"blocked_company": -999},
                     score=0,
                     verdict="SKIP",
@@ -104,13 +112,7 @@ def score_against_profile(
     # ── Step 4: Generic hard-skip keywords (revenue share, equity only, etc.) ──
     if check_hard_skip(combined_text):
         return Lead(
-            source=candidate.source,
-            tier=candidate.tier,
-            title=candidate.title,
-            company=candidate.company,
-            url=candidate.url,
-            raw_text=candidate.raw_text,
-            niche=niche,
+            **base,
             signals={"hard_skip": -999},
             score=0,
             verdict="SKIP",
@@ -168,30 +170,17 @@ def score_against_profile(
                 else:
                     signals["rate_below_floor"] = -15
 
-    # ── Step 7: Verdict ──
+    # ── Step 7: Conjunctive verdict (tech + intent; HOT also needs fit) ──
     total = sum(signals.values())
-
-    if total >= 10:
-        verdict: Verdict = "HOT"
-        status = LeadStatus.HOT
-    elif total >= 5:
-        verdict = "WARM"
-        status = LeadStatus.WARM
-    elif total > -500:
-        verdict = "COLD"
-        status = LeadStatus.COLD
-    else:
-        verdict = "SKIP"
-        status = LeadStatus.SKIPPED
+    verdict, status = classify_verdict(
+        signals,
+        total,
+        hot_threshold=settings.hot_threshold,
+        warm_threshold=settings.warm_threshold,
+    )
 
     return Lead(
-        source=candidate.source,
-        tier=candidate.tier,
-        title=candidate.title,
-        company=candidate.company,
-        url=candidate.url,
-        raw_text=candidate.raw_text,
-        niche=niche,
+        **base,
         signals=signals,
         score=total,
         verdict=verdict,

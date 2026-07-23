@@ -1,0 +1,44 @@
+{
+  "claims": [
+    {
+      "id": "trackclear_reapack",
+      "text": "TrackClear is live on ReaPack",
+      "match": [
+        "TrackClear",
+        "TrackClear is live on ReaPack",
+        "live on ReaPack"
+      ],
+      "evidence": "Public ReaPack listing for SGM TrackClear (verify before citing version numbers)"
+    },
+    {
+      "id": "portamento_engine_contract",
+      "text": "Portamento engine contract in progress for an iOS synth client",
+      "match": [
+        "portamento engine",
+        "portamento engine contract",
+        "portamento"
+      ],
+      "evidence": "Active client engagement - in progress only; never claim shipped, released, or App Store live"
+    },
+    {
+      "id": "makingmadi_operating",
+      "text": "makingmadi.com built and operating",
+      "match": [
+        "makingmadi.com",
+        "makingmadi",
+        "built and operating"
+      ],
+      "evidence": "https://makingmadi.com (live site; do not invent traffic or revenue figures)"
+    },
+    {
+      "id": "years_audio_17",
+      "text": "17 years professional audio engineering",
+      "match": [
+        "17 years",
+        "17y",
+        "seventeen years professional audio"
+      ],
+      "evidence": "Career history / Berklee background; do not inflate years or invent employers"
+    }
+  ]
+}

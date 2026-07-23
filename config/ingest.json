@@ -1,0 +1,7 @@
+{
+  "_comments": {
+    "upwork_rss_urls": "Paste Upwork saved-search RSS feed URLs here (Jobs → Saved Searches → RSS). Example shape: https://www.upwork.com/ab/feed/jobs/rss?securityToken=REDACTED&userUid=REDACTED&orgUid=REDACTED. Leave empty until you have real feeds — never commit live tokens."
+  },
+  "upwork_rss_urls": [],
+  "inbox_dir": "./inbox"
+}

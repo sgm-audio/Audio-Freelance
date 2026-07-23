@@ -33,6 +33,16 @@ frontend/.next/
 frontend/node_modules/
 frontend/out/
 
+# SGM Outreach Engine (pnpm monorepo)
+node_modules/
+packages/*/dist/
+packages/*/node_modules/
+data/outreach.sqlite
+data/outreach.sqlite-*
+inbox/*.csv
+!inbox/.gitkeep
+!inbox/README.md
+
 # Environment
 .env*
 !.env.example
@@ -53,3 +63,9 @@ Thumbs.db
 *.cert
 *.p12
 *.pfx
+
+# Graphify / local extract junk
+graphify-out/
+_extract_*
+_spec_*
+

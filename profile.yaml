@@ -1,26 +1,64 @@
+# Seeded from asset_registry.yml + config rate floors (session 1).
+# Edit via Preferences UI or this file. Empty fields = no filter.
 identity:
-  name: ''
-  location: ''
-  timezone: ''
+  name: Scott
+  location: Vancouver, BC
+  timezone: America/Vancouver
   remote_ok: true
   relocation_ok: false
 skills:
-  languages: []
-  frameworks: []
-  domains: []
-  specializations: []
+  languages:
+    - c++
+    - rust
+    - lua
+    - python
+  frameworks:
+    - juce
+    - nih-plug
+    - clap
+    - reascript
+    - onnx
+  domains:
+    - real-time audio dsp
+    - plugin development
+    - neural audio
+    - reaper scripting
+  specializations:
+    - mamba
+    - ssm
+    - clap
+    - ara
+    - on-device ml
 preferences:
-  niches: []
+  niches:
+    - plugin_dev
+    - reaper_scripts
+    - rust_audio
+    - audio_ml
+    - game_audio_dev
   excluded_niches: []
-  dealbreakers: []
-  rate_floor: 0
-  hourly_floor: 0
-  contract_types: []
+  dealbreakers:
+    - revenue share
+    - equity only
+    - unpaid
+    - for exposure
+    - sweat equity
+  rate_floor: 3000
+  hourly_floor: 150
+  contract_types:
+    - contract
+    - freelance
+    - fixed-price
 experience:
-  years: null
-  seniority: []
+  years: 17
+  seniority:
+    - senior
+    - lead
 portfolio:
   github: ''
   website: ''
-  notable_work: []
+  notable_work:
+    - Mamba/SSM RT audio inference benchmark
+    - REAPER SGM ReaPack extension
+    - CLAP spec MCP tooling
   portfolio_files: []

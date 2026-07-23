@@ -128,6 +128,52 @@ export async function fetchLeads(status?: string): Promise<{ count: number; lead
   return get(`/leads${qs}`);
 }
 
+export async function updateLeadStatus(
+  leadId: string,
+  newStatus: string,
+): Promise<{ status: string; lead_id: string; new_status: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(`${API}/leads/${leadId}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ new_status: newStatus }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    clearFetchCache();
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ── Outreach drafts (never auto-send) ──
+
+export type OutreachTemplateKey =
+  | "A_plugin_contract"
+  | "B_reaper_automation"
+  | "C_game_audio"
+  | "D_cold_outbound";
+
+export interface OutreachDraft {
+  lead_id: string;
+  template: string;
+  draft: string;
+  generated_at: string;
+  violations: string[];
+  safe_to_send: boolean;
+}
+
+export async function generateOutreach(
+  leadId: string,
+  templateKey?: OutreachTemplateKey,
+): Promise<OutreachDraft> {
+  const qs = templateKey ? `?template_key=${encodeURIComponent(templateKey)}` : "";
+  return post(`/outreach/${leadId}${qs}`, 30000);
+}
+
 export async function fetchMarket(): Promise<MarketReport> {
   return get("/market", 60000);
 }
