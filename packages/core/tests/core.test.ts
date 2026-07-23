@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { openAndMigrate } from "../src/db.js";
 import {
+  addSuppression,
   ensureLead,
   findCompanyByDomain,
   getPipelineStatus,
@@ -81,6 +82,18 @@ describe("sqlite migrations + status", () => {
     ).run("out@example.com", "unsubscribe", new Date().toISOString());
     expect(isEmailSuppressed(db, "OUT@example.com")).toBe(true);
     expect(isEmailSuppressed(db, "other@example.com")).toBe(false);
+    db.close();
+  });
+
+  it("addSuppression upserts and normalizes email", () => {
+    const { db } = tempDb();
+    addSuppression(db, "  Bounce@Example.com ", "bounce");
+    expect(isEmailSuppressed(db, "bounce@example.com")).toBe(true);
+    addSuppression(db, "bounce@example.com", "hard-bounce");
+    const row = db
+      .prepare("SELECT reason FROM suppressions WHERE email = ?")
+      .get("bounce@example.com") as { reason: string };
+    expect(row.reason).toBe("hard-bounce");
     db.close();
   });
 

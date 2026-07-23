@@ -1,12 +1,15 @@
 #!/usr/bin/env node
+import { runDryRunCommand } from "./dry-run.js";
 import { runEnrichCommand, runScoreCommand } from "./enrich.js";
 import { runAddCompanyCommand, runIngestCommand } from "./ingest.js";
+import { runMetricsCommand } from "./metrics.js";
 import {
   formatStatus,
   loadStatus,
   pauseSends,
   resumeSends,
 } from "./status.js";
+import { runWebhookCommand } from "./webhook.js";
 
 function usage(): never {
   console.error(`Usage: sgm-outreach <command>
@@ -19,6 +22,9 @@ Commands:
   add-company    Manually add a company + NEW lead
   enrich         Scrape + LLM facts + contacts (NEW → ENRICHED)
   score          Deterministic scoring (ENRICHED → SCORED)
+  metrics        Sent / replies / bounces by day + segment
+  webhook        Reply/bounce receiver (serve | handle)
+  dry-run        Staging dry-run: 10 fixture leads, mock send, suppression proof
 
 ingest options:
   --source <name>   appstore|salesnav|upwork|jobboards|all  (default: all)
@@ -41,6 +47,19 @@ enrich options:
 score options:
   --limit <n>       Max ENRICHED leads to score (default: 100)
   --db <path>       SQLite path
+
+metrics options:
+  --days <n>        Lookback window (default: 30)
+  --segment <name>  Filter by company segment
+  --json            Machine-readable output
+  --db <path>       SQLite path
+
+webhook subcommands:
+  serve [--port 8787] [--host 127.0.0.1] [--db path]
+  handle [--db path]   Read JSON event from stdin
+
+dry-run options:
+  --db <path>       SQLite path (default: ./data/outreach-dry-run.sqlite)
 `);
   process.exit(1);
 }
@@ -77,6 +96,18 @@ async function main(argv: string[]): Promise<void> {
     }
     case "score": {
       runScoreCommand(argv);
+      return;
+    }
+    case "metrics": {
+      runMetricsCommand(argv);
+      return;
+    }
+    case "webhook": {
+      await runWebhookCommand(argv);
+      return;
+    }
+    case "dry-run": {
+      runDryRunCommand(argv);
       return;
     }
     case "help":
