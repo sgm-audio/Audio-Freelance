@@ -13,15 +13,21 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    // Don't block the whole dashboard on the slow market scan.
     Promise.allSettled([
-      fetchStatus().then(setStatus).catch(() => {}),
-      fetchHealth().then(setHealth).catch(() => {}),
-      fetchMarket().then(setMarket).catch(() => {}),
+      fetchStatus().then((s) => { if (!cancelled) setStatus(s); }),
+      fetchHealth().then((h) => { if (!cancelled) setHealth(h); }),
     ]).then((results) => {
-      const allFailed = results.every(r => r.status === "rejected");
+      if (cancelled) return;
+      const allFailed = results.every((r) => r.status === "rejected");
       setBackendDown(allFailed);
       setLoading(false);
     });
+    fetchMarket()
+      .then((m) => { if (!cancelled) setMarket(m); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {
