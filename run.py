@@ -100,10 +100,10 @@ def frontend_cmd() -> list[str]:
     next_bin = ROOT / "frontend" / "node_modules" / "next" / "dist" / "bin" / "next"
     node = resolve_node()
     if node and next_bin.is_file():
-        return [node, str(next_bin), "dev", "--hostname", "127.0.0.1", "--port", str(FRONTEND_PORT)]
+        return [node, str(next_bin), "dev", "--port", str(FRONTEND_PORT)]
     npm = shutil.which("npm")
     assert npm
-    return [npm, "run", "dev", "--", "--hostname", "127.0.0.1", "--port", str(FRONTEND_PORT)]
+    return [npm, "run", "dev", "--", "--port", str(FRONTEND_PORT)]
 
 
 def preflight() -> int:
@@ -263,7 +263,7 @@ def main() -> int:
 
         for _ in range(60):
             if backend_healthy():
-                log(f"{GREEN}Backend ready{NC} on http://127.0.0.1:{BACKEND_PORT}")
+                log(f"{GREEN}Backend ready{NC} on http://localhost:{BACKEND_PORT}")
                 break
             if backend.poll() is not None:
                 print(f"{RED}Backend exited early{NC}")
@@ -288,7 +288,7 @@ def main() -> int:
                 print("Rerun with --verbose, or: cd frontend && npm run dev")
                 return 1
             if port_listening(FRONTEND_PORT):
-                log(f"{GREEN}Frontend ready{NC} on http://127.0.0.1:{FRONTEND_PORT}")
+                log(f"{GREEN}Frontend ready{NC} on http://localhost:{FRONTEND_PORT}")
                 break
             time.sleep(1)
         else:
@@ -297,10 +297,10 @@ def main() -> int:
             return 1
 
         print()
-        print(f"  Dashboard:   http://127.0.0.1:{FRONTEND_PORT}")
-        print(f"  API:         http://127.0.0.1:{BACKEND_PORT}")
-        print(f"  Briefing:    http://127.0.0.1:{BACKEND_PORT}/briefing")
-        print(f"  API Docs:    http://127.0.0.1:{BACKEND_PORT}/docs")
+        print(f"  Dashboard:   http://localhost:{FRONTEND_PORT}")
+        print(f"  API:         http://localhost:{BACKEND_PORT}")
+        print(f"  Briefing:    http://localhost:{BACKEND_PORT}/briefing")
+        print(f"  API Docs:    http://localhost:{BACKEND_PORT}/docs")
         print()
         print("Press Ctrl+C to stop both.")
         print()
