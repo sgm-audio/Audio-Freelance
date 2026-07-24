@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import shutil
 import signal
@@ -276,7 +277,9 @@ def main() -> int:
             return 1
 
         log(f"Starting frontend (Next.js on :{FRONTEND_PORT})...")
-        frontend, frontend_log_fh = spawn(frontend_cmd(), cwd=ROOT / "frontend", log_path=FRONTEND_LOG)
+        frontend, frontend_log_fh = spawn(
+            frontend_cmd(), cwd=ROOT / "frontend", log_path=FRONTEND_LOG
+        )
 
         for _ in range(60):
             if frontend.poll() is not None:
@@ -323,10 +326,8 @@ def main() -> int:
         stop(backend)
         for fh in (frontend_log_fh, backend_log_fh):
             if fh is not None:
-                try:
+                with contextlib.suppress(OSError):
                     fh.close()
-                except OSError:
-                    pass
         log("Done.")
 
 
