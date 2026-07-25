@@ -31,7 +31,7 @@ describe("claims allowlist", () => {
 
   it("accepts allowlisted credibility", () => {
     const body =
-      "Noticed your AUv3 update. TrackClear is live on ReaPack. I build real-time DSP engines. Open to a 20-minute call?";
+      "Noticed your AUv3 update. SGM Suno workflow suite is installable via ReaPack. I build real-time DSP engines. Open to a 20-minute call?";
     expect(lintClaims(body, claims)).toEqual([]);
     const out = validateDraftOutput(
       {
@@ -44,6 +44,6 @@ describe("claims allowlist", () => {
       claims,
       "Shipped AUv3 update last month",
     );
-    expect(out.body).toContain("TrackClear");
+    expect(out.body).toContain("ReaPack");
   });
 });

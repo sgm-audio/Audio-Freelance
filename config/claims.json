@@ -1,44 +1,99 @@
-{
-  "claims": [
-    {
-      "id": "trackclear_reapack",
-      "text": "TrackClear is live on ReaPack",
-      "match": [
-        "TrackClear",
-        "TrackClear is live on ReaPack",
-        "live on ReaPack"
-      ],
-      "evidence": "Public ReaPack listing for SGM TrackClear (verify before citing version numbers)"
-    },
-    {
-      "id": "portamento_engine_contract",
-      "text": "Portamento engine contract in progress for an iOS synth client",
-      "match": [
-        "portamento engine",
-        "portamento engine contract",
-        "portamento"
-      ],
-      "evidence": "Active client engagement - in progress only; never claim shipped, released, or App Store live"
-    },
-    {
-      "id": "makingmadi_operating",
-      "text": "makingmadi.com built and operating",
-      "match": [
-        "makingmadi.com",
-        "makingmadi",
-        "built and operating"
-      ],
-      "evidence": "https://makingmadi.com (live site; do not invent traffic or revenue figures)"
-    },
-    {
-      "id": "years_audio_17",
-      "text": "17 years professional audio engineering",
-      "match": [
-        "17 years",
-        "17y",
-        "seventeen years professional audio"
-      ],
-      "evidence": "Career history / Berklee background; do not inflate years or invent employers"
-    }
-  ]
-}
+{
+  "claims": [
+    {
+      "id": "trackclear_reapack",
+      "text": "SGM Suno workflow suite installable via ReaPack",
+      "match": [
+        "TrackClear",
+        "TrackClear is live on ReaPack",
+        "live on ReaPack",
+        "ReaPack",
+        "Suno workflow",
+        "SGM Suno",
+        "installable via ReaPack"
+      ],
+      "evidence": "https://github.com/SGM-Studios/sgm-suno-workflow (ReaPack index.xml + INSTALL.md). Prefer 'installable via ReaPack from the SGM index' over implying ReaTeam listing."
+    },
+    {
+      "id": "apc_mcp_public",
+      "text": "apc-mcp is public tooling for JUCE/CLAP/VST3/ARA plugin builds",
+      "match": [
+        "apc-mcp",
+        "apc mcp",
+        "CLAP spec MCP",
+        "MCP tooling",
+        "pluginval",
+        "clap-validator"
+      ],
+      "evidence": "https://github.com/sgm-audio/apc-mcp"
+    },
+    {
+      "id": "clara_architecture",
+      "text": "Building a custom C++ Mamba-3 SSM inference core for CLAP/VST3 (RT-safe audio thread)",
+      "match": [
+        "CLARA",
+        "Mamba-3",
+        "Mamba/SSM",
+        "SSM inference",
+        "custom C++ Mamba",
+        "RT-safe",
+        "zero heap alloc on audio thread",
+        "CPU-only neural audio"
+      ],
+      "evidence": "Sanitized case study: https://github.com/sgm-audio/portfolio/blob/main/case-studies/clara-mamba-ssm.md — never claim App Store, commercial release, or finished GUI/ARA conditioning"
+    },
+    {
+      "id": "portamento_engine_contract",
+      "text": "Portamento engine contract in progress for an iOS synth client",
+      "match": [
+        "portamento engine",
+        "portamento engine contract",
+        "portamento"
+      ],
+      "evidence": "Active client engagement - in progress only; never claim shipped, released, or App Store live"
+    },
+    {
+      "id": "makingmadi_operating",
+      "text": "makingmadi.com built and operating",
+      "match": [
+        "makingmadi.com",
+        "makingmadi",
+        "built and operating"
+      ],
+      "evidence": "https://makingmadi.com (live site; do not invent traffic or revenue figures)"
+    },
+    {
+      "id": "years_audio_17",
+      "text": "17 years professional audio engineering",
+      "match": [
+        "17 years",
+        "17y",
+        "seventeen years professional audio"
+      ],
+      "evidence": "Career history / Berklee background; do not inflate years or invent employers"
+    },
+    {
+      "id": "offer_rt_dsp",
+      "text": "I build real-time audio DSP engines - C++/Rust - for iOS apps, plugins, and embedded hardware",
+      "match": [
+        "real-time audio DSP",
+        "real-time audio engines",
+        "C++/Rust",
+        "on-device ML",
+        "fixed-scope",
+        "monthly retainer"
+      ],
+      "evidence": "Locked offer in OUTREACH_BUILD_SPEC.md — capability claim, not a shipped-product claim"
+    },
+    {
+      "id": "portfolio_public",
+      "text": "Public portfolio case studies on GitHub",
+      "match": [
+        "portfolio case studies",
+        "github.com/sgm-audio/portfolio",
+        "public case studies"
+      ],
+      "evidence": "https://github.com/sgm-audio/portfolio"
+    }
+  ]
+}

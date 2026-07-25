@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SGM Studios — Contractor Pitch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./tokens.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      background: #0a0c10;
+      color: var(--sgm-ink);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .deck {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: min(100vw, calc(100vh * 16 / 9));
+      height: min(100vh, calc(100vw * 9 / 16));
+      background: var(--sgm-steel-0);
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.45s var(--ease);
+      padding: clamp(1.5rem, 4vw, 3rem);
+      display: flex;
+      flex-direction: column;
+    }
+    .slide.active { opacity: 1; visibility: visible; }
+
+    .slide.dark {
+      background:
+        linear-gradient(160deg, #1c222c 0%, #12141a 60%, #0a0c10 100%);
+      color: var(--sgm-steel-0);
+    }
+    .slide.panel {
+      background: var(--sgm-steel-0);
+      color: var(--sgm-ink);
+    }
+    .slide.rail {
+      background: var(--sgm-rail);
+      color: var(--sgm-steel-0);
+    }
+
+    .kicker {
+      font-family: var(--font-mono);
+      font-size: clamp(0.65rem, 1.1vw, 0.78rem);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--sgm-vu);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .kicker::before {
+      content: "";
+      width: 14px;
+      height: 3px;
+      background: var(--sgm-vu);
+    }
+    .dark .kicker { color: var(--sgm-vu); }
+
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(2.2rem, 5.5vw, 4rem);
+      letter-spacing: -0.045em;
+      line-height: 0.98;
+    }
+    h1 em { font-style: normal; color: var(--sgm-vu); }
+    h2 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      letter-spacing: -0.035em;
+      line-height: 1.05;
+      margin-bottom: 1rem;
+    }
+    .lede {
+      font-size: clamp(1rem, 1.8vw, 1.25rem);
+      line-height: 1.45;
+      max-width: 38ch;
+      opacity: 0.82;
+      margin-top: 1rem;
+    }
+
+    .grow { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1rem;
+      margin-top: auto;
+      padding-top: 1rem;
+    }
+    .mono {
+      font-family: var(--font-mono);
+      font-size: clamp(0.65rem, 1.1vw, 0.75rem);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.55;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 2rem;
+    }
+    .brand-row img { width: 56px; height: 56px; color: #f4f5f7; }
+    .brand-row strong {
+      font-family: var(--font-display);
+      font-size: 1.65rem;
+      letter-spacing: -0.04em;
+    }
+    .brand-row span {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      opacity: 0.55;
+      text-transform: uppercase;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(1rem, 3vw, 2.5rem);
+      align-items: stretch;
+      flex: 1;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      flex: 1;
+      align-content: center;
+    }
+
+    .block {
+      border: 1px solid var(--sgm-line);
+      padding: 1.25rem;
+      background: rgba(255,255,255,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .dark .block {
+      background: rgba(244,245,247,0.04);
+      border-color: rgba(244,245,247,0.12);
+    }
+    .rail .block {
+      background: rgba(244,245,247,0.04);
+      border-color: rgba(244,245,247,0.12);
+    }
+    .block h3 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+    .block p, .block li {
+      font-size: 0.92rem;
+      line-height: 1.45;
+      opacity: 0.8;
+    }
+    .block ul { list-style: none; display: grid; gap: 0.4rem; }
+    .block li::before {
+      content: "▸ ";
+      color: var(--sgm-vu);
+      font-family: var(--font-mono);
+    }
+
+    .spec {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.8;
+      letter-spacing: 0.02em;
+    }
+    .spec b { color: var(--sgm-vu); font-weight: 500; }
+
+    .big-num {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      line-height: 0.9;
+      color: var(--sgm-vu);
+    }
+    .big-num span {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      color: inherit;
+      opacity: 0.7;
+      margin-top: 0.5rem;
+      font-weight: 400;
+    }
+
+    .cost-list {
+      list-style: none;
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .cost-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid var(--sgm-line);
+      font-size: 1rem;
+    }
+    .cost-list strong { font-family: var(--font-display); letter-spacing: -0.02em; }
+    .cost-list em {
+      font-style: normal;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--sgm-vu-dim);
+    }
+
+    .proof-card {
+      border-left: 3px solid var(--sgm-vu);
+      padding: 1rem 1rem 1rem 1.1rem;
+      background: var(--sgm-steel-1);
+    }
+    .proof-card .tag {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sgm-vu-dim);
+      margin-bottom: 0.35rem;
+    }
+    .proof-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+    .proof-card p { font-size: 0.88rem; line-height: 1.4; opacity: 0.8; }
+
+    .diff-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .diff-table th, .diff-table td {
+      text-align: left;
+      padding: 0.75rem 0.5rem;
+      border-bottom: 1px solid var(--sgm-line);
+    }
+    .diff-table th {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sgm-ink-soft);
+      font-weight: 500;
+    }
+    .diff-table td:first-child {
+      font-family: var(--font-display);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .price-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .price {
+      border: 1px solid var(--sgm-line);
+      padding: 1.25rem;
+      background: var(--sgm-steel-1);
+    }
+    .price .tier {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--sgm-vu-dim);
+      margin-bottom: 0.4rem;
+    }
+    .price .amt {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .price p {
+      font-size: 0.82rem;
+      margin-top: 0.5rem;
+      opacity: 0.75;
+      line-height: 1.35;
+    }
+
+    .cta-box {
+      border-top: 3px solid var(--sgm-vu);
+      padding-top: 1.25rem;
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .cta-box a {
+      color: var(--sgm-vu);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.15rem;
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+    }
+
+    .nav {
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 20;
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: rgba(244,245,247,0.7);
+      background: rgba(18,20,26,0.85);
+      padding: 0.4rem 0.55rem;
+      border: 1px solid rgba(244,245,247,0.12);
+    }
+    .nav button {
+      background: transparent;
+      border: 1px solid rgba(244,245,247,0.25);
+      color: inherit;
+      width: 2rem;
+      height: 2rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .nav button:hover { border-color: var(--sgm-vu); color: var(--sgm-vu); }
+
+    .progress {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 3px;
+      background: rgba(18,20,26,0.08);
+      z-index: 5;
+    }
+    .progress > i {
+      display: block;
+      height: 100%;
+      background: var(--sgm-vu);
+      width: 0%;
+      transition: width 0.35s var(--ease);
+    }
+
+    .wave-bg {
+      position: absolute;
+      left: 0; right: 0; bottom: 12%;
+      height: 80px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .wave-bg path {
+      fill: none;
+      stroke: var(--sgm-vu);
+      stroke-width: 2;
+    }
+
+    @media (max-width: 700px) {
+      .grid-2, .grid-3, .price-row { grid-template-columns: 1fr; }
+      .deck { width: 100vw; height: 100vh; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .slide { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+    <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+
+    <!-- 1 Hook -->
+    <section class="slide dark active" data-slide="0">
+      <div class="brand-row">
+        <img src="./mark.svg" alt="" width="48" height="48" />
+        <div>
+          <strong>SGM STUDIOS</strong>
+          <span>Scott Mills · Vancouver</span>
+        </div>
+      </div>
+      <div class="grow">
+        <p class="kicker">Contractor brief</p>
+        <h1>Your plugin<br />shouldn’t wait<br />on the <em>cloud</em>.</h1>
+        <p class="lede">Real-time DSP engines in C++/Rust — plugins, iOS, embedded. On-device ML that still clears the buffer.</p>
+      </div>
+      <div class="bottom">
+        <span class="mono">01 / 09</span>
+        <span class="mono">Fixed-scope · Retainer</span>
+      </div>
+      <svg class="wave-bg" viewBox="0 0 1200 80" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 40 C100 40 100 10 200 10 S300 70 400 70 S500 20 600 20 S700 60 800 60 S900 30 1000 30 S1100 40 1200 40"/>
+      </svg>
+    </section>
+
+    <!-- 2 Their problem -->
+    <section class="slide panel" data-slide="1">
+      <p class="kicker">The bind</p>
+      <h2>Shipping audio software<br />breaks in the last mile.</h2>
+      <div class="grid-2 grow">
+        <div class="block">
+          <h3>Host reality</h3>
+          <ul>
+            <li>CLAP / VST3 / ARA / AUv3 each have teeth</li>
+            <li>Validators fail after “it compiles”</li>
+            <li>RT rules: no alloc, no locks, no surprises</li>
+          </ul>
+        </div>
+        <div class="block">
+          <h3>ML reality</h3>
+          <ul>
+            <li>ONNX runtimes fight your latency budget</li>
+            <li>Demo notebooks ≠ DAW-safe engines</li>
+            <li>Teams hire generalists, ship clicks</li>
+          </ul>
+        </div>
+      </div>
+      <div class="bottom"><span class="mono">02 / 09</span></div>
+    </section>
+
+    <!-- 3 Cost of inaction -->
+    <section class="slide panel" data-slide="2">
+      <p class="kicker">Cost of waiting</p>
+      <div class="grid-2 grow">
+        <div>
+          <h2>Months of R&amp;D<br />for a buffer<br />you already know.</h2>
+        </div>
+        <ul class="cost-list">
+          <li><strong>Wrong runtime</strong><em>re-arch mid-sprint</em></li>
+          <li><strong>Format debt</strong><em>one host, then three</em></li>
+          <li><strong>XRun roulette</strong><em>reviews + refunds</em></li>
+          <li><strong>Agency bloat</strong><em>$25–50k neural bands</em></li>
+        </ul>
+      </div>
+      <div class="bottom"><span class="mono">03 / 09</span></div>
+    </section>
+
+    <!-- 4 Solution -->
+    <section class="slide dark" data-slide="3">
+      <p class="kicker">What I build</p>
+      <h2>Real-time engines.<br />Your product on top.</h2>
+      <div class="grid-3 grow" style="margin-top:1.5rem">
+        <div class="block">
+          <h3>DSP core</h3>
+          <p>C++/Rust processing, deterministic audio-thread discipline, measurable latency.</p>
+        </div>
+        <div class="block">
+          <h3>Formats</h3>
+          <p>CLAP, VST3, ARA, AUv3 / iOS — wrap once, validate hard.</p>
+        </div>
+        <div class="block">
+          <h3>On-device ML</h3>
+          <p>Custom inference (incl. Mamba/SSM class) when cloud is not an option.</p>
+        </div>
+      </div>
+      <div class="bottom"><span class="mono">04 / 09</span><span class="mono">SGM Studios · Contract</span></div>
+    </section>
+
+    <!-- 5 Proof -->
+    <section class="slide panel" data-slide="4">
+      <p class="kicker">Proof — public</p>
+      <h2>Citeable work.<br />No vapor.</h2>
+      <div class="grid-3 grow" style="margin-top:1rem">
+        <article class="proof-card">
+          <div class="tag">Shipped</div>
+          <h3>apc-mcp</h3>
+          <p>MCP tooling for CMake / ctest / pluginval / clap-validator across JUCE·CLAP·VST3·ARA.</p>
+        </article>
+        <article class="proof-card">
+          <div class="tag">Shipped</div>
+          <h3>Suno · ReaPack</h3>
+          <p>Six-script REAPER suite installable from the SGM ReaPack index.</p>
+        </article>
+        <article class="proof-card">
+          <div class="tag">Case study</div>
+          <h3>CLARA / Mamba-3</h3>
+          <p>Custom C++ SSM inference for CLAP+VST3. Zero-heap audio thread. Honest status published.</p>
+        </article>
+      </div>
+      <div class="bottom">
+        <span class="mono">05 / 09</span>
+        <span class="mono">github.com/sgm-audio/portfolio</span>
+      </div>
+    </section>
+
+    <!-- 6 Differentiators -->
+    <section class="slide panel" data-slide="5">
+      <p class="kicker">Why this, not a generalist shop</p>
+      <h2>Specialist economics.</h2>
+      <table class="diff-table grow">
+        <thead>
+          <tr><th></th><th>Typical agency</th><th>SGM</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Focus</td>
+            <td>Full-stack + “AI features”</td>
+            <td>RT audio + inference cores</td>
+          </tr>
+          <tr>
+            <td>Proof</td>
+            <td>Case studies behind NDA</td>
+            <td>Public tooling + writeups</td>
+          </tr>
+          <tr>
+            <td>Claims</td>
+            <td>Marketing copy</td>
+            <td>Allowlisted, evidence-backed</td>
+          </tr>
+          <tr>
+            <td>IP default</td>
+            <td>Everything assigned</td>
+            <td>Engines licensed · glue assigned</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="bottom"><span class="mono">06 / 09</span></div>
+    </section>
+
+    <!-- 7 Pricing -->
+    <section class="slide panel" data-slide="6">
+      <p class="kicker">Investment · CAD</p>
+      <h2>Clear floors.<br />No sweat equity.</h2>
+      <div class="price-row">
+        <div class="price">
+          <div class="tier">Small</div>
+          <div class="amt">$1.5–3k</div>
+          <p>Script / single feature / ReaScript automation</p>
+        </div>
+        <div class="price">
+          <div class="tier">Medium</div>
+          <div class="amt">$5–12k</div>
+          <p>Plugin component, host integration, inference glue</p>
+        </div>
+        <div class="price">
+          <div class="tier">Large</div>
+          <div class="amt">$15–30k</div>
+          <p>Full plugin + UI + test matrix / multi-format</p>
+        </div>
+      </div>
+      <p class="spec" style="margin-top:1.25rem">Floors: <b>$3,000</b> project · <b>$150/hr</b> · 50/50 payment · 2 revisions · 14-day support</p>
+      <div class="bottom"><span class="mono">07 / 09</span></div>
+    </section>
+
+    <!-- 8 Objections -->
+    <section class="slide rail" data-slide="7">
+      <p class="kicker">Straight answers</p>
+      <div class="grid-2 grow">
+        <div class="block">
+          <h3>“Can you join our Slack forever?”</h3>
+          <p>Retainer available. Otherwise fixed scope with written out-of-scope. I don’t do unpaid discovery.</p>
+        </div>
+        <div class="block">
+          <h3>“We need it in ONNX.”</h3>
+          <p>Fine when it clears RT. When it doesn’t, I own a custom core — that’s the CLARA-class work.</p>
+        </div>
+        <div class="block">
+          <h3>“Is CLARA for sale?”</h3>
+          <p>In progress. The case study is architecture proof for contract builds — not a vapor demo reel.</p>
+        </div>
+        <div class="block">
+          <h3>“Remote / timezone?”</h3>
+          <p>Vancouver. Remote OK. Relocation no. Async-first with scheduled fit calls.</p>
+        </div>
+      </div>
+      <div class="bottom"><span class="mono">08 / 09</span></div>
+    </section>
+
+    <!-- 9 CTA -->
+    <section class="slide dark" data-slide="8">
+      <p class="kicker">Next step</p>
+      <div class="grow">
+        <h1>15 minutes.<br />Format. Budget.<br /><em>Deadline.</em></h1>
+        <div class="cta-box">
+          <div>
+            <p class="lede" style="margin:0;max-width:28ch">I’ll reply with a scoped proposal inside two business days.</p>
+          </div>
+          <div style="text-align:right">
+            <a href="mailto:scott@sgmstudios.ca">scott@sgmstudios.ca</a><br />
+            <span class="mono" style="display:inline-block;margin-top:0.75rem;opacity:0.7">github.com/sgm-audio/portfolio</span>
+          </div>
+        </div>
+      </div>
+      <div class="bottom">
+        <span class="mono">09 / 09</span>
+        <span class="mono">SGM Studios · Scott Mills</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="nav" role="navigation" aria-label="Deck controls">
+    <button type="button" id="prev" aria-label="Previous">←</button>
+    <span id="pos">1 / 9</span>
+    <button type="button" id="next" aria-label="Next">→</button>
+  </div>
+
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    let i = 0;
+    const pos = document.getElementById("pos");
+    const bar = document.getElementById("bar");
+
+    function show(n) {
+      i = (n + slides.length) % slides.length;
+      slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+      pos.textContent = `${i + 1} / ${slides.length}`;
+      bar.style.width = `${((i + 1) / slides.length) * 100}%`;
+    }
+
+    document.getElementById("prev").onclick = () => show(i - 1);
+    document.getElementById("next").onclick = () => show(i + 1);
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+        e.preventDefault();
+        show(i + 1);
+      }
+      if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        show(i - 1);
+      }
+      if (e.key === "Home") show(0);
+      if (e.key === "End") show(slides.length - 1);
+    });
+    show(0);
+  </script>
+</body>
+</html>

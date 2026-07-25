@@ -4,7 +4,7 @@ export const OFFER_SENTENCE =
   "I build real-time audio DSP engines (C++/Rust) for iOS apps, plugins, and embedded hardware — on-device ML included; fixed-scope or retainer.";
 
 export const CREDIBILITY_LINE =
-  "Currently shipping a portamento engine for an iOS synth client; TrackClear is live on ReaPack.";
+  "Currently shipping a portamento engine for an iOS synth client; SGM Suno workflow suite is installable via ReaPack.";
 
 export function buildDraftPrompt(input: {
   channel: Channel;

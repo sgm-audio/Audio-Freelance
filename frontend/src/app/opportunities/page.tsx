@@ -1,32 +1,86 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchMarketOpportunities, MarketSignal } from "@/lib/api";
+import { fetchHealth, fetchMarketOpportunities, MarketSignal } from "@/lib/api";
+
+type LoadError =
+  | { kind: "backend_down" }
+  | { kind: "timeout" }
+  | { kind: "http"; message: string }
+  | { kind: "other"; message: string };
+
+function classifyFetchError(err: unknown): LoadError {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (err instanceof Error && err.name === "AbortError") {
+    return { kind: "timeout" };
+  }
+  if (/\b5\d{2}\b/.test(msg)) {
+    return { kind: "http", message: msg };
+  }
+  return { kind: "other", message: msg || "Could not load opportunities" };
+}
 
 export default function OpportunitiesPage() {
   const [data, setData] = useState<{
     summary: string; opportunities: string[]; recent_signals: MarketSignal[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<LoadError | null>(null);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
     setLoading(true);
-    try { setData(await fetchMarketOpportunities()); } catch { setData(null); }
+    setError(null);
+    try {
+      try {
+        await fetchHealth();
+      } catch {
+        setData(null);
+        setError({ kind: "backend_down" });
+        setLoading(false);
+        return;
+      }
+      setData(await fetchMarketOpportunities());
+    } catch (e) {
+      setData(null);
+      setError(classifyFetchError(e));
+    }
     setLoading(false);
   }
 
   if (loading) return <p className="text-sm text-muted-foreground animate-pulse">Scanning for opportunities...</p>;
-  if (!data) {
+
+  if (error?.kind === "backend_down") {
     return (
       <div className="max-w-lg mx-auto mt-16 text-center">
         <h1 className="text-2xl font-semibold tracking-tight mb-3">Backend Not Running</h1>
-        <p className="text-muted-foreground mb-4">Start the backend to view opportunities.</p>
-        <code className="block bg-muted rounded p-2 text-xs text-left">
-          ./run.sh<br />
-          make backend<br />make frontend
-        </code>
+        <p className="text-muted-foreground mb-4">Start the API, then refresh this page.</p>
+        <code className="block bg-muted rounded p-2 text-xs text-left">python run.py</code>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    const title =
+      error?.kind === "timeout" ? "Opportunities timed out" :
+      error?.kind === "http" ? "Opportunities request failed" :
+      "No opportunity data";
+    const detail =
+      error?.kind === "timeout"
+        ? "The market opportunities call timed out. Retry, or check search API keys in .env."
+        : error?.kind === "http"
+          ? `Server error: ${error.message}. Check backend logs.`
+          : "Backend is reachable, but this scan returned nothing. Web search needs Tavily, Serper, or Firecrawl keys; ATS company lists still work without them.";
+    return (
+      <div className="max-w-lg mx-auto mt-16 space-y-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-center">{title}</h1>
+        <p className="text-sm text-muted-foreground text-center">{detail}</p>
+        <div className="flex justify-center">
+          <button onClick={load} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -43,12 +97,10 @@ export default function OpportunitiesPage() {
         </button>
       </div>
 
-      {/* Summary */}
       <div className="rounded-lg border border-border bg-card p-5">
         <p className="text-sm">{data.summary}</p>
       </div>
 
-      {/* Opportunities */}
       <div>
         <h2 className="text-base font-medium mb-4">What to Pursue</h2>
         {data.opportunities.length === 0 ? (
@@ -64,7 +116,6 @@ export default function OpportunitiesPage() {
         )}
       </div>
 
-      {/* Recent signals */}
       <div>
         <h2 className="text-base font-medium mb-4">Recent Market Signals</h2>
         <div className="space-y-2">
@@ -90,19 +141,6 @@ export default function OpportunitiesPage() {
               </div>
             ))
           )}
-        </div>
-      </div>
-
-      {/* Saved drafts */}
-      <div className="rounded-lg border border-border bg-card p-5">
-        <h2 className="text-sm font-medium mb-3">Saved Application Drafts</h2>
-        <p className="text-xs text-muted-foreground mb-3">
-          8 application drafts are saved in the project at <code className="text-foreground">outreach/READY_TO_SEND.md</code>
-        </p>
-        <div className="text-sm space-y-1">
-          <p><span className="font-medium">Cash now:</span> VoiceWunder, BlackSalt Audio, RelicSoundLabs</p>
-          <p><span className="font-medium">Apply this week:</span> Soundtoys, Music AI, Suno</p>
-          <p><span className="font-medium">Check eligibility:</span> nadirozmen plugin series (remote, possible cofounder)</p>
         </div>
       </div>
     </div>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SGM — Leave-behind gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #12141a;
+      --panel: #1c222c;
+      --ink: #f4f5f7;
+      --muted: #8b93a1;
+      --vu: #e85d04;
+      --teal: #0f766e;
+      --phos: #3d8b40;
+      --font-d: "Space Grotesk", system-ui, sans-serif;
+      --font-b: "Archivo", system-ui, sans-serif;
+      --font-m: "IBM Plex Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-b);
+      min-height: 100vh;
+      padding: 1.25rem 1.25rem 2rem;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(244,245,247,0.1);
+    }
+    header h1 {
+      font-family: var(--font-d);
+      font-size: 1.5rem;
+      letter-spacing: -0.03em;
+    }
+    header p {
+      font-family: var(--font-m);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .actions button, .actions a {
+      font-family: var(--font-m);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid rgba(244,245,247,0.2);
+      background: transparent;
+      color: var(--ink);
+      padding: 0.55rem 0.75rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .actions button:hover, .actions a:hover { border-color: var(--vu); color: var(--vu); }
+    .actions button.picked {
+      background: var(--vu);
+      border-color: var(--vu);
+      color: #12141a;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .gallery { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(244,245,247,0.08);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .card.winner {
+      border-color: var(--vu);
+      box-shadow: 0 0 0 1px var(--vu);
+    }
+    .card-head {
+      padding: 0.85rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(244,245,247,0.08);
+    }
+    .card-head h2 {
+      font-family: var(--font-d);
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+    .card-head .swatch {
+      width: 12px; height: 12px;
+      display: inline-block;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+    }
+    .card-head p {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.35;
+      margin-top: 0.35rem;
+    }
+    .frame-wrap {
+      position: relative;
+      background: #9aa3b0;
+      aspect-ratio: 8.5 / 11;
+      overflow: hidden;
+    }
+    .frame-wrap iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 850px;
+      height: 1100px;
+      border: 0;
+      transform-origin: top left;
+      pointer-events: none;
+    }
+    .card-foot {
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      border-top: 1px solid rgba(244,245,247,0.08);
+    }
+    .card-foot button {
+      font-family: var(--font-m);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid rgba(244,245,247,0.25);
+      color: var(--ink);
+      padding: 0.5rem 0.7rem;
+      cursor: pointer;
+    }
+    .card-foot button:hover { border-color: var(--vu); color: var(--vu); }
+    .card.winner .card-foot button {
+      background: var(--vu);
+      border-color: var(--vu);
+      color: #12141a;
+    }
+    .card-foot a {
+      font-family: var(--font-m);
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .card-foot a:hover { color: var(--vu); }
+
+    .status {
+      margin-top: 1.25rem;
+      font-family: var(--font-m);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .status strong { color: var(--vu); font-weight: 500; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Leave-behind · side by side</h1>
+      <p>Pick a direction · 1 / 2 / 3 keys · Enter to open full</p>
+    </div>
+    <div class="actions">
+      <a href="./pitch-deck.html">Pitch deck</a>
+      <a href="./one-pager.html">Open A full</a>
+      <button type="button" id="clear">Clear pick</button>
+    </div>
+  </header>
+
+  <div class="gallery" id="gallery">
+    <article class="card" data-id="a" data-href="./one-pager.html">
+      <div class="card-head">
+        <div>
+          <h2><span class="swatch" style="background:#e85d04"></span>A · Console</h2>
+          <p>Steel panel · VU amber · dark hero. Current ship candidate.</p>
+        </div>
+      </div>
+      <div class="frame-wrap"><iframe title="Variant A" src="./one-pager.html" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="card-foot">
+        <button type="button" data-pick="a">Select A</button>
+        <a href="./one-pager.html" target="_blank" rel="noopener">Open ↗</a>
+      </div>
+    </article>
+
+    <article class="card" data-id="b" data-href="./one-pager-b.html">
+      <div class="card-head">
+        <div>
+          <h2><span class="swatch" style="background:#0f766e"></span>B · Blueprint</h2>
+          <p>Cool plate · teal signal · engineering grid.</p>
+        </div>
+      </div>
+      <div class="frame-wrap"><iframe title="Variant B" src="./one-pager-b.html" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="card-foot">
+        <button type="button" data-pick="b">Select B</button>
+        <a href="./one-pager-b.html" target="_blank" rel="noopener">Open ↗</a>
+      </div>
+    </article>
+
+    <article class="card" data-id="c" data-href="./one-pager-c.html">
+      <div class="card-head">
+        <div>
+          <h2><span class="swatch" style="background:#3d8b40"></span>C · Phosphor</h2>
+          <p>Print-light hero · black type · CRT green accent.</p>
+        </div>
+      </div>
+      <div class="frame-wrap"><iframe title="Variant C" src="./one-pager-c.html" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="card-foot">
+        <button type="button" data-pick="c">Select C</button>
+        <a href="./one-pager-c.html" target="_blank" rel="noopener">Open ↗</a>
+      </div>
+    </article>
+  </div>
+
+  <p class="status" id="status">No pick yet — choose A, B, or C.</p>
+
+  <script>
+    const cards = [...document.querySelectorAll(".card")];
+    const status = document.getElementById("status");
+    let pick = localStorage.getItem("sgm-onepager-pick") || "a";
+
+    function scaleFrames() {
+      cards.forEach((card) => {
+        const wrap = card.querySelector(".frame-wrap");
+        const frame = card.querySelector("iframe");
+        const w = wrap.clientWidth;
+        const s = w / 850;
+        frame.style.transform = `scale(${s})`;
+        wrap.style.height = `${1100 * s}px`;
+        wrap.style.aspectRatio = "auto";
+      });
+    }
+
+    function applyPick(id) {
+      pick = id;
+      if (id) localStorage.setItem("sgm-onepager-pick", id);
+      else localStorage.removeItem("sgm-onepager-pick");
+      cards.forEach((c) => {
+        const on = c.dataset.id === id;
+        c.classList.toggle("winner", on);
+        c.querySelector("[data-pick]").textContent = on ? `Selected ${id.toUpperCase()}` : `Select ${c.dataset.id.toUpperCase()}`;
+      });
+      status.innerHTML = id
+        ? `Pick: <strong>${id.toUpperCase()}</strong> — tell the agent to ship this as the canonical one-pager.`
+        : "No pick yet — choose A, B, or C.";
+    }
+
+    document.getElementById("gallery").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-pick]");
+      if (!btn) return;
+      applyPick(btn.dataset.pick);
+    });
+    document.getElementById("clear").onclick = () => applyPick("");
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "1") applyPick("a");
+      if (e.key === "2") applyPick("b");
+      if (e.key === "3") applyPick("c");
+      if (e.key === "Enter" && pick) {
+        const href = cards.find((c) => c.dataset.id === pick)?.dataset.href;
+        if (href) window.open(href, "_blank");
+      }
+    });
+
+    window.addEventListener("resize", scaleFrames);
+    scaleFrames();
+    applyPick(pick);
+    // reflow after iframes settle
+    setTimeout(scaleFrames, 400);
+    setTimeout(scaleFrames, 1200);
+  </script>
+</body>
+</html>
