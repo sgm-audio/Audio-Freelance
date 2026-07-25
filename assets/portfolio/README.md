@@ -6,7 +6,8 @@
 
 | Asset | Path |
 |---|---|
-| **One-pager** | [design/one-pager.html](./design/one-pager.html) — print to PDF |
+| **One-pager** | [design/one-pager.html](./design/one-pager.html) — **A · Console** (canonical) |
+| **Gallery** | [design/gallery.html](./design/gallery.html) — A/B/C archive |
 | **Pitch deck** | [design/pitch-deck.html](./design/pitch-deck.html) — arrow keys / Space |
 | Case studies | [case-studies/](./case-studies/) |
 | Rate card | [rate-card.md](./rate-card.md) |
