@@ -2,31 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { fetchStatus, fetchMarket, fetchHealth, StatusResponse, MarketReport } from "@/lib/api";
+import { fetchStatus, fetchHealth, StatusResponse } from "@/lib/api";
 import AudioVis from "@/components/audio-vis";
 
 export default function Dashboard() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
-  const [market, setMarket] = useState<MarketReport | null>(null);
   const [health, setHealth] = useState<{ status: string; ollama: boolean } | null>(null);
   const [backendDown, setBackendDown] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    // Don't block the whole dashboard on the slow market scan.
+    // Status + health only — market scan is slow and lives on /market.
     Promise.allSettled([
       fetchStatus().then((s) => { if (!cancelled) setStatus(s); }),
       fetchHealth().then((h) => { if (!cancelled) setHealth(h); }),
     ]).then((results) => {
       if (cancelled) return;
-      const allFailed = results.every((r) => r.status === "rejected");
-      setBackendDown(allFailed);
+      const healthFailed = results[1]?.status === "rejected";
+      const statusFailed = results[0]?.status === "rejected";
+      setBackendDown(healthFailed && statusFailed);
       setLoading(false);
     });
-    fetchMarket()
-      .then((m) => { if (!cancelled) setMarket(m); })
-      .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -49,11 +46,7 @@ export default function Dashboard() {
         <div className="text-left rounded-lg border border-border bg-card p-5 text-sm space-y-2">
           <p className="font-medium">Run both services:</p>
           <code className="block bg-muted rounded p-2 text-xs">
-            ./run.sh
-          </code>
-          <p className="font-medium mt-4">Or start individually:</p>
-          <code className="block bg-muted rounded p-2 text-xs">
-            make backend<br />make frontend
+            python run.py
           </code>
           <p className="text-muted-foreground mt-4">
             FastAPI on :8080 · Next.js on :3000
@@ -64,24 +57,26 @@ export default function Dashboard() {
   }
 
   const counts = status?.lead_counts || {};
-  const trends = market?.tech_trends || [];
-  const pricing = market?.pricing_benchmarks || [];
-  const opps = market?.hot_opportunities || [];
 
   const totalLeads = Object.values(counts).reduce((a, b) => a + (b ?? 0), 0);
   const hotCount = counts.HOT ?? 0;
   const pursuingCount = (counts.CONTACTED ?? 0) + (counts.REPLIED ?? 0) + (counts.PROPOSAL_SENT ?? 0);
+
+  const backendOk = Boolean(health) || Boolean(status);
+  const ollamaOk = health?.ollama ?? status?.ollama_available ?? false;
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {health?.ollama ? "✓ Backend online" : "⚠ Ollama unavailable — dedup disabled"}
+          {backendOk ? "✓ Backend online" : "⚠ Backend unreachable"}
           <span className="mx-2">·</span>
-          {market?.scanned_at
-            ? `Last market scan: ${new Date(market.scanned_at).toLocaleDateString()}`
-            : "Run a market scan to populate"}
+          {ollamaOk
+            ? "Ollama available"
+            : "Ollama off — local embedding fallback for dedup"}
+          <span className="mx-2">·</span>
+          <a href="/market" className="underline hover:text-foreground">Open market scan →</a>
         </p>
       </div>
 
@@ -155,58 +150,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-lg border border-border bg-card p-5">
-          <h2 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">Technology Trends</h2>
-          {trends.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Run a <a href="/market" className="underline">market scan</a>.</p>
-          ) : (
-            <div className="space-y-2">
-              {trends.slice(0, 8).map((t) => (
-                <div key={t.technology} className="flex items-center justify-between text-sm">
-                  <span>{t.technology}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">{t.mentions}</span>
-                    <span className={`text-xs ${t.direction === "rising" ? "text-green-500" : t.direction === "declining" ? "text-red-500" : "text-muted-foreground"}`}>
-                      {t.direction === "rising" ? "↑" : t.direction === "declining" ? "↓" : "→"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-lg border border-border bg-card p-5">
-          <h2 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">Pricing Benchmarks</h2>
-          {pricing.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Run a <a href="/market" className="underline">market scan</a>.</p>
-          ) : (
-            <div className="space-y-2">
-              {pricing.map((p) => (
-                <div key={p.niche} className="text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="capitalize">{p.niche.replace("_", " ")}</span>
-                    <span className="font-medium">${p.contract_range_min.toLocaleString()}–${p.contract_range_max.toLocaleString()}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{p.sample_count} data points</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="rounded-lg border border-border bg-card p-5">
+        <h2 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">Market &amp; pricing</h2>
+        <p className="text-sm text-muted-foreground">
+          Live market scans run on the <a href="/market" className="underline hover:text-foreground">Market</a> page
+          so the dashboard stays fast. Open{" "}
+          <a href="/opportunities" className="underline hover:text-foreground">Opportunities</a> for pursue signals.
+        </p>
       </div>
-
-      {opps.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-5">
-          <h2 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">Opportunities</h2>
-          <div className="space-y-2">
-            {opps.slice(0, 5).map((o, i) => (
-              <p key={i} className="text-sm">{o}</p>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
