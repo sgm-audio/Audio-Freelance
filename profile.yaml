@@ -55,10 +55,10 @@ experience:
     - senior
     - lead
 portfolio:
-  github: ''
-  website: ''
+  github: 'https://github.com/sgm-audio'
+  website: 'https://github.com/sgm-audio/portfolio'
   notable_work:
-    - Mamba/SSM RT audio inference benchmark
-    - REAPER SGM ReaPack extension
-    - CLAP spec MCP tooling
+    - CLARA — custom C++ Mamba-3 SSM inference for CLAP/VST3 (case study)
+    - apc-mcp — public MCP tooling for JUCE/CLAP/VST3/ARA plugin builds
+    - SGM Suno REAPER suite — installable via ReaPack
   portfolio_files: []
