@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 72" role="img" aria-label="SGM Studios">
+  <title>SGM Studios</title>
+  <rect x="0" y="12" width="48" height="48" fill="#12141A"/>
+  <rect x="5" y="18" width="2.5" height="36" fill="#E85D04"/>
+  <path
+    d="M11 42 C14 42 14 30 18.5 30 C23 30 23 42 27.5 42 C32 42 32 30 36.5 30 C39.5 30 41 33 42.5 36"
+    fill="none" stroke="#F4F5F7" stroke-width="2" stroke-linecap="square"/>
+  <circle cx="42.5" cy="36" r="2" fill="#E85D04"/>
+  <text x="64" y="36" font-family="Space Grotesk, Archivo, sans-serif" font-size="28" font-weight="700" fill="#12141A" letter-spacing="-0.04em">SGM STUDIOS</text>
+  <text x="64" y="56" font-family="IBM Plex Mono, monospace" font-size="11" fill="#3A404C" letter-spacing="0.14em">REAL-TIME AUDIO � VANCOUVER</text>
+</svg>
