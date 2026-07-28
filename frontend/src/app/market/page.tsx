@@ -2,30 +2,87 @@
 
 import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { fetchMarket, MarketReport } from "@/lib/api";
+import { fetchHealth, fetchMarket, MarketReport } from "@/lib/api";
+
+type LoadError =
+  | { kind: "backend_down" }
+  | { kind: "timeout" }
+  | { kind: "http"; message: string }
+  | { kind: "empty_or_keys"; message: string };
+
+function classifyFetchError(err: unknown): LoadError {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (err instanceof Error && err.name === "AbortError") {
+    return { kind: "timeout" };
+  }
+  if (/\b5\d{2}\b/.test(msg)) {
+    return { kind: "http", message: msg };
+  }
+  if (/\b4\d{2}\b/.test(msg)) {
+    return { kind: "empty_or_keys", message: msg };
+  }
+  return { kind: "empty_or_keys", message: msg || "Market scan failed" };
+}
 
 export default function MarketPage() {
   const [report, setReport] = useState<MarketReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<LoadError | null>(null);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
     setLoading(true);
-    try { setReport(await fetchMarket()); } catch { setReport(null); }
+    setError(null);
+    try {
+      try {
+        await fetchHealth();
+      } catch {
+        setReport(null);
+        setError({ kind: "backend_down" });
+        setLoading(false);
+        return;
+      }
+      setReport(await fetchMarket());
+    } catch (e) {
+      setReport(null);
+      setError(classifyFetchError(e));
+    }
     setLoading(false);
   }
 
   if (loading) return <p className="text-sm text-muted-foreground animate-pulse">Scanning market...</p>;
-  if (!report) {
+
+  if (error?.kind === "backend_down") {
     return (
       <div className="max-w-lg mx-auto mt-16 text-center">
         <h1 className="text-2xl font-semibold tracking-tight mb-3">Backend Not Running</h1>
-        <p className="text-muted-foreground mb-4">Start the backend to scan the market.</p>
-        <code className="block bg-muted rounded p-2 text-xs text-left">
-          ./run.sh<br />
-          make backend<br />make frontend
-        </code>
+        <p className="text-muted-foreground mb-4">Start the API, then refresh this page.</p>
+        <code className="block bg-muted rounded p-2 text-xs text-left">python run.py</code>
+      </div>
+    );
+  }
+
+  if (error || !report) {
+    const title =
+      error?.kind === "timeout" ? "Market scan timed out" :
+      error?.kind === "http" ? "Market scan failed" :
+      "No market data";
+    const detail =
+      error?.kind === "timeout"
+        ? "The scan took too long. Search APIs may be slow or missing keys — retry, or check Tavily/Serper/Firecrawl in .env."
+        : error?.kind === "http"
+          ? `Server error: ${error.message}. Check backend logs.`
+          : "Backend is up, but the scan returned nothing useful. Web search needs at least one of TAVILY_API_KEY, SERPER_API_KEY, or FIRECRAWL_API_KEY in .env (ATS company lists still work without them).";
+    return (
+      <div className="max-w-lg mx-auto mt-16 space-y-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-center">{title}</h1>
+        <p className="text-sm text-muted-foreground text-center">{detail}</p>
+        <div className="flex justify-center">
+          <button onClick={load} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
+            Retry scan
+          </button>
+        </div>
       </div>
     );
   }
@@ -44,12 +101,10 @@ export default function MarketPage() {
         </button>
       </div>
 
-      {/* Summary */}
       <div className="rounded-lg border border-border bg-card p-5">
         <p className="text-sm">{report.summary}</p>
       </div>
 
-      {/* Technology Trends */}
       <div>
         <h2 className="text-base font-medium mb-4">Technology Trends</h2>
         <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -113,7 +168,6 @@ export default function MarketPage() {
         </div>
       )}
 
-      {/* Pricing */}
       <div>
         <h2 className="text-base font-medium mb-4">Pricing Benchmarks</h2>
         <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -144,7 +198,6 @@ export default function MarketPage() {
         </div>
       </div>
 
-      {/* Opportunities */}
       {report.hot_opportunities.length > 0 && (
         <div>
           <h2 className="text-base font-medium mb-4">Opportunities</h2>
@@ -158,7 +211,6 @@ export default function MarketPage() {
         </div>
       )}
 
-      {/* Raw Signals */}
       <div>
         <h2 className="text-base font-medium mb-4">Recent Signals ({report.total_signals})</h2>
         <div className="space-y-2">
