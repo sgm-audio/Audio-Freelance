@@ -1,0 +1,32 @@
+/**
+ * SGM Studios — design tokens
+ * Direction: console / Swiss technical. Cool steel, ink, VU amber.
+ * Forbidden: purple gradients, cream+terracotta, neon glow, pill clusters.
+ */
+:root {
+  --sgm-steel-0: #f4f5f7;
+  --sgm-steel-1: #e2e5ea;
+  --sgm-steel-2: #c5cad3;
+  --sgm-ink: #12141a;
+  --sgm-ink-soft: #3a404c;
+  --sgm-rail: #1c222c;
+  --sgm-vu: #e85d04;
+  --sgm-vu-dim: #b84703;
+  --sgm-signal: #0d9488;
+  --sgm-paper: #f4f5f7;
+  --sgm-line: rgba(18, 20, 26, 0.12);
+
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Archivo", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2.5rem;
+  --space-6: 4rem;
+
+  --radius: 2px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
