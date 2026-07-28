@@ -50,26 +50,26 @@ Hi {name},
 
 Working on {game} — saw you need real-time audio tooling.
 
-I ship C++/Rust audio code with sub-1ms processing per buffer at 48kHz (benchmarked publicly).
+I ship C++/Rust audio engines for plugins and game-adjacent pipelines — {asset_proof}.
 
 Quick screen share to discuss?
 
 No pressure.
 
-P.S. {benchmark_link}""",
+P.S. {demo_link}""",
     "D_cold_outbound": """Subject: {company}'s {product_area}
 
 Hi {name},
 
 {specific_observation_about_their_product_or_recent_post}.
 
-I work on real-time, CPU-only neural audio inference (Mamba/SSM architectures) — public benchmarks here: {benchmark_link}.
+I work on real-time, CPU-only neural audio inference (Mamba/SSM architectures) — {asset_proof}. Case study: {demo_link}.
 
 If you ever need contract DSP/inference work, happy to do a quick intro call.
 
 No pressure either way.
 
-P.S. {benchmark_link}""",
+P.S. {demo_link}""",
 }
 
 
