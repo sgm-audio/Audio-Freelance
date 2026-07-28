@@ -88,7 +88,7 @@ describe("runDraft", () => {
       .prepare("SELECT body FROM drafts WHERE lead_id = ?")
       .all(leadId) as Array<{ body: string }>;
     expect(drafts[0]?.body).toContain("AUv3");
-    expect(drafts[0]?.body).toContain("TrackClear");
+    expect(drafts[0]?.body).toContain("ReaPack");
     db.close();
   });
 

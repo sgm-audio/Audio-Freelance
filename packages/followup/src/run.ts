@@ -46,7 +46,7 @@ function templateBody(
     return `Hi ${first} — quick bump on my note about ${companyName}. ${fact ? `Still thinking about ${fact}. ` : ""}Happy to do a 20-minute call if useful.`;
   }
   if (kind === "day10") {
-    return `Hi ${first} — sharing a public TrackClear ReaPack listing in case it helps your audio tooling stack at ${companyName}. Open to a short call.`;
+    return `Hi ${first} — sharing our public SGM Suno REAPER suite (ReaPack index) in case it helps your audio tooling stack at ${companyName}: https://github.com/SGM-Studios/sgm-suno-workflow — open to a short call.`;
   }
   return `Hi ${first} — checking in from SGM Studios. If ${companyName} ever needs real-time DSP/on-device ML help, I'm around.`;
 }
