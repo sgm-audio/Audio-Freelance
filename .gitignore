@@ -54,7 +54,8 @@ inbox/*.csv
 Thumbs.db
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/tasks.json
 .idea/
 *.swp
 *.swo
