@@ -29,12 +29,11 @@ function Sidebar() {
     <nav className="w-56 shrink-0 border-r border-border bg-sidebar flex flex-col h-dvh sticky top-0">
       <div className="p-4 pb-0">
         <Link href="/" prefetch={true} className="text-sm font-semibold tracking-tight flex items-center gap-2">
-          <span className="text-lg">◆</span> aquire
+          <span className="text-lg">◆</span> Acquire
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-1 text-sm">
         <NavItem href="/" label="Dashboard" />
-        <NavItem href="/outreach" label="SGM Outreach" />
         <NavItem href="/leads" label="Leads" />
         <NavItem href="/cold-leads" label="Cold Leads" />
         <NavItem href="/tracking" label="Tracking" />
@@ -45,7 +44,15 @@ function Sidebar() {
           <NavItem href="/preferences" label="Preferences" />
           <NavItem href="/api/v1/health" label="API Health" external />
           <NavItem href="/api/v1/debug" label="Diagnostics" external />
-          <NavItem href="/briefing" label="Daily Briefing" external />
+          <NavItem href="http://127.0.0.1:8080/briefing" label="Daily Briefing" external />
+          <details className="pt-2">
+            <summary className="px-3 py-1.5 text-xs text-muted-foreground cursor-pointer hover:text-foreground list-none">
+              More…
+            </summary>
+            <div className="mt-1 space-y-1">
+              <NavItem href="/outreach" label="SGM Outreach" />
+            </div>
+          </details>
         </div>
       </div>
       <div className="p-4 border-t border-border">
