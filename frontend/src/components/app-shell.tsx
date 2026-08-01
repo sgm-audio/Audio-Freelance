@@ -50,6 +50,8 @@ function Sidebar() {
               More…
             </summary>
             <div className="mt-1 space-y-1">
+              <NavItem href="/leads/import" label="Import Leads" />
+              <NavItem href="/bookmarklet" label="Bookmarklet" />
               <NavItem href="/outreach" label="SGM Outreach" />
             </div>
           </details>

@@ -128,6 +128,8 @@ INTENT_SIGNAL_NAMES: frozenset[str] = frozenset(
         "senior_role",
         "remote_pnw",
         "contract_type_match",
+        "budget_above_floor",
+        "rate_above_floor",
     }
 )
 
@@ -138,6 +140,8 @@ FIT_SIGNAL_NAMES: frozenset[str] = frozenset(
         "skills_language_match",
         "skills_framework_match",
         "domain_match",
+        "specialization_match",
+        "seniority_match",
     }
 )
 
@@ -196,5 +200,10 @@ def classify_verdict(
             return "HOT", LeadStatus.HOT
         if total >= warm_threshold:
             return "WARM", LeadStatus.WARM
+
+    # Strong tech alone (≥8 points from tech signals) reaches WARM without intent
+    tech_points = sum(signals.get(name, 0) for name in TECH_SIGNAL_NAMES)
+    if tech_points >= 8 and total >= warm_threshold:
+        return "WARM", LeadStatus.WARM
 
     return "COLD", LeadStatus.COLD

@@ -161,14 +161,14 @@ def score_against_profile(
         if profile.contract_types and _any_match(combined_text, profile.contract_types):
             signals["contract_type_match"] = 3
 
-        # Rate floor check (if profile has a floor)
+        # Budget floor check (if profile has a floor)
         if profile.rate_floor > 0:
             budget = _parse_budget(combined_text)
             if budget is not None:
                 if budget >= profile.rate_floor:
-                    signals["rate_above_floor"] = 8
+                    signals["budget_above_floor"] = 8
                 else:
-                    signals["rate_below_floor"] = -15
+                    signals["budget_below_floor"] = -15
 
     # ── Step 7: Conjunctive verdict (tech + intent; HOT also needs fit) ──
     total = sum(signals.values())

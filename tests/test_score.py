@@ -195,3 +195,31 @@ class TestProfileScore:
         lead = score_against_profile(c, "plugin_dev", profile)
         assert "skills_language_match" in lead.signals or "skills_framework_match" in lead.signals
         assert lead.verdict == "HOT"
+
+    def test_tech_plus_budget_is_hot_no_contract_keyword(self):
+        """Tech + budget alone = HOT even without 'contract'/'freelance' keyword."""
+        c = RawCandidate(
+            source="test",
+            title="C++ DSP Developer for CLAP Plugin",
+            url="https://example.com/job11",
+            snippet="Need experienced C++ developer for real-time audio plugin. Budget $5000.",
+            tier=1,
+        )
+        profile = Profile(languages=["c++"], frameworks=["clap"], rate_floor=3000)
+        lead = score_against_profile(c, "plugin_dev", profile)
+        assert lead.verdict == "HOT"
+        assert "budget_above_floor" in lead.signals
+
+    def test_strong_tech_no_intent_is_warm(self):
+        """C++ + DSP + CLAP (strong tech) without 'contract' keyword → WARM."""
+        c = RawCandidate(
+            source="test",
+            title="C++ Audio Plugin Developer",
+            url="https://example.com/job12",
+            snippet="Looking for C++ developer with DSP experience for CLAP plugin development.",
+            tier=1,
+        )
+        lead = score_candidate(c, "plugin_dev")
+        assert lead.verdict == "WARM"
+        assert "cxx_audio" in lead.signals
+        assert "plugin_format" in lead.signals

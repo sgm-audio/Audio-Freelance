@@ -331,3 +331,52 @@ export async function removeBlockedCompany(company: string): Promise<{ status: s
     return res.json();
   } finally { clearTimeout(timer); }
 }
+
+// ── Manual lead creation ──
+
+export interface ManualLeadRequest {
+  title: string;
+  url: string;
+  snippet: string;
+  source?: string;
+  company?: string;
+  niche?: string;
+}
+
+export interface BulkImportResult {
+  imported: number;
+  errors: { title: string; error: string }[];
+  total: number;
+}
+
+export async function addManualLead(data: ManualLeadRequest): Promise<Lead> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(`${API}/leads/manual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    clearFetchCache();
+    return res.json();
+  } finally { clearTimeout(timer); }
+}
+
+export async function bulkImportLeads(leads: ManualLeadRequest[]): Promise<BulkImportResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const res = await fetch(`${API}/leads/bulk`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leads }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    clearFetchCache();
+    return res.json();
+  } finally { clearTimeout(timer); }
+}

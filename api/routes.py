@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from api.auth import require_api_key
@@ -58,6 +59,38 @@ class ScoreRequest(BaseModel):
 
 class LeadStatusUpdate(BaseModel):
     new_status: str = Field(min_length=1)
+
+
+class ManualLeadRequest(BaseModel):
+    """Manual lead creation — from bookmarklet, form, or bulk import."""
+
+    model_config = {"extra": "forbid"}
+
+    title: str = Field(min_length=1)
+    url: str = Field(min_length=1)
+    snippet: str = Field(min_length=1)
+    source: str = Field(default="manual")
+    company: str | None = None
+    niche: str = Field(default="plugin_dev")
+
+
+class BulkLeadItem(BaseModel):
+    """Single item in a bulk import request."""
+
+    model_config = {"extra": "forbid"}
+
+    title: str = Field(min_length=1)
+    url: str = Field(min_length=1)
+    snippet: str = Field(min_length=1)
+    source: str = Field(default="manual")
+    company: str | None = None
+    niche: str = Field(default="plugin_dev")
+
+
+class BulkLeadRequest(BaseModel):
+    """Bulk import request with 1-100 leads."""
+
+    leads: list[BulkLeadItem] = Field(min_length=1, max_length=100)
 
 
 @public.get("/health")
@@ -319,6 +352,126 @@ async def translate_tech(technical_description: str):
 
     result = translate_capability(technical_description)
     return result
+
+
+# ── Manual lead creation ──
+
+
+@router.post("/leads/manual")
+async def add_manual_lead(body: ManualLeadRequest):
+    """Add a single lead manually — from bookmarklet, form, or quick-add.
+
+    Scores the candidate and stores it in ChromaDB. Returns the scored lead.
+    """
+    if body.niche not in PREFERRED_NICHES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown niche '{body.niche}'. Valid: {', '.join(PREFERRED_NICHES)}",
+        )
+
+    candidate = RawCandidate(
+        source=body.source,
+        title=body.title,
+        url=body.url,
+        snippet=body.snippet,
+        company=body.company,
+        raw_text=body.snippet,
+        tier=1,
+    )
+    lead = score_candidate(candidate, body.niche)
+
+    try:
+        upsert_lead(lead)
+    except Exception as e:
+        log.warning("Manual lead storage failed", extra={"error": e})
+        raise HTTPException(status_code=500, detail=f"Failed to store lead: {e}")
+
+    return lead.model_dump(mode="json")
+
+
+@router.post("/leads/bulk")
+async def add_bulk_leads(body: BulkLeadRequest):
+    """Import multiple leads at once (max 100).
+
+    Each lead is scored and stored independently. Partial success: some may
+    succeed while others fail. Returns imported count and error details.
+    """
+    imported = 0
+    errors: list[dict] = []
+
+    for item in body.leads:
+        if item.niche not in PREFERRED_NICHES:
+            errors.append({"title": item.title, "error": f"Unknown niche '{item.niche}'"})
+            continue
+        try:
+            candidate = RawCandidate(
+                source=item.source,
+                title=item.title,
+                url=item.url,
+                snippet=item.snippet,
+                company=item.company,
+                raw_text=item.snippet,
+                tier=1,
+            )
+            lead = score_candidate(candidate, item.niche)
+            upsert_lead(lead)
+            imported += 1
+        except Exception as exc:
+            errors.append({"title": item.title, "error": str(exc)})
+
+    return {"imported": imported, "errors": errors, "total": len(body.leads)}
+
+
+# ── Bookmarklet ──
+
+
+@public.get("/bookmarklet", response_class=HTMLResponse)
+async def bookmarklet_page():
+    """HTML page with a drag-to-bookmarks-bar link for one-click lead capture."""
+    from fastapi.responses import HTMLResponse
+
+    js = (
+        "javascript:(function(){"
+        "var t=document.title||'';"
+        "var u=location.href;"
+        "var s=window.getSelection()?.toString()||'';"
+        "var d=JSON.stringify({title:t,url:u,snippet:s,source:'bookmarklet'});"
+        "var x=new XMLHttpRequest();"
+        "x.open('POST','/api/v1/leads/manual',true);"
+        "x.setRequestHeader('Content-Type','application/json');"
+        "x.send(d);"
+        "alert('Lead captured!');"
+        "})()"
+    )
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Bookmarklet — Audio-Freelance</title>
+<style>
+  body {{ font-family: system-ui, sans-serif; max-width: 600px; margin: 4rem auto; padding: 0 1rem; line-height: 1.6; }}
+  a.bookmarklet {{ display: inline-block; padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border-radius: 0.5rem; text-decoration: none; font-weight: 600; cursor: grab; }}
+  code {{ background: #1e293b; color: #e2e8f0; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; }}
+  pre {{ background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }}
+</style></head>
+<body>
+<h1>📥 Capture Lead Bookmarklet</h1>
+<p>Drag this button to your bookmarks bar:</p>
+<p><a class="bookmarklet" href="{js}" onclick="return false;">📥 Capture Lead</a></p>
+<p>Then, when you find a lead on any page:</p>
+<ol>
+  <li>Select some text on the page (the job description, requirements, etc.)</li>
+  <li>Click the <strong>📥 Capture Lead</strong> bookmarklet</li>
+  <li>The lead is scored and saved to your pipeline</li>
+</ol>
+<p>The bookmarklet captures:</p>
+<ul>
+  <li><strong>Title:</strong> the page title</li>
+  <li><strong>URL:</strong> the current page URL</li>
+  <li><strong>Snippet:</strong> any text you have selected</li>
+</ul>
+<p>Leads are scored with niche <code>plugin_dev</code> by default. Edit in the dashboard.</p>
+<p><small>Requires the backend to be running on <code>localhost:8080</code>.</small></p>
+</body></html>"""
+    return HTMLResponse(content=html, media_type="text/html")
 
 
 @router.post("/rate")

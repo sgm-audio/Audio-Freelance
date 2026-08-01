@@ -8,6 +8,7 @@ import {
 } from "@/components/lead-detail-sheet";
 import {
   addBlockedCompany,
+  addManualLead,
   clearFetchCache,
   fetchBlockedCompanies,
   fetchLeads,
@@ -32,6 +33,17 @@ export default function LeadsPage() {
   const [focusIdx, setFocusIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
+
+  // Quick Add modal state
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickTitle, setQuickTitle] = useState("");
+  const [quickUrl, setQuickUrl] = useState("");
+  const [quickSnippet, setQuickSnippet] = useState("");
+  const [quickSource, setQuickSource] = useState("manual");
+  const [quickCompany, setQuickCompany] = useState("");
+  const [quickNiche, setQuickNiche] = useState("plugin_dev");
+  const [quickSubmitting, setQuickSubmitting] = useState(false);
+  const [quickResult, setQuickResult] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,6 +87,31 @@ export default function LeadsPage() {
       setBlockMsg("Failed to block company");
     }
     setTimeout(() => setBlockMsg(""), 3000);
+  }
+
+  async function handleQuickAdd() {
+    if (!quickTitle || !quickUrl || !quickSnippet) return;
+    setQuickSubmitting(true);
+    setQuickResult("");
+    try {
+      const lead = await addManualLead({
+        title: quickTitle,
+        url: quickUrl,
+        snippet: quickSnippet,
+        source: quickSource,
+        company: quickCompany || undefined,
+        niche: quickNiche,
+      });
+      setQuickResult(`${lead.verdict} · score ${lead.score}`);
+      setQuickTitle("");
+      setQuickUrl("");
+      setQuickSnippet("");
+      setQuickCompany("");
+      await load();
+    } catch (e: unknown) {
+      setQuickResult(`Error: ${(e as Error).message || "Failed"}`);
+    }
+    setQuickSubmitting(false);
   }
 
   const handleStatus = useCallback(async (status: string) => {
@@ -185,6 +222,13 @@ export default function LeadsPage() {
           className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent"
         >
           {loading ? "..." : "Refresh"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowQuickAdd(true)}
+          className="rounded-md border border-primary/50 bg-primary/10 text-primary px-3 py-1.5 text-sm hover:bg-primary/20"
+        >
+          + Quick Add
         </button>
       </div>
 
@@ -307,6 +351,125 @@ export default function LeadsPage() {
         onStatus={handleStatus}
         busy={busy}
       />
+
+      {/* Quick Add Modal */}
+      {showQuickAdd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowQuickAdd(false)}>
+          <div
+            className="bg-card border border-border rounded-lg p-6 w-full max-w-lg mx-4 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Quick Add Lead</h2>
+              <button
+                type="button"
+                onClick={() => setShowQuickAdd(false)}
+                className="text-muted-foreground hover:text-foreground text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Title *</label>
+                <input
+                  type="text"
+                  value={quickTitle}
+                  onChange={(e) => setQuickTitle(e.target.value)}
+                  placeholder="e.g. C++ DSP Developer for CLAP Plugin"
+                  className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">URL *</label>
+                <input
+                  type="url"
+                  value={quickUrl}
+                  onChange={(e) => setQuickUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Snippet *</label>
+                <textarea
+                  value={quickSnippet}
+                  onChange={(e) => setQuickSnippet(e.target.value)}
+                  placeholder="Paste the job description or key details..."
+                  rows={4}
+                  className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-y"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Source</label>
+                  <select
+                    value={quickSource}
+                    onChange={(e) => setQuickSource(e.target.value)}
+                    className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="manual">Manual</option>
+                    <option value="upwork">Upwork</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="forum">Forum</option>
+                    <option value="email">Email</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Niche</label>
+                  <select
+                    value={quickNiche}
+                    onChange={(e) => setQuickNiche(e.target.value)}
+                    className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="plugin_dev">Plugin Dev</option>
+                    <option value="reaper_scripts">REAPER Scripts</option>
+                    <option value="rust_audio">Rust Audio</option>
+                    <option value="audio_ml">Audio ML</option>
+                    <option value="game_audio_dev">Game Audio</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Company (optional)</label>
+                <input
+                  type="text"
+                  value={quickCompany}
+                  onChange={(e) => setQuickCompany(e.target.value)}
+                  placeholder="e.g. iZotope"
+                  className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </div>
+
+            {quickResult && (
+              <div className={`rounded-md px-3 py-2 text-sm ${quickResult.startsWith("Error") ? "bg-red-500/10 text-red-400 border border-red-500/30" : "bg-green-500/10 text-green-400 border border-green-500/30"}`}>
+                {quickResult}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowQuickAdd(false)}
+                className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleQuickAdd}
+                disabled={quickSubmitting || !quickTitle || !quickUrl || !quickSnippet}
+                className="rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm hover:bg-primary/90 disabled:opacity-50"
+              >
+                {quickSubmitting ? "Saving..." : "Add Lead"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
