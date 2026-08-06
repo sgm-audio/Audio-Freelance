@@ -91,6 +91,16 @@ python run.py
 
 Then open **http://localhost:3000**
 
+**Desktop window (optional):** after the stack deps above are installed, plus Rust + WebView2:
+
+```powershell
+cd desktop
+npm install
+npm run tauri dev
+```
+
+Or VS Code/Cursor: **Run Task → Open Desktop App**. Closing the window stops `:3000`/`:8080` (`python run.py --shutdown`). See [desktop/README.md](desktop/README.md).
+
 The launcher runs pre-flight checks (uv, Node, `.env`, free ports) before starting anything — `python run.py --check` runs just the checks, `--verbose` shows server output.
 
 ### Prerequisites
