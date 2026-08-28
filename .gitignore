@@ -71,3 +71,7 @@ graphify-out/
 _extract_*
 _spec_*
 
+# Tauri desktop build output (never commit — 668MB+ artifacts)
+desktop/src-tauri/target/
+desktop/target/
+
