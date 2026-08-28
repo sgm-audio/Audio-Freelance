@@ -82,16 +82,49 @@ services:
       - ./config:/app/config:ro
     command: ["node", "packages/cli/dist/bin.js", "status"]
 
+  # ── Message queue: decoupled ingestion in front of n8n (Refusal #3) ──
+  # Client/API-gateway PUBLISHes to `leads.ingest`; n8n consumes via Redis Trigger.
+  redis:
+    profiles: ["outreach"]
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── n8n: IO + Orchestration only (Refusal #1/#2/#4/#5) ──
+  # All logic executes in the FastAPI backend ({{ $env.BACKEND_API_URL }}).
+  # All config is injected via env vars — no hardcoded IDs/keys in workflows.
   n8n:
     profiles: ["outreach"]
     image: n8nio/n8n:latest
     ports:
       - "5678:5678"
+    depends_on:
+      redis:
+        condition: service_healthy
     environment:
       - N8N_PORT=5678
       - GENERIC_TIMEZONE=America/Vancouver
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-audio-freelance-default-key}
+      # ── Refusal #4: everything is a variable ──
+      - BACKEND_API_URL=${BACKEND_API_URL:-http://backend:8080}
+      - API_KEY=${API_KEY:-}
+      - ERROR_WEBHOOK_URL=${ERROR_WEBHOOK_URL:-}
+      - HIVYR_PROD_DB=${HIVYR_PROD_DB:-}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/home/node/.n8n/workflows:ro
 
 volumes:
   ollama_data:
@@ -99,3 +132,4 @@ volumes:
   lead_data:
   outreach_data:
   n8n_data:
+  redis_data:

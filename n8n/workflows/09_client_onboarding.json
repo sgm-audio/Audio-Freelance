@@ -1,0 +1,98 @@
+{
+  "name": "AF · Client Onboarding (Orchestrator)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "onboarding",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 320]
+    },
+    {
+      "parameters": { "workflowId": "ee33c035-ae58-4d5e-ad50-9b8a42c0c191", "options": {} },
+      "id": "exec_ingest",
+      "name": "1 · Ingest Lead",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [440, 320]
+    },
+    {
+      "parameters": { "workflowId": "9bff3445-5dd7-4ab6-b63f-6d3850940dad", "options": {} },
+      "id": "exec_score",
+      "name": "2 · Score Lead",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [680, 320]
+    },
+    {
+      "parameters": { "workflowId": "386431b1-3b1c-47fe-9caa-406625b9bc38", "options": {} },
+      "id": "exec_translate",
+      "name": "3 · Translate",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [920, 320]
+    },
+    {
+      "parameters": { "workflowId": "e9634f86-2481-4e18-817f-5f08c93a7ea7", "options": {} },
+      "id": "exec_outreach",
+      "name": "4 · Generate Outreach",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1160, 320]
+    },
+    {
+      "parameters": { "workflowId": "58670713-0ae9-444c-a6eb-d369fc95bc5b", "options": {} },
+      "id": "exec_crm",
+      "name": "5 · Update CRM",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1400, 320]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1640, 320]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [ [ { "node": "1 · Ingest Lead", "type": "main", "index": 0 } ] ]
+    },
+    "1 · Ingest Lead": {
+      "main": [ [ { "node": "2 · Score Lead", "type": "main", "index": 0 } ] ]
+    },
+    "2 · Score Lead": {
+      "main": [ [ { "node": "3 · Translate", "type": "main", "index": 0 } ] ]
+    },
+    "3 · Translate": {
+      "main": [ [ { "node": "4 · Generate Outreach", "type": "main", "index": 0 } ] ]
+    },
+    "4 · Generate Outreach": {
+      "main": [ [ { "node": "5 · Update CRM", "type": "main", "index": 0 } ] ]
+    },
+    "5 · Update CRM": {
+      "main": [ [ { "node": "Respond", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "pinData": {},
+  "meta": { "instanceId": "audio-freelance" },
+  "id": "ba98a8be-5b94-4080-a2d0-5941d4a90357",
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "0c60e528-216b-4170-95a2-b11550d6eebd"
+  },
+  "versionId": "1"
+}

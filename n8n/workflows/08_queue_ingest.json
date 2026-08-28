@@ -1,0 +1,48 @@
+{
+  "name": "AF · Queue Ingest (Redis)",
+  "nodes": [
+    {
+      "parameters": {
+        "channel": "leads.ingest",
+        "event": "message"
+      },
+      "id": "redis_trigger",
+      "name": "Redis Trigger: leads.ingest",
+      "type": "n8n-nodes-base.redisTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "credentials": {
+        "redis": {
+          "id": "REDIS_CREDENTIAL_ID",
+          "name": "Redis (docker)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": "ee33c035-ae58-4d5e-ad50-9b8a42c0c191",
+        "options": {}
+      },
+      "id": "exec_ingest",
+      "name": "Exec: Ingest Lead",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [540, 300]
+    }
+  ],
+  "connections": {
+    "Redis Trigger: leads.ingest": {
+      "main": [
+        [ { "node": "Exec: Ingest Lead", "type": "main", "index": 0 } ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": { "instanceId": "audio-freelance" },
+  "id": "119b8320-22f6-46e5-8e07-ab0aedaae001",
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "0c60e528-216b-4170-95a2-b11550d6eebd"
+  },
+  "versionId": "1"
+}
