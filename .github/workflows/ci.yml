@@ -90,7 +90,7 @@ jobs:
 
       - name: Docker metadata (backend)
         id: meta-backend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ steps.image.outputs.owner_repo }}/backend
           tags: |
@@ -111,7 +111,7 @@ jobs:
 
       - name: Docker metadata (frontend)
         id: meta-frontend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ steps.image.outputs.owner_repo }}/frontend
           tags: |
