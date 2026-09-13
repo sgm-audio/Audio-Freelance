@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -7,7 +8,17 @@ import { FirstBootDetector } from "@/app/first-boot";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const bare = pathname === "/outreach" || pathname.startsWith("/outreach/");
+
+  if (!mounted) {
+    return null;
+  }
 
   if (bare) {
     return <>{children}</>;
@@ -69,7 +80,7 @@ function NavItem({ href, label, external }: { href: string; label: string; exter
     "flex items-center rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors";
   if (external) {
     return (
-      <a href={href} className={cls} target="_blank" rel="noopener">
+      <a href={href} className={cls} target="_blank" rel="noopener noreferrer">
         {label}
         <span className="ml-auto text-xs opacity-50">↗</span>
       </a>

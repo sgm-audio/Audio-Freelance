@@ -175,6 +175,35 @@ def extract_signals(
     return result
 
 
+def _parse_budget(text: str) -> int | None:
+    """Extract a budget amount from raw text, handling $5K shorthand, ranges, and hourly rates."""
+    for pat in [
+        r"\$\s*(\d+)\s*k\b",
+        r"\b(\d{2,4})\s*k\s*(?:budget|contract|usd|cad|freelance|remote)",
+        r"rate\s+(?:is|of|around)?\s*\$?\s*(\d{2,3})\s*k",
+    ]:
+        m = re.search(pat, text, re.IGNORECASE)
+        if m:
+            val = int(m.group(1)) * 1000
+            if val >= 500:
+                return val
+
+    patterns = [
+        r"\$\s*((?:\d{4,10}|\d{1,3}(?:,\d{3})*))(?:\.\d{2})?\s*(?:cad|usd)?",
+        r"(\d{4,5})\s*(?:cad|usd|dollars)",
+        r"budget\s*(?:of\s*)?[:$]?\s*\$?(\d[\d,]*)",
+        r"rate\s*(?:of\s*)?[:$]?\s*((?:\d{4,10}|\d{1,3}(?:,\d{3})*))",
+        r"\b\$(\d{2,3}(?:,\d{3})*)\s*(?:/hr|/hour|\s*(?:per|an?)\s*hour)",
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, re.IGNORECASE)
+        if m:
+            val = int(m.group(1).replace(",", ""))
+            if val >= 100:
+                return val
+    return None
+
+
 def classify_verdict(
     signals: dict[str, int],
     total: int,
