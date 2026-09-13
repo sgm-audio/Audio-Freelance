@@ -37,14 +37,14 @@ function Waveform() {
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
       <boxGeometry />
-      <meshStandardMaterial color="#4a7dff" transparent opacity={0.6} />
+      <meshStandardMaterial color="#d08b45" transparent opacity={0.6} />
     </instancedMesh>
   );
 }
 
 function Grid() {
   return (
-    <gridHelper args={[16, 12, "#2a2a3a", "#1a1a2a"]} position={[0, -2, -2]} />
+    <gridHelper args={[16, 12, "#383734", "#171716"]} position={[0, -2, -2]} />
   );
 }
 

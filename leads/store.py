@@ -88,7 +88,11 @@ def texts_are_near_dup(
 
 
 def check_ollama_available() -> bool:
-    """Return True if the Ollama server is reachable with the embedding model."""
+    """Return True if the Ollama server is reachable.
+    
+    Note: Even if reachable, the server may crash during embed calls 
+    due to ROCm driver issues on some AMD iGPUs.
+    """
     try:
         import ollama
 
@@ -122,9 +126,15 @@ def _init() -> None:
         from chromadb.utils import embedding_functions
 
         if check_ollama_available():
-            embedding_fn = embedding_functions.OllamaEmbeddingFunction(
-                model_name=EMBEDDING_MODEL,
-            )
+            try:
+                embedding_fn = embedding_functions.OllamaEmbeddingFunction(
+                    model_name=EMBEDDING_MODEL,
+                )
+                # Warm-up call to verify the model doesn't crash the ROCm driver
+                embedding_fn(["warmup"])
+            except Exception:
+                # ROCm crash or model missing; fall back to CPU transformers
+                embedding_fn = None
 
     if embedding_fn is None:
         with contextlib.suppress(Exception):
