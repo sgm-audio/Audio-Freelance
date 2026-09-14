@@ -12,9 +12,7 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 _MAILTO_RE = re.compile(r"mailto:([^\s\"'<>?]+)", re.IGNORECASE)
-_EMAIL_RE = re.compile(
-    r"(?<![/\w.-])([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b"
-)
+_EMAIL_RE = re.compile(r"(?<![/\w.-])([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b")
 # Skip noise emails from CDNs, trackers, placeholders
 _EMAIL_SKIP_SUBSTR = (
     "example.com",

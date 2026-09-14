@@ -153,9 +153,7 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
                 c.raw_text = full_text[:2000]  # cap at 2000 chars
                 fetched_count += 1
             if not c.contact_path:
-                c.contact_path = extract_contact_path(
-                    full_text or "", c.raw_text, c.snippet
-                )
+                c.contact_path = extract_contact_path(full_text or "", c.raw_text, c.snippet)
         except Exception:
             import logging
 

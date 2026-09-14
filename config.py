@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # ── Optional API tokens ──
     github_token: str = ""
 
-# ── Ollama ──
+    # ── Ollama ──
     ollama_host: str = "http://localhost:11434"
 
     # ── ChromaDB ──

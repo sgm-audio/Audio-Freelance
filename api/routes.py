@@ -445,7 +445,7 @@ async def bookmarklet_page():
         "alert('Lead captured!');"
         "})()"
     )
-# CSS styles for bookmarklet
+    # CSS styles for bookmarklet
     BOOKMARKLET_CSS = """
     body {
       font-family: system-ui, sans-serif;
@@ -479,7 +479,6 @@ async def bookmarklet_page():
       overflow-x: auto;
     }
     """
-
 
     html = f"""<!DOCTYPE html>
 <html lang="en">

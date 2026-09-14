@@ -254,9 +254,7 @@ def preflight(*, force: bool = False) -> tuple[int, bool, bool]:
     if next_bin.is_file():
         vlog(f"{GREEN}[OK]{NC} frontend Next.js binary present")
     else:
-        print(
-            f"{RED}[MISSING]{NC} frontend deps — run: cd frontend && npm install"
-        )
+        print(f"{RED}[MISSING]{NC} frontend deps — run: cd frontend && npm install")
         failures += 1
 
     if force:
@@ -271,9 +269,7 @@ def preflight(*, force: bool = False) -> tuple[int, bool, bool]:
         reuse_backend = True
         log(f"{GREEN}[OK]{NC} port {BACKEND_PORT} already serving healthy backend — will reuse")
     else:
-        print(
-            f"{RED}[BUSY]{NC} port {BACKEND_PORT} is in use but backend health check failed"
-        )
+        print(f"{RED}[BUSY]{NC} port {BACKEND_PORT} is in use but backend health check failed")
         reclaim_hint(BACKEND_PORT)
         failures += 1
 
@@ -283,9 +279,7 @@ def preflight(*, force: bool = False) -> tuple[int, bool, bool]:
         reuse_frontend = True
         log(f"{GREEN}[OK]{NC} port {FRONTEND_PORT} already accepting — will reuse")
     else:
-        print(
-            f"{RED}[BUSY]{NC} port {FRONTEND_PORT} is in use but not accepting connections"
-        )
+        print(f"{RED}[BUSY]{NC} port {FRONTEND_PORT} is in use but not accepting connections")
         reclaim_hint(FRONTEND_PORT)
         failures += 1
 
@@ -464,9 +458,7 @@ def main() -> int:
                 if proc is None:
                     continue
                 if proc.poll() is not None:
-                    print(
-                        f"{RED}{name} exited unexpectedly (code {proc.returncode}){NC}"
-                    )
+                    print(f"{RED}{name} exited unexpectedly (code {proc.returncode}){NC}")
                     dump_log(log_path, name.lower())
                     return 1
             time.sleep(1)
