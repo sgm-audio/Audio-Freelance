@@ -43,7 +43,6 @@ FastAPI Server (standalone)
 - [x] `scoring/__init__.py`
 - [x] `scoring/score.py` — `score_candidate()`: hard-skip → signal extraction → budget parse → verdict
 - [x] `scoring/signals.py` — Regex patterns: POSITIVE (real-time C++/Rust +5, plugin format +5, ML/neural +8, Rust audio +6, REAPER +5, edge inference +5, low-latency +4, budget above floor +10, remote/PNW +3), NEGATIVE (budget below floor -15, GUI-only -3, Mac-only/Dante -10), HARD SKIP (revenue-share, equity-only, unpaid, etc). Verdict: ≥10 HOT, ≥5 WARM, <5 COLD, SKIP.
-- [x] `scoring/fit_score.py` — Tier 4 company fit-score (RT audio +5, ML +5, small stage +5, tech content +3; threshold ≥10)
 
 ### Step 1.5: LangGraph Pipeline
 - [x] `graph/__init__.py`
@@ -153,7 +152,6 @@ FastAPI Server (standalone)
 │   ├── __init__.py
 │   ├── score.py                     # Main scoring pipeline
 │   ├── signals.py                   # Signal detection patterns
-│   └── fit_score.py                 # Tier 4 company fit-score
 ├── graph/
 │   ├── __init__.py
 │   ├── state.py                     # Pipeline state TypedDict

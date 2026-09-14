@@ -49,6 +49,8 @@ assets/       # Asset registry (asset_registry.yml)
 packages/     # pnpm monorepo (outreach CLI packages)
 frontend/     # Next.js dashboard
 tests/        # 65+ pytest tests
+scripts/      # Shell/python ops scripts (incl. test_endpoints.py smoke script)
+docs/         # PRD + ADRs; planning/ (backlog, build plan, audit), outreach/ (spec, runbook, review)
 ```
 
 ## Testing

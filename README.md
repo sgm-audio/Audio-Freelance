@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/badge/LangGraph-0.2%2B-red" alt="LangGraph">
   <img src="https://img.shields.io/badge/ChromaDB-0.6%2B-purple" alt="ChromaDB">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <a href="https://github.com/sgm-audio/Audio-Freelance/actions/workflows/ci.yml"><img src="https://github.com/sgm-audio/Audio-Freelance/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
 ---
@@ -173,6 +174,29 @@ Full API documentation available at `http://localhost:8080/docs` (OpenAPI/Swagge
 | Scoring | Profile-based signal detection | Lead qualification |
 | Observability | Prometheus + Sentry + structlog | Metrics + errors + logging |
 | Deployment | Docker + Fly.io + GitHub Actions | CI/CD pipeline |
+
+## Project Docs
+
+- **Roadmap:** [docs/ROADMAP.md](docs/ROADMAP.md) — where the project is going and how to help
+- [PRD](docs/PRD.md) and [ADR-001](docs/ADR-001.md) in `docs/`
+- Detailed engineering roadmap: [`docs/planning/`](docs/planning/UX_PRODUCT_ROADMAP.md)
+- Outreach engine spec, runbook & red-team review: [`docs/outreach/`](docs/outreach/OUTREACH_BUILD_SPEC.md)
+
+## System Intelligence
+
+This project maintains a persistent knowledge graph in `graphify-out/` for architectural analysis and cross-file relationship tracking. Use the `graphify` tool to query the codebase structure.
+
+## Gallery
+
+![Dashboard](assets/screenshots/dashboard.png)
+*Main acquisition dashboard showing lead pipelines and scoring metrics.*
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for scope,
+setup, and PR guidelines, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for
+community expectations. Good first contributions: new search-tier sources,
+market-intelligence signals, and dashboard polish.
 
 ## License
 

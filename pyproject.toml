@@ -3,7 +3,7 @@ name = "audio-dev-freelance-system"
 version = "0.1.2"
 description = "Automated freelance lead acquisition pipeline for audio DSP/plugin/realtime work"
 requires-python = ">=3.12"
-readme = "BUILD_PLAN.md"
+readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "SGM", email = "scott@audio.dev" }]
 

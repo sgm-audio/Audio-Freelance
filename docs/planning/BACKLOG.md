@@ -35,4 +35,4 @@ M0–M5 package sources under `packages/{core,ingest,enrich,score,draft,approve,
 
 ## Operator entry
 
-See [OUTREACH_RUNBOOK.md](./OUTREACH_RUNBOOK.md). Latest red-team: [OUTREACH_REVIEW.md](./OUTREACH_REVIEW.md).
+See [OUTREACH_RUNBOOK.md](../outreach/OUTREACH_RUNBOOK.md). Latest red-team: [OUTREACH_REVIEW.md](../outreach/OUTREACH_REVIEW.md). Spec: [OUTREACH_BUILD_SPEC.md](../outreach/OUTREACH_BUILD_SPEC.md).
