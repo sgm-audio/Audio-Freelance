@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # ── Optional API tokens ──
     github_token: str = ""
 
-    # ── Ollama ──
+# ── Ollama ──
     ollama_host: str = "http://localhost:11434"
 
     # ── ChromaDB ──
@@ -45,6 +45,10 @@ class Settings(BaseSettings):
 
     # ── Niches ──
     preferred_niches: str = "plugin_dev,reaper_scripts,rust_audio,audio_ml,game_audio_dev"
+    user_type: str = "audio"  # audio | automation | custom
+    automation_niches: str = (
+        "n8n_automation,zapier_make,api_integration,business_automation,ai_automation"
+    )
 
     # ── Rate floors ──
     min_rate_cad: int = 3000
@@ -84,6 +88,10 @@ class Settings(BaseSettings):
         if not self.cors_origins:
             return []
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    def as_automation_niche_list(self) -> list[str]:
+        """Return automation_niches as a list."""
+        return [n.strip() for n in self.automation_niches.split(",") if n.strip()]
 
 
 # Singleton — crashes at import time if tavily_api_key etc are missing

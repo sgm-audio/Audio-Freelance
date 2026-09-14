@@ -5,6 +5,7 @@ All configurable values load from .env with fallback defaults.
 
 import contextlib
 import json
+import os
 import re
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -13,7 +14,10 @@ from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from config import settings
+from debug.log import get_logger
 from leads.schema import Lead, LeadStatus
+
+log = get_logger(__name__)
 
 CHROMA_COLLECTION_LEADS: str = settings.chroma_collection_leads
 CHROMA_COLLECTION_OUTREACH: str = settings.chroma_collection_outreach
@@ -89,8 +93,8 @@ def texts_are_near_dup(
 
 def check_ollama_available() -> bool:
     """Return True if the Ollama server is reachable.
-    
-    Note: Even if reachable, the server may crash during embed calls 
+
+    Note: Even if reachable, the server may crash during embed calls
     due to ROCm driver issues on some AMD iGPUs.
     """
     try:
@@ -110,6 +114,7 @@ def ensure_collections_initialized() -> bool:
         _init()
         return True
     except Exception:
+        log.warning("chroma_init_failed", exc_info=True)
         return False
 
 
@@ -120,21 +125,29 @@ def _init() -> None:
 
     import chromadb
 
-    # Try Ollama first, fall back to local sentence-transformers
+    # Try Ollama first, fall back to local sentence-transformers.
+    # LEADS_DISABLE_OLLAMA=1 forces the CPU path — used by the test suite so
+    # embedding dimensions can't flip mid-run when ROCm crashes.
     embedding_fn = None
-    with contextlib.suppress(Exception):
-        from chromadb.utils import embedding_functions
+    if os.environ.get("LEADS_DISABLE_OLLAMA") != "1":
+        with contextlib.suppress(Exception):
+            from chromadb.utils import embedding_functions
 
-        if check_ollama_available():
-            try:
-                embedding_fn = embedding_functions.OllamaEmbeddingFunction(
-                    model_name=EMBEDDING_MODEL,
-                )
-                # Warm-up call to verify the model doesn't crash the ROCm driver
-                embedding_fn(["warmup"])
-            except Exception:
-                # ROCm crash or model missing; fall back to CPU transformers
-                embedding_fn = None
+            if check_ollama_available():
+                try:
+                    embedding_fn = embedding_functions.OllamaEmbeddingFunction(
+                        model_name=EMBEDDING_MODEL,
+                    )
+                    # Warm-up call to verify the model doesn't crash the ROCm driver
+                    embedding_fn(["warmup"])
+                except Exception:
+                    # ROCm crash or model missing; fall back to CPU transformers
+                    log.warning(
+                        "ollama_embedding_init_failed",
+                        fallback="sentence-transformers",
+                        exc_info=True,
+                    )
+                    embedding_fn = None
 
     if embedding_fn is None:
         with contextlib.suppress(Exception):
@@ -148,17 +161,15 @@ def _init() -> None:
         path=str(_DATA_DIR),
     )
 
-    _leads_collection = client.get_or_create_collection(
-        name=CHROMA_COLLECTION_LEADS,
-        embedding_function=embedding_fn,
-        metadata={"hnsw:space": "cosine"},
-    )
+    def _get_or_create_collection(name: str):
+        return client.get_or_create_collection(
+            name=name,
+            embedding_function=embedding_fn,
+            metadata={"hnsw:space": "cosine"},
+        )
 
-    _outreach_collection = client.get_or_create_collection(
-        name=CHROMA_COLLECTION_OUTREACH,
-        embedding_function=embedding_fn,
-        metadata={"hnsw:space": "cosine"},
-    )
+    _leads_collection = _get_or_create_collection(CHROMA_COLLECTION_LEADS)
+    _outreach_collection = _get_or_create_collection(CHROMA_COLLECTION_OUTREACH)
 
     _initialized = True
 
@@ -428,11 +439,7 @@ def rotate_cold(age_days: int = 3) -> tuple[int, int]:
                 _leads_collection.delete(ids=[str(lead.id)])
                 deleted += 1
             except Exception:
-                import logging
-
-                logging.getLogger("leads.store").warning(
-                    "Failed to delete lead during rotation.", exc_info=True
-                )
+                log.warning("rotation_delete_failed", exc_info=True)
 
     return archived, deleted
 
@@ -445,6 +452,7 @@ def restore_from_archive(archive_path: Path) -> int:
     """
     _init()
     restored = 0
+    skipped = 0
     with open(archive_path) as f:
         for line in f:
             line = line.strip()
@@ -456,8 +464,10 @@ def restore_from_archive(archive_path: Path) -> int:
                 upsert_lead(lead)
                 restored += 1
             except ValueError:
-                # Duplicate or blocked source — skip
-                pass
+                # Duplicate or blocked source — count so restore failures are visible
+                skipped += 1
+    if skipped:
+        log.info("restore_from_archive", restored=restored, skipped_duplicates=skipped)
     return restored
 
 
@@ -497,6 +507,7 @@ def get_last_rotation() -> datetime | None:
     try:
         return datetime.fromisoformat(_ROTATION_STAMP_FILE.read_text().strip())
     except Exception:
+        log.debug("rotation_stamp_unparseable", exc_info=True)
         return None
 
 

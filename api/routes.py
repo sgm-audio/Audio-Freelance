@@ -172,6 +172,7 @@ async def list_cold_leads(days: int = 7, niche: str | None = None):
                     if len(leads) >= 200:
                         break
         except Exception:
+            log.debug("cold_leads_archive_read_failed", exc_info=True)
             continue
         if len(leads) >= 200:
             break
@@ -204,6 +205,7 @@ async def cold_lead_stats():
                         source_counts[data.get("source", "unknown")] += 1
                         total += 1
             except Exception:
+                log.debug("cold_stats_read_failed", exc_info=True)
                 continue
 
     return {
@@ -443,14 +445,47 @@ async def bookmarklet_page():
         "alert('Lead captured!');"
         "})()"
     )
+# CSS styles for bookmarklet
+    BOOKMARKLET_CSS = """
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 600px;
+      margin: 4rem auto;
+      padding: 0 1rem;
+      line-height: 1.6;
+    }
+    a.bookmarklet {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: #3b82f6;
+      color: white;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: grab;
+    }
+    code {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+    }
+    """
+
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><title>Bookmarklet — Audio-Freelance</title>
 <style>
-  body {{ font-family: system-ui, sans-serif; max-width: 600px; margin: 4rem auto; padding: 0 1rem; line-height: 1.6; }}
-  a.bookmarklet {{ display: inline-block; padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border-radius: 0.5rem; text-decoration: none; font-weight: 600; cursor: grab; }}
-  code {{ background: #1e293b; color: #e2e8f0; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; }}
-  pre {{ background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }}
+{BOOKMARKLET_CSS}
 </style></head>
 <body>
 <h1>📥 Capture Lead Bookmarklet</h1>
@@ -458,15 +493,15 @@ async def bookmarklet_page():
 <p><a class="bookmarklet" href="{js}" onclick="return false;">📥 Capture Lead</a></p>
 <p>Then, when you find a lead on any page:</p>
 <ol>
-  <li>Select some text on the page (the job description, requirements, etc.)</li>
-  <li>Click the <strong>📥 Capture Lead</strong> bookmarklet</li>
-  <li>The lead is scored and saved to your pipeline</li>
+<li>Select some text on the page (the job description, requirements, etc.)</li>
+<li>Click the <strong>📥 Capture Lead</strong> bookmarklet</li>
+<li>The lead is scored and saved to your pipeline</li>
 </ol>
 <p>The bookmarklet captures:</p>
 <ul>
-  <li><strong>Title:</strong> the page title</li>
-  <li><strong>URL:</strong> the current page URL</li>
-  <li><strong>Snippet:</strong> any text you have selected</li>
+<li><strong>Title:</strong> the page title</li>
+<li><strong>URL:</strong> the current page URL</li>
+<li><strong>Snippet:</strong> any text you have selected</li>
 </ul>
 <p>Leads are scored with niche <code>plugin_dev</code> by default. Edit in the dashboard.</p>
 <p><small>Requires the backend to be running on <code>localhost:8080</code>.</small></p>
@@ -544,6 +579,8 @@ async def pipeline_status():
             leads = get_leads_by_status(status)
             counts[status.value] = len(leads)
         except Exception:
+            # Zeroing masks a store outage; warn so "0 leads" is distinguishable from "DB down".
+            log.warning("status_count_failed", status=status.value, exc_info=True)
             counts[status.value] = 0
 
     leads_stored.set(sum(counts.values()))

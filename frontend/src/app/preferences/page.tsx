@@ -38,12 +38,12 @@ export default function PreferencesPage() {
   async function handleAddCompany() {
     if (!newSlug.trim()) return;
     try { await addCompany(newAts, newSlug.trim().toLowerCase()); setNewSlug(""); load(); }
-    catch {}
+    catch { setMessage("Failed to add company."); setTimeout(() => setMessage(""), 3000); }
   }
 
   async function handleRemove(ats: string, slug: string) {
     try { await removeCompany(ats, slug); load(); }
-    catch {}
+    catch { setMessage("Failed to remove company."); setTimeout(() => setMessage(""), 3000); }
   }
 
   if (loading) return <div className="flex justify-center h-64"><p className="text-muted-foreground animate-pulse mt-16">Loading...</p></div>;

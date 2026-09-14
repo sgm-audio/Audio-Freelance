@@ -25,6 +25,7 @@ export default function SetupPage() {
   const [seniority, setSeniority] = useState<string[]>([]);
   const [niches, setNiches] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploadError, setUploadError] = useState("");
 
   function toggle(arr: string[], set: (v: string[]) => void, item: string) {
     set(arr.includes(item) ? arr.filter(x => x !== item) : [...arr, item]);
@@ -114,11 +115,17 @@ export default function SetupPage() {
                 if (res.ok) {
                   const data = await res.json();
                   setUploadedFiles([...uploadedFiles, data]);
+                  setUploadError("");
+                } else {
+                  setUploadError("Upload failed. Check file size (max 10MB) and try again.");
                 }
-              } catch {}
+              } catch {
+                setUploadError("Upload failed — is the backend running?");
+              }
             }}
             className="text-sm"
           />
+          {uploadError && <p className="mt-3 text-sm text-red-400">{uploadError}</p>}
         </div>
         {uploadedFiles.length > 0 && (
           <div className="space-y-1">
