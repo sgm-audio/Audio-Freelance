@@ -365,7 +365,7 @@ def main() -> int:
     parser.add_argument(
         "--shutdown",
         action="store_true",
-        help="kill listeners on :3000 and :8080 and exit (desktop shell quit)",
+        help="kill listeners on :3000 and :8080 and exit",
     )
     args = parser.parse_args()
     if args.verbose:

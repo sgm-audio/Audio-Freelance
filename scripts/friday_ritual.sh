@@ -115,14 +115,9 @@ else:
     print(f'   Next rotation due in ~{max(0, d.get(\"rotation_due_days\",3)*24 - (hrs or 0))}h')
 " 2>/dev/null || echo "   Unknown"
 
-# 8. Overdue follow-ups
+# 8. Run backup
 echo ""
-echo "8. Overdue follow-ups..."
-bash scripts/check_followups.sh 2>/dev/null || echo "   Could not check."
-
-# 9. Run backup
-echo ""
-echo "9. Running backup..."
+echo "8. Running backup..."
 bash scripts/backup.sh --retain 7 2>/dev/null || echo "   Backup failed"
 
 echo ""

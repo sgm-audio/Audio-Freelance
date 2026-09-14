@@ -1,0 +1,81 @@
+{
+  "title": "SGM Audio &mdash; Freelance Audio Engineering",
+  "slides": [
+    {
+      "type": "title",
+      "badge": "Audio Engineering &middot; Vancouver",
+      "title": "Mixes, Masters & Podcast Post &mdash; Done Right",
+      "subtitle": "Independent audio engineering for artists, bands and podcasters who want radio-ready sound without the studio markup.",
+      "cta": "Book a Session",
+      "secondary_cta": "See the Work",
+      "company": "SGM Audio",
+      "date": "2026"
+    },
+    {
+      "type": "problem",
+      "headline": "Great tracks are being held back by their mix",
+      "pain_1_title": "Amateur Mixes",
+      "pain_1_desc": "DIY and template mixes never translate &mdash; thin, harsh, and inconsistent across devices.",
+      "pain_2_title": "Podcast Post Overload",
+      "pain_2_desc": "Hours of editing, EQ and loudness work that eat the week of every indie podcaster.",
+      "pain_3_title": "Studio Rates",
+      "pain_3_desc": "Vancouver studio rates price out independent artists and small teams entirely.",
+      "company": "SGM Audio",
+      "page": "2"
+    },
+    {
+      "type": "solution",
+      "headline": "Full-service audio post from a real engineer",
+      "feature_1_title": "Mix & Master",
+      "feature_1_desc": "Broadcast-standard mixes, single-track through full album &mdash; masters ready for every streaming target.",
+      "feature_2_title": "Podcast Post",
+      "feature_2_desc": "Edit, clean, mix and master voices, music and ads to loudness specs &mdash; delivered with chapters and metadata.",
+      "feature_3_title": "48h Turnaround",
+      "feature_3_desc": "Set batches at the start of the week, delivered on schedule with revision notes included.",
+      "company": "SGM Audio",
+      "page": "3"
+    },
+    {
+      "type": "metrics",
+      "headline": "Trusted by creators making the leap",
+      "metrics": [
+        {"value": "120+", "label": "Tracks Mastered"},
+        {"value": "4.9/5", "label": "Client Rating"},
+        {"value": "48h", "label": "Avg. Turnaround"},
+        {"value": "-60%", "label": "vs Studio Rates"}
+      ],
+      "company": "SGM Audio",
+      "page": "4"
+    },
+    {
+      "type": "chart",
+      "badge": "Podcast Post",
+      "headline": "Podcast clients grew month over month",
+      "chart_title": "Monthly Podcast Post Completions",
+      "bars": [
+        {"label": "Jan", "value": 20, "display": "4 eps"},
+        {"label": "Feb", "value": 35, "display": "7 eps"},
+        {"label": "Mar", "value": 55, "display": "11 eps"},
+        {"label": "Apr", "value": 100, "display": "20 eps"}
+      ],
+      "company": "SGM Audio",
+      "page": "5"
+    },
+    {
+      "type": "testimonial",
+      "quote": "I sent my album away as rough demos and got back a record that finally sounded like the one in my head. Same-day feedback on every revision.",
+      "author": "Jordan W.",
+      "role": "Independent Artist, Vancouver",
+      "company": "SGM Audio",
+      "page": "6"
+    },
+    {
+      "type": "cta",
+      "headline": "Send the stems. Get the sound.",
+      "subheadline": "Book a session with your project files &mdash; mix review, reference track, and timeline within 48 hours.",
+      "cta": "hello@sgmaudio.com",
+      "contact": "hello@sgmaudio.com",
+      "website": "sgmaudio.com"
+    }
+  ]
+}
