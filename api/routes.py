@@ -447,10 +447,37 @@ async def bookmarklet_page():
 <html lang="en">
 <head><meta charset="utf-8"><title>Bookmarklet — Audio-Freelance</title>
 <style>
-  body {{ font-family: system-ui, sans-serif; max-width: 600px; margin: 4rem auto; padding: 0 1rem; line-height: 1.6; }}
-  a.bookmarklet {{ display: inline-block; padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border-radius: 0.5rem; text-decoration: none; font-weight: 600; cursor: grab; }}
-  code {{ background: #1e293b; color: #e2e8f0; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; }}
-  pre {{ background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }}
+  body {{
+    font-family: system-ui, sans-serif;
+    max-width: 600px;
+    margin: 4rem auto;
+    padding: 0 1rem;
+    line-height: 1.6;
+  }}
+  a.bookmarklet {{
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #3b82f6;
+    color: white;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: grab;
+  }}
+  code {{
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+  }}
+  pre {{
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+  }}
 </style></head>
 <body>
 <h1>📥 Capture Lead Bookmarklet</h1>
