@@ -1,8 +1,10 @@
 import sys
+
 sys.path.insert(0, '.')
 
-from api.routes import app
 from fastapi.testclient import TestClient
+
+from api.routes import app
 
 client = TestClient(app)
 
