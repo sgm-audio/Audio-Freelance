@@ -37,4 +37,3 @@ export function openAndMigrate(dbPath: string): OutreachDb {
     migrate(db);
     return db;
 }
-//# sourceMappingURL=db.js.map
