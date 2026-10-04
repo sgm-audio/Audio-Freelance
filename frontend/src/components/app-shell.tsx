@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -8,17 +7,7 @@ import { FirstBootDetector } from "@/app/first-boot";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const bare = pathname === "/outreach" || pathname.startsWith("/outreach/");
-
-  if (!mounted) {
-    return null;
-  }
 
   if (bare) {
     return <>{children}</>;

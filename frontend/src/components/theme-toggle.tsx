@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+const subscribe = () => () => {};
 
 export function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
+  // Avoid a server/client hydration mismatch while still rendering immediately after hydration.
+  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
 
   if (!mounted) return <div className="h-6" />;
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveProfile } from "@/lib/api";
+import { ProfileData, saveProfile } from "@/lib/api";
 
 const STEPS = ["Welcome", "Skills", "Domains", "Rate", "Portfolio", "Finish"];
 
@@ -24,7 +24,7 @@ export default function SetupPage() {
   const [dealbreakers, setDealbreakers] = useState<string[]>([]);
   const [seniority, setSeniority] = useState<string[]>([]);
   const [niches, setNiches] = useState<string[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<ProfileData["portfolio"]["portfolio_files"]>([]);
 
   function toggle(arr: string[], set: (v: string[]) => void, item: string) {
     set(arr.includes(item) ? arr.filter(x => x !== item) : [...arr, item]);
@@ -50,7 +50,7 @@ export default function SetupPage() {
 
       {step===0&&<div className="space-y-6">
         <h1 className="text-2xl font-semibold">Welcome</h1>
-        <p className="text-muted-foreground">Let's set up your freelance profile. Everything is optional — skip or edit later.</p>
+        <p className="text-muted-foreground">Let&apos;s set up your freelance profile. Everything is optional — skip or edit later.</p>
         <p className="text-sm text-muted-foreground">The more you add, the better we can filter leads to match your skills and rate.</p>
         <div className="flex justify-between pt-4">
           <button onClick={()=>router.push("/")} className="text-sm text-muted-foreground hover:text-foreground">Skip for now</button>

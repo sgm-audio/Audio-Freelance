@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function ErrorPage({
   error,
   unstable_retry,
@@ -17,9 +19,9 @@ export default function ErrorPage({
         <button onClick={unstable_retry} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm">
           Retry
         </button>
-        <a href="/" className="rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-accent">
+        <Link href="/" className="rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-accent">
           Dashboard
-        </a>
+        </Link>
       </div>
     </div>
   );

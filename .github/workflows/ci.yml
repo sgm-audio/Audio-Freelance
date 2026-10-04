@@ -59,9 +59,33 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Build
-        run: npx next build
+      - name: Lint
+        run: npm run lint
         working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+
+  test-outreach:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build and test
+        run: pnpm test
 
   docker:
     runs-on: ubuntu-latest

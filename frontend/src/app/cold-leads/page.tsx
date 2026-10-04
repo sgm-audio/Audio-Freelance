@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchColdLeads, fetchColdStats, rotateColdLeads, fetchRotationStatus, Lead, ColdStats, RotationStatus } from "@/lib/api";
 
 export default function ColdLeadsPage() {
@@ -12,9 +12,7 @@ export default function ColdLeadsPage() {
   const [rotating, setRotating] = useState(false);
   const [rotateResult, setRotateResult] = useState<string>("");
 
-  useEffect(() => { load(); }, [days]);
-
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [data, s, r] = await Promise.all([
@@ -27,7 +25,12 @@ export default function ColdLeadsPage() {
       setRotStatus(r);
     } catch { setLeads([]); }
     setLoading(false);
-  }
+  }, [days]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on filter change
+    void load();
+  }, [load]);
 
   async function handleRotate() {
     setRotating(true);
@@ -44,7 +47,6 @@ export default function ColdLeadsPage() {
     setTimeout(() => setRotateResult(""), 6000);
   }
 
-  const bySource = stats?.by_source || {};
   const byNiche = stats?.by_niche || {};
 
   return (
