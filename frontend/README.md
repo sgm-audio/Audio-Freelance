@@ -17,6 +17,12 @@ Requires the backend running on `http://localhost:8080`. Start both with `make d
 - **/leads** — Filterable lead list with verdict badges
 - **/market** — Full market intelligence report
 - **/opportunities** — Actionable opportunities and saved drafts
+- **/cold-leads** — Archived and rotating cold leads
+- **/tracking** — Active pursuits and outcomes
+- **/preferences** — Profile, company, and block-list settings
+- **/setup** — First-run profile wizard
+- **/leads/import** — Bulk lead import
+- **/bookmarklet** — Manual-capture bookmarklet
 - **/prospect/[niche]** — Run a prospect scan per niche
 
 ## Stack
@@ -31,6 +37,13 @@ Requires the backend running on `http://localhost:8080`. Start both with `make d
 ## Build
 
 ```bash
+npm run lint
 npm run build
 npm start
+```
+
+Playwright provides a small navigation smoke suite. It starts the Next.js dev server automatically; install browser dependencies and run it with:
+
+```bash
+npm run test:e2e
 ```

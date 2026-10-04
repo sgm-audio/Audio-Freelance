@@ -54,6 +54,8 @@ Tests verified this pass: `@sgm-outreach/{draft,approve,followup,send}` — 29 t
 
 ## BLOCKERS (must fix before live email volume)
 
+<!-- STATUS: research — authentication design and live-provider validation require human decisions. -->
+
 1. **Approval webhook has zero auth** (`packages/approve/src/webhook.ts`). POST JSON `{action, draft_id}` → approve. Default bind is `127.0.0.1` (good), but if you ever expose `:8788` or tunnel it for Telegram/n8n without a shared secret, anyone who can hit it can approve and arm the send drain. **Add a shared secret header before non-loopback use.**
 2. **Live Resend still needs ops keys** — `RESEND_API_KEY` + verified domain (`sgmstudios.ca`). CLI correctly refuses without key. Code is ready; volume is not until keys + a real staging send to your own inbox.
 3. **Do not treat “PASS packages” as “Telegram digest e2e proven.”** Digest + optional `N8N_APPROVAL_WEBHOOK_URL` push exist; native Telegram bot wiring is n8n’s job and was not exercised in this audit.

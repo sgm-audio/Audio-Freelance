@@ -81,12 +81,11 @@ python run.py
 
 ```powershell
 # Install backend + frontend dependencies
-uv sync
+uv sync --extra dev
 cd frontend; npm install; cd ..
 
 # Start both servers
 python run.py
-# or: .\run.bat
 ```
 
 Then open **http://localhost:3000**
@@ -123,17 +122,16 @@ To drop into the uv-managed venv for one-off commands:
 | Platform | Command |
 |---|---|
 | macOS / Linux | `./activate.sh` |
-| Windows PowerShell | `.\activate.ps1` |
-| Windows cmd | `activate.bat` |
+| All platforms | `uv run <command>` (runs one command in the managed environment) |
 
-Type `exit` to leave.
+`activate.sh` opens a subshell; type `exit` to leave it. No Windows activation wrapper is currently included.
 
 ### Individual Commands
 
 ```bash
 make backend    # FastAPI on :8080
 make frontend   # Next.js on :3000
-make test       # Run 65 backend tests
+make test       # Run the backend pytest suite
 make build      # Production frontend build
 ```
 
@@ -193,10 +191,11 @@ graph TB
 | Tier 2 | Weekly | We Work Remotely, RemoteOK, Wellfound, HN Algolia |
 | Tier 3 | Niche | Audio Programmer, GitHub bounties, music-tech boards |
 | Tier 4 | Outbound | Plugin companies, YC audio startups, AI-audio startups |
+| Tier 5 | Direct ATS | Public Greenhouse, Lever, and Ashby job-board APIs |
 
 ## Environment Variables
 
-All configuration is centralized in `config.py` (pydantic-settings). Copy `.env.example` to `.env` and fill in required values.
+Backend configuration is centralized in `config.py` (pydantic-settings); the separate outreach workspace reads its `SGM_OUTREACH_*` settings directly. Copy `.env.example` to `.env` and fill in the search keys (blank values are accepted at startup, but prospecting requires at least one usable provider key).
 
 ### Required
 
@@ -284,8 +283,8 @@ All configuration is centralized in `config.py` (pydantic-settings). Copy `.env.
 | Data integrity checks | ✅ |
 | Docker images (GHCR) | ✅ |
 | Docker Compose (dev + prod profiles) | ✅ |
-| CI pipeline (lint + test + build + docker) | ✅ |
-| 81 unit tests | ✅ |
+| CI pipeline (Python/frontend lint, Python/outreach tests, frontend build, Docker publish) | ✅ |
+| Backend and outreach unit tests | ✅ |
 | Input validation (Pydantic) | ✅ |
 | API documentation (OpenAPI at /docs) | ✅ |
 
@@ -293,9 +292,8 @@ All configuration is centralized in `config.py` (pydantic-settings). Copy `.env.
 
 | Gap | Why Not |
 |---|---|
-| Frontend tests | Legacy — frontend is Next.js without test framework |
-| E2E tests | Requires running full stack with external APIs |
-| One-click cloud deploy | ✅ Fly.io `fly.toml` + CD workflow (needs Fly account + `FLY_API_TOKEN` secret) |
+| Frontend unit tests | No component/unit test runner is configured |
+| E2E coverage | Playwright smoke tests exist, but are not run in CI and cover only dashboard navigation |
 | Multi-user / RBAC | Solo tool — not a SaaS product |
 | HTTPS in dev | Expected at reverse proxy level (nginx/Caddy) |
 
@@ -317,8 +315,7 @@ All configuration is centralized in `config.py` (pydantic-settings). Copy `.env.
 | `GET` | `/api/v1/market/pricing` | Pricing benchmarks |
 | `GET` | `/api/v1/market/opportunities` | Actionable opportunities |
 | `POST` | `/api/v1/debug` | Run diagnostics |
-| `GET` | `/briefing` | Plain-text daily briefing |
-| `POST` | `/dispatch` | Email briefing to configured address |
+| `GET` | `/briefing` | Rendered HTML daily briefing |
 
 ## Market Intelligence
 

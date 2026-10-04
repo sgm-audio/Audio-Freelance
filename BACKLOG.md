@@ -25,6 +25,8 @@ M0–M5 package sources under `packages/{core,ingest,enrich,score,draft,approve,
 
 ## Pending / in flight
 
+<!-- STATUS: in progress — these items need implementation or operational validation. -->
+
 | Area | Status |
 |---|---|
 | Approve webhook shared-secret auth | Open — required before non-loopback `approve serve` |
