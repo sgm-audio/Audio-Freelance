@@ -28,6 +28,7 @@ The most serious reachable issue was an unused, unauthenticated Chroma HTTP serv
 - **Outreach:** all ten packages build and all **72 Vitest tests pass**. Stale source-map warnings were removed.
 - **E2E:** not locally verified because the Playwright Chromium download repeatedly failed at TLS setup.
 - **Desktop/Docker:** not locally built because Rust/Cargo and Docker are unavailable in the sandbox.
+- **GitHub CI:** PR #70 started all five jobs, but every runnable job failed/cancelled within 2–4 seconds **before a runner was assigned and with no steps/logs**. This is repository/Actions infrastructure or billing state, not a test result; Python CI therefore remains unverified.
 - **Counts:** **24 findings / 15 fixed / 9 escalated / 20 items labeled** (17 GitHub PRs and 3 documentation sections).
 
 ## Critical Findings (act immediately)
