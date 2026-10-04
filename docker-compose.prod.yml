@@ -8,7 +8,6 @@ services:
       - .env
     environment:
       - OLLAMA_HOST=http://ollama:11434
-      - CHROMA_HOST=http://chromadb:8000
       - LOG_LEVEL=WARNING
     # Don't re-seed in production
     command: uv run python main.py
@@ -31,6 +30,3 @@ services:
           memory: 4G
         reservations:
           memory: 2G
-
-  chromadb:
-    restart: unless-stopped

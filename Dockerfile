@@ -19,7 +19,9 @@ RUN chown -R appuser:appuser /app
 # Drop privileges
 USER appuser
 
-# Expose API port
+# Listen on the container interface by default (local run.py still defaults to loopback).
+ENV HOST=0.0.0.0
+ENV PORT=8080
 EXPOSE 8080
 
 # Healthcheck

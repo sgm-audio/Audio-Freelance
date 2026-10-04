@@ -285,6 +285,29 @@ class TestProfile:
         resp = client.post("/api/v1/profile/upload")
         assert resp.status_code == 422
 
+    def test_upload_sanitizes_filename(self):
+        """Uploaded filenames cannot create attacker-controlled subdirectories."""
+        resp = client.post(
+            "/api/v1/profile/upload",
+            files={"file": ("../resume.pdf", b"%PDF-test", "application/pdf")},
+        )
+        assert resp.status_code == 200
+        stored_path = Path(__file__).resolve().parent.parent / resp.json()["path"]
+        try:
+            assert stored_path.parent.name == "portfolio"
+            assert stored_path.name.endswith("_resume.pdf")
+        finally:
+            stored_path.unlink(missing_ok=True)
+
+    def test_upload_rejects_oversized_content(self):
+        """Uploads larger than 10 MiB are rejected."""
+        resp = client.post(
+            "/api/v1/profile/upload",
+            files={"file": ("large.pdf", b"x" * (10 * 1024 * 1024 + 1), "application/pdf")},
+        )
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "File too large (max 10MB)"
+
     def test_blocked_companies_get(self):
         """GET /api/v1/profile/blocked returns list."""
         resp = client.get("/api/v1/profile/blocked")

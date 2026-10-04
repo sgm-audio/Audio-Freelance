@@ -20,17 +20,6 @@ services:
               count: all
               capabilities: [gpu]
 
-  # ── Vector database ──
-  chromadb:
-    image: chromadb/chroma:latest
-    ports:
-      - "8001:8000"
-    volumes:
-      - chroma_data:/chroma/chroma
-    environment:
-      - IS_PERSISTENT=TRUE
-      - PERSIST_DIRECTORY=/chroma/chroma
-
   # ── FastAPI backend ──
   backend:
     image: ghcr.io/sgm-audio/audio-freelance/backend:latest
@@ -39,15 +28,15 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
+      - HOST=0.0.0.0
       - OLLAMA_HOST=http://ollama:11434
-      - CHROMA_HOST=http://chromadb:8000
       - EMBEDDING_MODEL=nomic-embed-text
       - PREFERRED_NICHES=plugin_dev,reaper_scripts,rust_audio,audio_ml,game_audio_dev
       - MIN_RATE_CAD=3000
       - HOURLY_FLOOR_CAD=150
-    depends_on:
-      - chromadb
     volumes:
       - lead_data:/app/leads/data
     command: >
@@ -95,7 +84,6 @@ services:
 
 volumes:
   ollama_data:
-  chroma_data:
   lead_data:
   outreach_data:
   n8n_data:
