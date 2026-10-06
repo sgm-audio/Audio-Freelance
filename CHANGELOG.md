@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Environment reference** — complete env var table (25 fields from `config.py`) with defaults and descriptions.
 - **Production readiness checklist** — 16 production-grade items in README.
 - **Fly.io deploy** — `fly.toml` config (Seattle region, auto-stop, HTTPS). CD workflow deploys on `v*` tags. Deployment docs in README.
-- **Frontend e2e tests** — Playwright smoke tests (dashboard render, sidebar nav, theme toggle). Run with `npm run test:e2e`.
+- **Frontend verification** — framework-free API-client unit tests plus six deterministic Playwright flows for offline, setup, lead, upload, theme, accessibility, and auth behavior. Run with `npm run test:unit` and `npm run test:e2e`.
+- **Release consistency** — `VERSION`, `scripts/set_version.py`, and `scripts/check_version.py` keep public Python, frontend, desktop, OpenAPI, and image metadata aligned while private outreach workspaces remain `0.0.0`.
 - **Screenshots gallery** — placeholder table in README with headless capture instructions for Firefox/Chrome.
 
 ### Fixed
@@ -37,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Test suite: 65 → 119 tests (81 unit + 38 integration).
 - 13 files refactored to use centralized `config.settings`.
-- Docker Compose: `image:` fields enable GHCR pull with local `build:` fallback.
+- Docker Compose: versioned local images build by default; production can provide tested digest-pinned image references.
 
 ## [v0.1.2] - 2026-07-07
 

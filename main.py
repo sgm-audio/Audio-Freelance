@@ -74,12 +74,14 @@ if settings.sentry_dsn:
         profiles_sample_rate=0.1,
     )
 
+APP_VERSION = (Path(__file__).resolve().parent / "VERSION").read_text().strip()
+
 app = FastAPI(
     title="Audio-Dev Freelance Acquisition System",
     description=(
         "Automated multi-tier lead sourcing, scoring, outreach, and market intelligence pipeline."
     ),
-    version="0.1.2",
+    version=APP_VERSION,
 )
 
 app.state.limiter = limiter

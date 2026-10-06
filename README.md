@@ -360,6 +360,30 @@ fly open
 
 The repository includes a `fly.toml` with sensible defaults (Seattle region, 1GB RAM, auto-stop on idle). It builds and deploys the FastAPI backend only; the Next.js frontend requires a separate deployment target.
 
+### Versioning and release procedure
+
+Public application surfaces use the SemVer value in `VERSION`. The Python package,
+FastAPI/OpenAPI, Next.js app, desktop package/Tauri bundle, and default image tags
+must match it. Private `@sgm-outreach/*` workspace packages are never published and
+remain `private: true` at `0.0.0`.
+
+Prepare a release from a clean, updated `master` checkout:
+
+```bash
+python scripts/set_version.py 0.1.3
+# Move the CHANGELOG Unreleased entries into a dated [v0.1.3] section.
+python scripts/check_version.py
+# Run the complete clean-checkout verification matrix before tagging.
+git tag -a v0.1.3 -m "Audio-Freelance v0.1.3"
+git push origin v0.1.3
+```
+
+Use a `-rc.N` SemVer suffix for prereleases and mark the GitHub release as a
+prerelease. Never retag a failed release. Roll back Fly to the last verified image
+or deployment, publish a GitHub advisory note, and issue a new patch version with
+the corrective commit. Container rollback references must use the recorded image
+digest, not a mutable tag.
+
 ### GitHub Actions CD
 
 Pushing a version tag (`v0.1.3`, `v1.0.0`) triggers automatic deployment via GitHub Actions. Requires `FLY_API_TOKEN` secret in repo settings.
