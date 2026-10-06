@@ -4,6 +4,7 @@ Tests the FastAPI app through TestClient (no real HTTP server).
 Validates that every route accepts requests and returns expected shapes.
 """
 
+import re
 import shutil
 from pathlib import Path
 
@@ -16,7 +17,21 @@ from main import app
 client = TestClient(app)
 
 # Profile path for save/restore during destructive tests
-_PROFILE_PATH = Path(__file__).resolve().parent.parent / "profile.yaml"
+_ROOT = Path(__file__).resolve().parent.parent
+_PROFILE_PATH = _ROOT / "profile.yaml"
+
+
+def test_readme_api_inventory_matches_application_routes():
+    """Keep the documented method/path table synchronized with OpenAPI routes."""
+    readme = (_ROOT / "README.md").read_text(encoding="utf-8")
+    documented = set(re.findall(r"\| `(GET|POST|PUT|PATCH|DELETE)` \| `([^`]+)`", readme))
+    implemented = {
+        (method.upper(), path)
+        for path, operations in app.openapi()["paths"].items()
+        for method in operations
+        if method.upper() in {"GET", "POST", "PUT", "PATCH", "DELETE"}
+    }
+    assert documented == implemented
 
 
 @pytest.fixture
@@ -372,5 +387,30 @@ class TestBriefing:
                 ).status_code
                 == 200
             )
+        finally:
+            settings.api_key = original
+
+    def test_auth_denials_are_logged_without_credentials(self):
+        """Denied requests record only a reason, never supplied credentials."""
+        from unittest.mock import patch
+
+        original = settings.api_key
+        settings.api_key = "briefing-test-key"
+        try:
+            with patch("api.auth.logger.warning") as warning:
+                assert client.get("/briefing").status_code == 401
+                assert (
+                    client.get(
+                        "/briefing",
+                        headers={"Authorization": "Bearer attacker-supplied-token"},
+                    ).status_code
+                    == 401
+                )
+
+            assert warning.call_count == 2
+            warning.assert_any_call("api_auth_denied", reason="missing_authorization")
+            warning.assert_any_call("api_auth_denied", reason="invalid_credentials")
+            assert "attacker-supplied-token" not in repr(warning.call_args_list)
+            assert "briefing-test-key" not in repr(warning.call_args_list)
         finally:
             settings.api_key = original

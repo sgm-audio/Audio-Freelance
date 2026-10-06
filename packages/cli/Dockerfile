@@ -12,7 +12,8 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages packages
 RUN pnpm install --frozen-lockfile \
-  && pnpm build
+  && pnpm build \
+  && CI=true pnpm install --prod --frozen-lockfile --offline
 
 ENV NODE_ENV=production
 ENV SGM_OUTREACH_DB=/data/outreach.sqlite

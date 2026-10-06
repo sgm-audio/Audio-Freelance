@@ -31,7 +31,7 @@ services:
     ports:
       - "8080:8080"
     env_file:
-      - .env
+      - ${ENV_FILE:-.env}
     environment:
       - HOST=0.0.0.0
       - OLLAMA_HOST=http://ollama:11434

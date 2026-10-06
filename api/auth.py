@@ -10,9 +10,12 @@ Set API_KEY in .env to enable authentication for all non-public endpoints.
 
 import secrets
 
+import structlog
 from fastapi import Header, HTTPException
 
 from config import settings
+
+logger = structlog.get_logger(__name__)
 
 
 async def require_api_key(authorization: str | None = Header(None)):
@@ -25,6 +28,7 @@ async def require_api_key(authorization: str | None = Header(None)):
         return  # no key configured = open access (local dev)
 
     if not authorization:
+        logger.warning("api_auth_denied", reason="missing_authorization")
         raise HTTPException(
             status_code=401,
             detail="Missing Authorization header. Use: Authorization: Bearer <key>",
@@ -36,4 +40,6 @@ async def require_api_key(authorization: str | None = Header(None)):
         or parts[0].lower() != "bearer"
         or not secrets.compare_digest(parts[1], api_key)
     ):
+        # Never log the header or configured secret.
+        logger.warning("api_auth_denied", reason="invalid_credentials")
         raise HTTPException(status_code=401, detail="Invalid API key")

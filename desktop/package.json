@@ -2,6 +2,7 @@
   "name": "audio-freelance-desktop",
   "private": true,
   "version": "0.1.2",
+  "packageManager": "npm@12.2.0",
   "type": "module",
   "scripts": {
     "tauri": "tauri",

@@ -267,55 +267,84 @@ Backend configuration is centralized in `config.py` (pydantic-settings); the sep
 
 ## Production Readiness
 
-### What's Production-Grade
+### Implementation and verification status
 
-| Capability | Status |
+| Capability | Implementation | Latest evidence |
+|---|---|---|
+| Configuration, JSON logging, correlation IDs, metrics | Implemented | Local static/unit checks pass; supported Python runtime CI is pending |
+| Bearer auth, CORS, security headers, rate limiting | Implemented | Focused local policy checks pass; full Python 3.12/3.13 runtime suite is pending |
+| Backups and data-integrity checks | Implemented | Source/tests present; container persistence gate awaits a working Actions runner |
+| Backend and outreach tests | Implemented | Outreach passes locally; backend Python 3.12/3.13 execution is pending |
+| Frontend unit tests | Implemented | Node unit tests pass locally |
+| Playwright smoke tests | Implemented in CI | Browser installation/execution is pending |
+| Docker images and Compose profiles | Implemented in CI | Build, profile, health, persistence, non-root, and image-scan job is pending |
+| Rust/Tauri checks | Implemented in CI | Cargo execution is pending |
+| OpenAPI documentation | Implemented | Interactive schemas at `/docs`; route inventory below |
+
+A capability is not release-verified merely because its implementation exists. See
+[`docs/remediation/06-independent-final-verification-report.md`](docs/remediation/06-independent-final-verification-report.md)
+for the current gate result and blocked evidence.
+
+### Known product limitations
+
+| Gap | Status |
 |---|---|
-| Centralized config (pydantic-settings) | ✅ |
-| Structured JSON logging (structlog) | ✅ |
-| Request correlation IDs | ✅ |
-| Error tracking (Sentry, optional) | ✅ |
-| Prometheus metrics | ✅ |
-| API rate limiting (60 req/min) | ✅ |
-| Bearer token auth | ✅ |
-| CORS + security headers | ✅ |
-| Automated backups (retention: 7) | ✅ |
-| Data integrity checks | ✅ |
-| Docker images (GHCR) | ✅ |
-| Docker Compose (dev + prod profiles) | ✅ |
-| CI pipeline (Python/frontend lint, Python/outreach tests, frontend build, Docker publish) | ✅ |
-| Backend and outreach unit tests | ✅ |
-| Input validation (Pydantic) | ✅ |
-| API documentation (OpenAPI at /docs) | ✅ |
-
-### Not Yet Implemented
-
-| Gap | Why Not |
-|---|---|
-| Frontend unit tests | No component/unit test runner is configured |
-| E2E coverage | Playwright smoke tests exist, but are not run in CI and cover only dashboard navigation |
-| Multi-user / RBAC | Solo tool — not a SaaS product |
-| HTTPS in dev | Expected at reverse proxy level (nginx/Caddy) |
+| Multi-user / RBAC | Not implemented; this is currently a solo operator tool |
+| HTTPS in local development | Expected at a production reverse proxy such as nginx or Caddy |
+| Broad browser workflows | Current Playwright coverage is a deterministic dashboard smoke suite |
 
 ## API
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/health` | Health check |
-| `GET` | `/api/v1/status` | Lead counts + system status |
-| `GET` | `/api/v1/leads` | List leads (filterable by status) |
-| `POST` | `/api/v1/prospect/{niche}` | Search → dedup → score pipeline |
-| `POST` | `/api/v1/score` | Manually score a raw candidate |
-| `POST` | `/api/v1/translate` | Tech capability → client pitch |
-| `POST` | `/api/v1/outreach/{lead_id}` | Generate outreach draft |
-| `POST` | `/api/v1/proposal` | Generate structured proposal |
-| `POST` | `/api/v1/rate` | Rate tiers for a task |
-| `GET` | `/api/v1/market` | Full market intelligence report |
-| `GET` | `/api/v1/market/trends` | Technology trends |
-| `GET` | `/api/v1/market/pricing` | Pricing benchmarks |
-| `GET` | `/api/v1/market/opportunities` | Actionable opportunities |
-| `POST` | `/api/v1/debug` | Run diagnostics |
-| `GET` | `/briefing` | Rendered HTML daily briefing |
+All JSON routes are under `/api/v1` except `/briefing`. “Protected” routes require
+`Authorization: Bearer <API_KEY>` when configured and always require it when
+`ENVIRONMENT=production`. The four explicitly public operational/setup routes remain
+available without a token. OpenAPI at `/docs` is authoritative for request and response
+schemas.
+
+| Method | Path | Access | Response/purpose |
+|---|---|---|---|
+| `GET` | `/api/v1/health` | Public | JSON health, Ollama state, and timestamp |
+| `GET` | `/api/v1/metrics` | Public | Prometheus text exposition |
+| `GET` | `/api/v1/bookmarklet` | Public | HTML bookmarklet installer |
+| `GET` | `/api/v1/profile/status` | Public | JSON first-run profile status |
+| `GET` | `/api/v1/leads` | Protected | JSON lead list, optionally filtered by status |
+| `GET` | `/api/v1/leads/cold` | Protected | JSON archived cold leads |
+| `GET` | `/api/v1/leads/cold/stats` | Protected | JSON cold-lead counts by niche/source |
+| `POST` | `/api/v1/leads/rotate-cold` | Protected | JSON rotation result |
+| `GET` | `/api/v1/leads/rotation-status` | Protected | JSON rotation schedule/status |
+| `GET` | `/api/v1/leads/{lead_id}` | Protected | JSON lead detail |
+| `POST` | `/api/v1/leads/{lead_id}/status` | Protected | JSON status transition result |
+| `POST` | `/api/v1/prospect/{niche}` | Protected | JSON search, deduplication, and scoring result |
+| `POST` | `/api/v1/score` | Protected | JSON score for a raw candidate |
+| `POST` | `/api/v1/translate` | Protected | JSON client-facing translation |
+| `POST` | `/api/v1/leads/manual` | Protected | JSON manually created lead |
+| `POST` | `/api/v1/leads/bulk` | Protected | JSON bulk import result |
+| `POST` | `/api/v1/rate` | Protected | JSON rate tiers |
+| `POST` | `/api/v1/outreach/{lead_id}` | Protected | JSON outreach draft |
+| `POST` | `/api/v1/proposal` | Protected | JSON structured proposal |
+| `GET` | `/api/v1/status` | Protected | JSON lead counts and system status |
+| `POST` | `/api/v1/debug` | Protected | JSON diagnostics |
+| `GET` | `/api/v1/market` | Protected | JSON market intelligence report |
+| `GET` | `/api/v1/market/trends` | Protected | JSON technology trends |
+| `GET` | `/api/v1/market/pricing` | Protected | JSON pricing benchmarks |
+| `GET` | `/api/v1/market/opportunities` | Protected | JSON actionable opportunities |
+| `GET` | `/api/v1/tracking` | Protected | JSON tracking events |
+| `GET` | `/api/v1/tracking/active` | Protected | JSON active pursuits |
+| `POST` | `/api/v1/tracking/triage` | Protected | JSON single-lead triage result |
+| `POST` | `/api/v1/tracking/triage/batch` | Protected | JSON batch triage result |
+| `GET` | `/api/v1/tracking/won-lost` | Protected | JSON outcome summary |
+| `GET` | `/api/v1/tracking/{lead_id}` | Protected | JSON tracking history for one lead |
+| `GET` | `/api/v1/profile` | Protected | JSON profile |
+| `POST` | `/api/v1/profile` | Protected | JSON profile update result |
+| `DELETE` | `/api/v1/profile` | Protected | JSON profile deletion result |
+| `POST` | `/api/v1/profile/upload` | Protected | JSON bounded portfolio upload result |
+| `GET` | `/api/v1/companies` | Protected | JSON ATS company configuration |
+| `POST` | `/api/v1/companies` | Protected | JSON company-add result |
+| `DELETE` | `/api/v1/companies` | Protected | JSON company-removal result |
+| `GET` | `/api/v1/profile/blocked` | Protected | JSON blocked-company list |
+| `POST` | `/api/v1/profile/blocked` | Protected | JSON block result |
+| `DELETE` | `/api/v1/profile/blocked` | Protected | JSON unblock result |
+| `GET` | `/briefing` | Protected | Rendered HTML daily briefing |
 
 ## Market Intelligence
 
@@ -414,6 +443,11 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # View logs
 docker compose logs -f backend
+
+# Destructive CI-style release gate using isolated synthetic credentials/project data
+# (builds all profiles, starts production services, checks auth/non-root/health/persistence,
+# then removes its containers and volumes)
+scripts/verify_containers.sh
 ```
 
 ## License

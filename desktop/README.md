@@ -5,14 +5,15 @@ Thin **Tauri 2** window around the existing FastAPI + Next stack. Does **not** b
 ## Prerequisites
 
 - Same as the main app: Python 3.12+, Node 22+, `uv`, `frontend/node_modules`, `.env`
-- [Rust](https://rustup.rs/) (stable)
+- npm 12.2.0 for reproducible desktop lock generation (pinned in `package.json`)
+- [Rust](https://rustup.rs/) using the repository-pinned toolchain
 - Windows WebView2 (usually already installed)
 
 ## Dev
 
 ```powershell
 cd desktop
-npm install
+npx --yes npm@12.2.0 ci
 npm run tauri dev
 ```
 
