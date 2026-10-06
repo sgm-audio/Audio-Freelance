@@ -6,7 +6,8 @@ RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuse
 WORKDIR /app
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# uv 0.12.23; manifest digest recorded by dependency monitoring on 2026-10-05.
+COPY --from=ghcr.io/astral-sh/uv:0.12.23@sha256:61d393e44e249f2e4b526b6c7ddcecce245946826e608e11c93ad4f5bba55b21 /uv /uvx /bin/
 
 # Install dependencies (layer is cached until pyproject.toml changes)
 COPY pyproject.toml uv.lock ./

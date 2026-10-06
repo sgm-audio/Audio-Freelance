@@ -24,3 +24,24 @@ updates:
       interval: "monthly"
     labels:
       - "ci"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "docker"
+    directory: "/packages/cli"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"

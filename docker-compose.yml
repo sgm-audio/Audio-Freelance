@@ -1,15 +1,17 @@
 version: "3.9"
 
 # ── Production override: docker compose -f docker-compose.yml -f docker-compose.prod.yml up ──
-# Uses pre-built GHCR images instead of local builds.
+# Builds versioned local images by default; production may supply digest-pinned *_IMAGE variables.
 
 services:
   # ── Embedding service (optional) ──
   ollama:
-    image: ollama/ollama:latest
+    # Stable release; set OLLAMA_IMAGE to a tested digest-pinned reference in production.
+    image: ${OLLAMA_IMAGE:-ollama/ollama:0.35.1}
     profiles: ["full"]
     ports:
-      - "11434:11434"
+      # Optional local model API; never publish it on non-loopback interfaces.
+      - "127.0.0.1:11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     deploy:
@@ -22,7 +24,7 @@ services:
 
   # ── FastAPI backend ──
   backend:
-    image: ghcr.io/sgm-audio/audio-freelance/backend:latest
+    image: ${BACKEND_IMAGE:-audio-freelance-backend:0.1.2}
     build:
       context: .
       dockerfile: Dockerfile
@@ -44,7 +46,7 @@ services:
 
   # ── Next.js frontend ──
   frontend:
-    image: ghcr.io/sgm-audio/audio-freelance/frontend:latest
+    image: ${FRONTEND_IMAGE:-audio-freelance-frontend:0.1.2}
     build:
       context: frontend
       dockerfile: Dockerfile
@@ -73,9 +75,11 @@ services:
 
   n8n:
     profiles: ["outreach"]
-    image: n8nio/n8n:latest
+    # Stable release; set N8N_IMAGE to a tested digest-pinned reference in production.
+    image: ${N8N_IMAGE:-n8nio/n8n:2.41.6}
     ports:
-      - "5678:5678"
+      # The workflow editor is an operator-only local surface.
+      - "127.0.0.1:5678:5678"
     environment:
       - N8N_PORT=5678
       - GENERIC_TIMEZONE=America/Vancouver

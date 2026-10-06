@@ -349,7 +349,7 @@ fly apps create audio-freelance
 fly secrets set TAVILY_API_KEY=your-key
 fly secrets set SERPER_API_KEY=your-key
 fly secrets set FIRECRAWL_API_KEY=your-key
-fly secrets set API_KEY=your-auth-key  # optional
+fly secrets set API_KEY=your-auth-key  # required when ENVIRONMENT=production
 
 # 4. Deploy
 fly deploy
@@ -358,7 +358,7 @@ fly deploy
 fly open
 ```
 
-The app includes a `fly.toml` with sensible defaults (Seattle region, 1GB RAM, auto-stop on idle).
+The repository includes a `fly.toml` with sensible defaults (Seattle region, 1GB RAM, auto-stop on idle). It builds and deploys the FastAPI backend only; the Next.js frontend requires a separate deployment target.
 
 ### GitHub Actions CD
 

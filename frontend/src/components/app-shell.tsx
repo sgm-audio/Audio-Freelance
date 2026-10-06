@@ -44,7 +44,7 @@ function Sidebar() {
           <NavItem href="/preferences" label="Preferences" />
           <NavItem href="/api/v1/health" label="API Health" external />
           <NavItem href="/api/v1/debug" label="Diagnostics" external />
-          <NavItem href="http://127.0.0.1:8080/briefing" label="Daily Briefing" external />
+          <NavItem href="/briefing" label="Daily Briefing" external />
           <details className="pt-2">
             <summary className="px-3 py-1.5 text-xs text-muted-foreground cursor-pointer hover:text-foreground list-none">
               More…
