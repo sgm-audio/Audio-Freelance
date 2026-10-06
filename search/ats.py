@@ -90,9 +90,7 @@ async def fetch_greenhouse_jobs(company: str, timeout: int = 10) -> list[RawCand
                         raw_text=raw_text[:2000],
                         company=company,
                         tier=5,
-                        contact_path=extract_contact_path(
-                            content, raw_text, apply_url=job_url
-                        ),
+                        contact_path=extract_contact_path(content, raw_text, apply_url=job_url),
                     )
                 )
     except Exception:
@@ -143,9 +141,7 @@ async def fetch_lever_jobs(company: str, timeout: int = 10) -> list[RawCandidate
                         raw_text=raw_text[:2000],
                         company=company,
                         tier=5,
-                        contact_path=extract_contact_path(
-                            description, raw_text, apply_url=job_url
-                        ),
+                        contact_path=extract_contact_path(description, raw_text, apply_url=job_url),
                     )
                 )
     except Exception:
@@ -194,9 +190,7 @@ async def fetch_ashby_jobs(company: str, timeout: int = 10) -> list[RawCandidate
                         raw_text=raw_text[:2000],
                         company=company,
                         tier=5,
-                        contact_path=extract_contact_path(
-                            description, raw_text, apply_url=job_url
-                        ),
+                        contact_path=extract_contact_path(description, raw_text, apply_url=job_url),
                     )
                 )
     except Exception:

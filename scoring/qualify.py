@@ -42,9 +42,12 @@ def should_pursue(
     require_contact: bool = True,
 ) -> bool:
     """True if the lead is worth pursuing (QUALIFIED or MAYBE)."""
-    return qualify_lead(
-        lead,
-        hot_threshold=hot_threshold,
-        warm_threshold=warm_threshold,
-        require_contact=require_contact,
-    ) != "NOT_QUALIFIED"
+    return (
+        qualify_lead(
+            lead,
+            hot_threshold=hot_threshold,
+            warm_threshold=warm_threshold,
+            require_contact=require_contact,
+        )
+        != "NOT_QUALIFIED"
+    )

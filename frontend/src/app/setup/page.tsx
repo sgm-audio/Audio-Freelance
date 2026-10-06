@@ -25,6 +25,7 @@ export default function SetupPage() {
   const [seniority, setSeniority] = useState<string[]>([]);
   const [niches, setNiches] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<ProfileData["portfolio"]["portfolio_files"]>([]);
+  const [uploadError, setUploadError] = useState("");
 
   function toggle(arr: string[], set: (v: string[]) => void, item: string) {
     set(arr.includes(item) ? arr.filter(x => x !== item) : [...arr, item]);
@@ -106,20 +107,41 @@ export default function SetupPage() {
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
+              setUploadError("");
+              const allowed = file.type === "application/pdf"
+                || file.type.startsWith("image/")
+                || file.type === "application/msword"
+                || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+              if (!allowed) {
+                setUploadError("Unsupported file type. Choose PDF, DOCX, DOC, or an image.");
+                return;
+              }
+              if (file.size > 10 * 1024 * 1024) {
+                setUploadError("File too large (max 10MB). ");
+                return;
+              }
               const formData = new FormData();
               formData.append("file", file);
               formData.append("file_type", "resume");
               try {
                 const res = await fetch("/api/v1/profile/upload", { method: "POST", body: formData });
-                if (res.ok) {
-                  const data = await res.json();
-                  setUploadedFiles([...uploadedFiles, data]);
+                if (!res.ok) {
+                  const detail = await res.json().catch(() => null) as { detail?: string } | null;
+                  setUploadError(detail?.detail || `Upload failed (${res.status}).`);
+                  return;
                 }
-              } catch {}
+                const data = await res.json();
+                setUploadedFiles([...uploadedFiles, data]);
+              } catch {
+                setUploadError("Upload failed. Backend may be unavailable.");
+              }
             }}
             className="text-sm"
           />
         </div>
+        {uploadError && (
+          <p role="alert" className="text-sm text-red-400">{uploadError}</p>
+        )}
         {uploadedFiles.length > 0 && (
           <div className="space-y-1">
             {uploadedFiles.map((f, i) => (

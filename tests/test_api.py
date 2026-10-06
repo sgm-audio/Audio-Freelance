@@ -114,7 +114,7 @@ class TestProspecting:
         resp = client.post("/api/v1/prospect/INVALID")
         assert resp.status_code == 400
 
-    @pytest.mark.skip(reason="Runs full pipeline — external APIs, 30s+")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_prospect_valid_niche(self):
         """POST /api/v1/prospect/plugin_dev runs full pipeline."""
         resp = client.post("/api/v1/prospect/plugin_dev", timeout=120)
@@ -225,26 +225,26 @@ class TestColdLeads:
 class TestMarket:
     """Market intelligence endpoints — skipped by default (external APIs, 60s+)."""
 
-    @pytest.mark.skip(reason="Market scan calls external APIs — run manually")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_market_overview(self):
         resp = client.get("/api/v1/market", timeout=120)
         assert resp.status_code == 200
 
-    @pytest.mark.skip(reason="Market scan calls external APIs — run manually")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_market_trends(self):
         resp = client.get("/api/v1/market/trends", timeout=120)
         assert resp.status_code == 200
         data = resp.json()
         assert "tech_trends" in data
 
-    @pytest.mark.skip(reason="Market scan calls external APIs — run manually")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_market_pricing(self):
         resp = client.get("/api/v1/market/pricing", timeout=120)
         assert resp.status_code == 200
         data = resp.json()
         assert "pricing_benchmarks" in data
 
-    @pytest.mark.skip(reason="Market scan calls external APIs — run manually")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_market_opportunities(self):
         resp = client.get("/api/v1/market/opportunities", timeout=120)
         assert resp.status_code == 200

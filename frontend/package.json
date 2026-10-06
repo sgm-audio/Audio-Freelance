@@ -7,8 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test:e2e": "npx playwright install chromium --with-deps && npx playwright test",
-    "test:e2e:ui": "npx playwright test --ui"
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:unit": "node --experimental-strip-types --test tests/*.test.mts",
+    "test:e2e:install": "playwright install chromium --with-deps"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
