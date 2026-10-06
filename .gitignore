@@ -35,6 +35,8 @@ outreach/
 frontend/.next/
 frontend/node_modules/
 frontend/out/
+frontend/playwright-report/
+frontend/test-results/
 
 # SGM Outreach Engine (pnpm monorepo)
 node_modules/
