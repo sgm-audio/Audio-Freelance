@@ -8,13 +8,14 @@ from pathlib import Path
 from string import Template
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from api.auth import require_api_key
 from api.metrics import api_request_duration, api_requests
 from api.routes import public, router
 from config import settings
@@ -153,7 +154,11 @@ app.include_router(router, prefix="/api/v1")
 # ── Daily Briefing HTML page ──
 
 
-@app.get("/briefing", response_class=HTMLResponse)
+@app.get(
+    "/briefing",
+    response_class=HTMLResponse,
+    dependencies=[Depends(require_api_key)],
+)
 async def daily_briefing():
     """Rendered HTML daily briefing: lead counts, pipeline status, quick actions."""
     from leads.schema import LeadStatus

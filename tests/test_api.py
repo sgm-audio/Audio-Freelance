@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from config import settings
 from main import app
 
 client = TestClient(app)
@@ -350,8 +351,26 @@ class TestCompanies:
 class TestBriefing:
     """Daily briefing HTML page."""
 
-    def test_briefing_returns_html(self):
-        """GET /briefing returns HTML response."""
+    def test_briefing_returns_html_in_explicit_local_mode(self):
+        """GET /briefing stays available when local auth is explicitly disabled."""
+        assert settings.environment == "development"
+        assert not settings.api_key
         resp = client.get("/briefing")
         assert resp.status_code == 200
         assert "text/html" in resp.headers["content-type"]
+
+    def test_briefing_requires_bearer_token_when_configured(self):
+        """The non-API briefing route shares the protected auth boundary."""
+        original = settings.api_key
+        settings.api_key = "briefing-test-key"
+        try:
+            assert client.get("/briefing").status_code == 401
+            assert (
+                client.get(
+                    "/briefing",
+                    headers={"Authorization": "Bearer briefing-test-key"},
+                ).status_code
+                == 200
+            )
+        finally:
+            settings.api_key = original
