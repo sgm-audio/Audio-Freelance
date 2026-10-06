@@ -67,6 +67,7 @@ export default function LeadsPage() {
   }, [filter]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset/load when the input changes
     load();
   }, [load]);
 

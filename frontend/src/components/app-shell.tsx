@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -8,17 +7,7 @@ import { FirstBootDetector } from "@/app/first-boot";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const bare = pathname === "/outreach" || pathname.startsWith("/outreach/");
-
-  if (!mounted) {
-    return null;
-  }
 
   if (bare) {
     return <>{children}</>;
@@ -55,7 +44,7 @@ function Sidebar() {
           <NavItem href="/preferences" label="Preferences" />
           <NavItem href="/api/v1/health" label="API Health" external />
           <NavItem href="/api/v1/debug" label="Diagnostics" external />
-          <NavItem href="http://127.0.0.1:8080/briefing" label="Daily Briefing" external />
+          <NavItem href="/briefing" label="Daily Briefing" external />
           <details className="pt-2">
             <summary className="px-3 py-1.5 text-xs text-muted-foreground cursor-pointer hover:text-foreground list-none">
               More…

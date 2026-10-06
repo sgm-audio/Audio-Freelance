@@ -1,0 +1,14 @@
+# Normalize text files across development platforms.
+* text=auto eol=lf
+
+# Windows command wrappers must retain CRLF when added.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets.
+*.ico binary
+*.icns binary
+*.jpg binary
+*.jpeg binary
+*.png binary

@@ -83,6 +83,22 @@ echo {"kind":"bounce","email":"gone@example.com","reason":"hard-bounce"} | pnpm 
 
 Endpoint: `POST /webhooks/resend` — also accepts `{"kind":"reply"|"bounce","email":"…"}`.
 
+### Approval webhook authentication
+
+`pnpm sgm-outreach approve serve --port 8788` refuses to start unless
+`SGM_OUTREACH_APPROVAL_WEBHOOK_SECRET` contains at least 32 characters. Every
+approval POST must include:
+
+- `X-SGM-Timestamp`: current Unix time in seconds (accepted for five minutes);
+- `X-SGM-Signature`: `sha256=<hex HMAC-SHA256>` where the signed bytes are the
+  ASCII timestamp, a literal `.`, and the exact raw request body.
+
+A valid signature is single-use during the acceptance window; a replay returns
+HTTP 409. Missing, malformed, invalid, or stale authentication returns HTTP 401.
+Bodies over 64 KiB return HTTP 413. The `/health` route is intentionally public
+and does not mutate state. Configure n8n to preserve the exact JSON body used to
+calculate the signature.
+
 ## Staging dry-run (live now)
 
 Offline, no API keys. Seeds 10 fixtures, mock-sends 9, proves suppressed address blocked:

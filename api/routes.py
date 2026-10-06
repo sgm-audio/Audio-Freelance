@@ -1,7 +1,6 @@
 """FastAPI route definitions for the freelance acquisition system."""
 
 import contextlib
-import shutil
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -897,21 +896,34 @@ async def upload_profile_file(file: UploadFile = File(...), file_type: str = "re
     ):
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
 
-    if file.size and file.size > 10 * 1024 * 1024:
+    max_bytes = 10 * 1024 * 1024
+    if file.size and file.size > max_bytes:
         raise HTTPException(status_code=400, detail="File too large (max 10MB)")
 
     upload_dir = Path(__file__).resolve().parent.parent / "assets" / "portfolio"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    safe_name = f"{uuid.uuid4()}_{file.filename}"
-    file_path = upload_dir / safe_name
+    # Browsers normally send a basename, but UploadFile.filename is untrusted input.
+    # Normalize both POSIX and Windows separators before constructing the destination.
+    original_name = file.filename or "upload.bin"
+    basename = Path(original_name.replace("\\", "/")).name or "upload.bin"
+    file_path = upload_dir / f"{uuid.uuid4()}_{basename}"
 
-    with open(file_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    written = 0
+    try:
+        with open(file_path, "wb") as destination:
+            while chunk := file.file.read(1024 * 1024):
+                written += len(chunk)
+                if written > max_bytes:
+                    raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+                destination.write(chunk)
+    except Exception:
+        file_path.unlink(missing_ok=True)
+        raise
 
     return {
         "status": "uploaded",
-        "filename": file.filename,
+        "filename": original_name,
         "path": str(file_path.relative_to(Path(__file__).resolve().parent.parent)),
         "type": file_type,
     }

@@ -92,4 +92,3 @@ export function assertTransition(from: LeadState | null, to: LeadState): void {
 export function isTerminal(state: LeadState): boolean {
     return TERMINAL_STATES.has(state);
 }
-//# sourceMappingURL=state-machine.js.map
