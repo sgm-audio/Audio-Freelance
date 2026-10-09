@@ -18,6 +18,15 @@ updates:
     labels:
       - "dependencies"
 
+  # pnpm workspace (outreach CLI packages) — root lockfile drives updates
+  - package-ecosystem: "npm"
+    directory: "/packages"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

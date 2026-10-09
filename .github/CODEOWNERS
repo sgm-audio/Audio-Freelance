@@ -1,2 +1,4 @@
-# Default owner for this single-maintainer repository.
+# Code ownership — auto-assigns reviewers on PRs.
+# Solo maintainer today; add paths here as collaborators pick up areas.
+
 * @sgm-audio

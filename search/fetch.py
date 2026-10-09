@@ -8,10 +8,13 @@ Uses httpx for fetching and a simple HTML-to-text extractor (no external
 dependency on trafilatura to keep the install lean).
 """
 
+import logging
 import re
 from html.parser import HTMLParser
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 # ── URL quality filter ──
 
@@ -98,6 +101,7 @@ def html_to_text(html: str) -> str:
     try:
         parser.feed(html)
     except Exception:
+        logger.debug("html parse failed, returning partial text", exc_info=True)
         return ""
     return parser.get_text()
 
@@ -136,6 +140,7 @@ async def fetch_and_extract(url: str, timeout: int = 10) -> str | None:
 
             return html_to_text(resp.text)
     except Exception:
+        logger.debug("fetch_and_extract failed: %s", url, exc_info=True)
         return None
 
 

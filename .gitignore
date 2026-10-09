@@ -5,9 +5,15 @@ __pycache__/
 .venv/
 dist/
 build/
+.mypy_cache/
 .pytest_cache/
+.ruff_cache/
 .coverage
 coverage.xml
+
+# Local machine diagnostics (never belong in the repo)
+dxdiag_output.txt
+data/startup-review-attempt.log
 
 # ChromaDB data
 leads/data/
@@ -28,8 +34,8 @@ frontend/.bun/
 # Proposals (generated)
 proposals/
 
-# Outreach drafts (personal application strategies)
-outreach/
+# Outreach drafts (personal application strategies — root only, not docs/outreach/)
+/outreach/
 
 # Frontend
 frontend/.next/
@@ -76,6 +82,11 @@ Thumbs.db
 graphify-out/
 _extract_*
 _spec_*
+
+# Nested git worktree mount points (branch1-4, reviews) — real worktrees, but
+# they must not be committed into the parent repo's tree
+reviews/
+branch*/
 
 # Tauri desktop build output (never commit — 668MB+ artifacts)
 desktop/src-tauri/target/

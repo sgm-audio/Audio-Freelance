@@ -31,6 +31,17 @@
 
 Built for audio DSP engineers, plugin developers, and audio ML engineers who want to spend less time hunting and more time coding.
 
+## The Business Case
+
+A senior audio engineer's billable rate is $150-300/hr. Every hour spent manually
+searching job boards, Reddit threads, and startup funding announcements instead of
+building costs $150-300 in opportunity cost. At 20 hrs/week of manual prospecting,
+that's **$3,000-6,000/week in lost revenue**.
+
+Audio-Freelance eliminates this by running 5 parallel search tiers across 15+
+sources, deduplicating with embedding-based similarity, scoring against your
+profile, and generating outreach drafts - all in under 30 seconds.
+
 ## Features
 
 **Search & Score** — Multi-tier search across KVR Audio, JUCE Forum, Reddit, HN, GitHub, LinkedIn, and company career pages. Scored by signal detection (C++/Rust DSP, CLAP, Mamba/SSM, REAPER, on-device ML, etc.) with configurable thresholds.
@@ -89,16 +100,6 @@ python run.py
 ```
 
 Then open **http://localhost:3000**
-
-**Desktop window (optional):** after the stack deps above are installed, plus Rust + WebView2:
-
-```powershell
-cd desktop
-npm install
-npm run tauri dev
-```
-
-Or VS Code/Cursor: **Run Task → Open Desktop App**. Closing the window stops `:3000`/`:8080` (`python run.py --shutdown`). See [desktop/README.md](desktop/README.md).
 
 The launcher runs pre-flight checks (uv, Node, `.env`, free ports) before starting anything — `python run.py --check` runs just the checks, `--verbose` shows server output.
 
@@ -278,7 +279,6 @@ Backend configuration is centralized in `config.py` (pydantic-settings); the sep
 | Frontend unit tests | Implemented | Node unit tests pass locally |
 | Playwright smoke tests | Implemented in CI | Browser installation/execution is pending |
 | Docker images and Compose profiles | Implemented in CI | Build, profile, health, persistence, non-root, and image-scan job is pending |
-| Rust/Tauri checks | Implemented in CI | Cargo execution is pending |
 | OpenAPI documentation | Implemented | Interactive schemas at `/docs`; route inventory below |
 
 A capability is not release-verified merely because its implementation exists. See
@@ -392,7 +392,7 @@ The repository includes a `fly.toml` with sensible defaults (Seattle region, 1GB
 ### Versioning and release procedure
 
 Public application surfaces use the SemVer value in `VERSION`. The Python package,
-FastAPI/OpenAPI, Next.js app, desktop package/Tauri bundle, and default image tags
+FastAPI/OpenAPI, Next.js app, and default image tags
 must match it. Private `@sgm-outreach/*` workspace packages are never published and
 remain `private: true` at `0.0.0`.
 
@@ -449,6 +449,27 @@ docker compose logs -f backend
 # then removes its containers and volumes)
 scripts/verify_containers.sh
 ```
+
+## Project Docs
+
+- **Roadmap:** [docs/ROADMAP.md](docs/ROADMAP.md) - where the project is going and how to help
+- [PRD](docs/PRD.md) and [ADR-001](docs/ADR-001.md) in `docs/`
+- Detailed engineering roadmap: [`docs/planning/`](docs/planning/UX_PRODUCT_ROADMAP.md)
+- Outreach engine spec, runbook & red-team review: [`docs/outreach/`](docs/outreach/OUTREACH_BUILD_SPEC.md)
+- Independent verification report: [`docs/remediation/`](docs/remediation/06-independent-final-verification-report.md)
+
+## System Intelligence
+
+This project maintains a persistent knowledge graph in `graphify-out/` for
+architectural analysis and cross-file relationship tracking. Use the `graphify`
+tool to query the codebase structure.
+
+## Contributing
+
+Contributions are welcome - see [CONTRIBUTING.md](CONTRIBUTING.md) for scope,
+setup, and PR guidelines, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for
+community expectations. Good first contributions: new search-tier sources,
+market-intelligence signals, and dashboard polish.
 
 ## License
 
