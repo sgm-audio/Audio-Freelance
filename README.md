@@ -1,114 +1,83 @@
 <p align="center">
-  <h1 align="center">Audio-Freelance</h1>
-  <p align="center">Automated lead acquisition pipeline for freelance audio DSP, plugin, and ML engineers.</p>
+  <h1 align="center">◆ Audio-Freelance</h1>
+  <p align="center">Automated lead sourcing, scoring, and market intelligence<br />for freelance audio/DSP/plugin developers.</p>
+</p>
+
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#api">API</a> ·
+  <a href="#market-intelligence">Market Intelligence</a> ·
+  <a href="#license">License</a>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.12%2B-blue" alt="Python">
   <img src="https://img.shields.io/badge/next.js-16-black" alt="Next.js">
-  <img src="https://img.shields.io/badge/LangGraph-0.2%2B-red" alt="LangGraph">
-  <img src="https://img.shields.io/badge/ChromaDB-0.6%2B-purple" alt="ChromaDB">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
-  <a href="https://github.com/sgm-audio/Audio-Freelance/actions/workflows/ci.yml"><img src="https://github.com/sgm-audio/Audio-Freelance/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
 ---
 
+<p align="center">
+  <img src="frontend/public/dashboard.png" alt="Dashboard" width="800">
+</p>
+
+---
+
+**Audio-Freelance** is a full-stack system that finds freelance audio development work — not by scraping job boards, but by mining market intelligence: funding rounds, technology trends, product launches, hiring signals, and pricing data. It scores leads, tracks opportunities, and generates outreach drafts.
+
+Built for audio DSP engineers, plugin developers, and audio ML engineers who want to spend less time hunting and more time coding.
+
 ## The Business Case
 
-A senior audio engineer's billable rate is $150–300/hr. Every hour spent manually searching job boards, Reddit threads, and startup funding announcements instead of building costs $150–300 in opportunity cost. At 20 hrs/week of manual prospecting, that's **$3,000–6,000/week in lost revenue**.
+A senior audio engineer's billable rate is $150-300/hr. Every hour spent manually
+searching job boards, Reddit threads, and startup funding announcements instead of
+building costs $150-300 in opportunity cost. At 20 hrs/week of manual prospecting,
+that's **$3,000-6,000/week in lost revenue**.
 
-Audio-Freelance eliminates this by running 5 parallel search tiers across 15+ sources, deduplicating with embedding-based similarity, scoring against your profile, and generating outreach drafts — all in under 30 seconds.
+Audio-Freelance eliminates this by running 5 parallel search tiers across 15+
+sources, deduplicating with embedding-based similarity, scoring against your
+profile, and generating outreach drafts - all in under 30 seconds.
 
-## Architecture
+## Features
 
-```mermaid
-graph TB
-    User[User] -->|HTTP :3000| Frontend[Next.js 16 Dashboard]
-    Frontend -->|/api/v1/* proxy| Backend[FastAPI :8080]
+**Search & Score** — Multi-tier search across KVR Audio, JUCE Forum, Reddit, HN, GitHub, LinkedIn, and company career pages. Scored by signal detection (C++/Rust DSP, CLAP, Mamba/SSM, REAPER, on-device ML, etc.) with configurable thresholds.
 
-    Backend -->|embeddings| Ollama[Ollama nomic-embed-text]
-    Backend -->|CRUD + dedup| ChromaDB[(ChromaDB Vector Store)]
+**Market Intelligence** — 6-category market scanner: funding rounds, technology trends, product launches, pricing benchmarks, hiring signals, and GitHub activity. Tracks 14+ technologies (CLAP, ARA, Mamba/SSM, Rust Audio, JUCE, etc.) with rising/stable/declining status.
 
-    subgraph SearchAPIs[Search API Fallback Chain]
-        Tavily[Tavily Primary] -->|fail| Serper[Serper Fallback]
-        Serper -->|fail| Firecrawl[Firecrawl Final]
-    end
+**Outreach Generator** — Templated outreach drafts (A-D) with asset registry claim validation. Proposal generator with pricing tiers and IP licensing notes. Ready-to-send application materials for live opportunities.
 
-    Backend --> SearchAPIs
+**Dashboard** — Next.js 16 dark-mode dashboard with lead management, market trends, pricing benchmarks, and one-click prospecting. Theme toggle, keyboard navigable.
 
-    subgraph ATS[ATS API Integrations]
-        Greenhouse[Greenhouse]
-        Lever[Lever]
-        Ashby[Ashby]
-    end
+## Screenshots
 
-    Backend --> ATS
+| Dashboard | Market Intelligence | Lead Pipeline |
+|---|---|---|
+| ![Dashboard](frontend/public/screenshots/dashboard.png) | ![Market](frontend/public/screenshots/market.png) | ![Pipeline](frontend/public/screenshots/pipeline.png) |
 
-    subgraph Pipeline[LangGraph DAG Pipeline]
-        direction LR
-        S1[5-Tier Search] --> S2[ChromaDB Dedup]
-        S2 --> S3[Deep Fetch]
-        S3 --> S4[Profile Scoring]
-        S4 --> S5[LLM Outreach]
-        S5 --> S6[Review Queue]
-    end
+### Capturing Screenshots
 
-    Backend --> Pipeline
+```bash
+# 1. Start the app
+./run.sh
 
-    subgraph Intelligence[Market Intelligence]
-        MI1[Funding Rounds]
-        MI2[Tech Trends]
-        MI3[Product Launches]
-        MI4[Pricing Benchmarks]
-        MI5[Hiring Signals]
-        MI6[GitHub Trending]
-    end
+# 2. Take screenshots (Firefox)
+firefox --screenshot frontend/public/screenshots/dashboard.png http://localhost:3000/
+firefox --screenshot frontend/public/screenshots/market.png http://localhost:3000/market
+firefox --screenshot frontend/public/screenshots/pipeline.png http://localhost:3000/tracking
 
-    Backend --> Intelligence
-
-    subgraph Monitoring[Observability]
-        Prometheus[Prometheus Metrics]
-        Sentry[Sentry Errors]
-        Structlog[Structured Logging]
-    end
-
-    Backend --> Monitoring
+# 3. Or use Chrome headless
+google-chrome --headless --screenshot=frontend/public/screenshots/dashboard.png --window-size=1280,800 http://localhost:3000/
 ```
 
-## Deployment ROI
-
-Deploying this architecture eliminates 15–30 hours/week of manual lead generation, recovers $3,000–6,000/week in opportunity cost, and provides continuous market intelligence across 14+ audio technologies — all running locally with zero cloud compute dependencies.
-
-## R&D Status
-
-### Architecture Sandbox
-
-**Implemented Nodes:**
-
-| Node | Status | Coverage |
-|------|--------|----------|
-| 5-Tier Search (Tavily/Serper/Firecrawl) | Production-ready | All tiers functional |
-| ATS API Integration (Greenhouse, Lever, Ashby) | Production-ready | Tier 5 search |
-| ChromaDB Dedup (URL + embedding cosine) | Production-ready | 92% threshold |
-| Profile-Based Signal Scoring | Production-ready | HOT/WARM/COLD/SKIP |
-| Market Intelligence Scanner (6 categories) | Production-ready | 14+ technologies tracked |
-| LLM Outreach Generation (templated) | Production-ready | 4 template types |
-| FastAPI Backend (15+ endpoints) | Production-ready | Auth, rate limiting, CORS |
-| Next.js 16 Dashboard | Production-ready | Dark mode, keyboard nav |
-| Prometheus Metrics + Sentry | Production-ready | Full observability stack |
-| Docker + Fly.io Deployment | Production-ready | CI/CD via GitHub Actions |
-
-**Upcoming Roadmap:**
-
-| Phase | Description | Priority |
-|-------|-------------|----------|
-| Phase 2 | Web dashboard enhancements (bulk operations, lead scoring visualization) | High |
-| Phase 3 | ARA host bridge for audio analysis integration | Medium |
-| Phase 4 | DAW/ReaScript integration for REAPER workflows | Medium |
-| Phase 5 | Multi-user support with RBAC | Low |
-
 ## Quick Start
+
+Works on macOS, Linux, and Windows — the launcher (`run.py`) is plain Python with no extra dependencies.
+
+**macOS / Linux**
 
 ```bash
 # Install backend + frontend dependencies
@@ -116,84 +85,388 @@ make install
 
 # Start both servers
 python run.py
-
-# Open dashboard
-open http://localhost:3000
+# or: ./run.sh / make dev
 ```
+
+**Windows (PowerShell or cmd)**
+
+```powershell
+# Install backend + frontend dependencies
+uv sync --extra dev
+cd frontend; npm install; cd ..
+
+# Start both servers
+python run.py
+```
+
+Then open **http://localhost:3000**
+
+The launcher runs pre-flight checks (uv, Node, `.env`, free ports) before starting anything — `python run.py --check` runs just the checks, `--verbose` shows server output.
 
 ### Prerequisites
 
 - Python 3.12+
 - Node.js 22+
-- [Ollama](https://ollama.ai) with `nomic-embed-text` (for dedup embeddings)
-- At least one search API key (Tavily, Serper, or Firecrawl)
+- [Ollama](https://ollama.ai) with `nomic-embed-text` (for dedup)
+- Search API keys (Tavily, Serper, or Firecrawl) — set in `.env`
 
 ```bash
-cp .env.example .env
-# Add your API keys to .env
+cp .env.example .env          # Windows: copy .env.example .env
+# Add your API keys
 ollama pull nomic-embed-text
 ```
+
+### Virtualenv Shell
+
+To drop into the uv-managed venv for one-off commands:
+
+| Platform | Command |
+|---|---|
+| macOS / Linux | `./activate.sh` |
+| All platforms | `uv run <command>` (runs one command in the managed environment) |
+
+`activate.sh` opens a subshell; type `exit` to leave it. No Windows activation wrapper is currently included.
 
 ### Individual Commands
 
 ```bash
 make backend    # FastAPI on :8080
 make frontend   # Next.js on :3000
-make test       # Run 81 backend tests
+make test       # Run the backend pytest suite
 make build      # Production frontend build
 ```
 
+## Architecture
+
+```mermaid
+graph TB
+    User[👤 User] -->|HTTP :3000| Frontend[Next.js Dashboard]
+    Frontend -->|/api/v1/* proxy| Backend[FastAPI :8080]
+
+    Backend -->|embeddings| Ollama[Ollama<br/>nomic-embed-text]
+    Backend -->|CRUD + dedup| ChromaDB[(ChromaDB<br/>Vector Store)]
+    Backend -->|search queries| SearchAPIs[Search APIs]
+
+    SearchAPIs --> Tavily[Tavily<br/>Primary]
+    SearchAPIs --> Serper[Serper<br/>Fallback]
+    SearchAPIs --> Firecrawl[Firecrawl<br/>Fallback]
+
+    Backend --> ATS[ATS APIs]
+    ATS --> Greenhouse[Greenhouse]
+    ATS --> Lever[Lever]
+    ATS --> Ashby[Ashby]
+
+    subgraph Pipeline[DAG Pipeline]
+        Search[5-Tier Search] --> Dedup[ChromaDB Dedup]
+        Dedup --> Score[Signal Scoring]
+        Score --> Generate[LLM Outreach]
+        Generate --> Review[Review Queue]
+    end
+
+    Backend --> Pipeline
+
+    subgraph Monitoring
+        Metrics[Prometheus /metrics]
+        Sentry[Sentry Error Tracking]
+        Health[Health Checks]
+        Backup[Daily Backup]
+    end
+
+    Backend --> Monitoring
+```
+
+### Data Flow
+
+1. **Prospect**: User clicks "Prospect plugin_dev" → `POST /api/v1/prospect/{niche}` → Pipeline runs 5 search tiers in parallel → Dedup via ChromaDB embeddings → Score against user profile → Store HOT/WARM in ChromaDB, archive COLD/SKIP
+2. **Dashboard**: `GET /api/v1/status` + `GET /api/v1/market` → Aggregated lead counts, technology trends, pricing benchmarks
+3. **Outreach**: `POST /api/v1/outreach/{lead_id}` → LLM generates draft from template → Logged to outreach collection
+4. **Triage**: `POST /api/v1/tracking/triage` → Keyword classifier → Suggested action (proposal/rate/archive/dead)
+5. **Backup**: `scripts/backup.sh --retain 7` → Tars ChromaDB + archives + tracking + profile → Prunes old backups
+6. **Metrics**: Prometheus scrapes `GET /api/v1/metrics` every 15s → Counters for pipeline runs, leads discovered, API requests
+
+### Search Tiers
+
+| Tier | Frequency | Sources |
+|------|-----------|---------|
+| Tier 1 | Daily | KVR Audio, JUCE Forum, Reddit (audio_programming, REAPER) |
+| Tier 2 | Weekly | We Work Remotely, RemoteOK, Wellfound, HN Algolia |
+| Tier 3 | Niche | Audio Programmer, GitHub bounties, music-tech boards |
+| Tier 4 | Outbound | Plugin companies, YC audio startups, AI-audio startups |
+| Tier 5 | Direct ATS | Public Greenhouse, Lever, and Ashby job-board APIs |
+
+## Environment Variables
+
+Backend configuration is centralized in `config.py` (pydantic-settings); the separate outreach workspace reads its `SGM_OUTREACH_*` settings directly. Copy `.env.example` to `.env` and fill in the search keys (blank values are accepted at startup, but prospecting requires at least one usable provider key).
+
+### Required
+
+| Variable | Description | Example |
+|---|---|---|
+| `TAVILY_API_KEY` | Tavily search API key | `tvly-dev-...` |
+| `SERPER_API_KEY` | Serper (Google) search API key | `abc123...` |
+| `FIRECRAWL_API_KEY` | Firecrawl web scraping API key | `fc-...` |
+
+### Optional — Authentication
+
+| Variable | Default | Description |
+|---|---|---|
+| `API_KEY` | `""` (open access) | Bearer token for API auth. Leave empty for local dev. |
+| `GITHUB_TOKEN` | `""` | GitHub personal access token for API queries |
+
+### Optional — Ollama
+
+| Variable | Default | Description |
+|---|---|---|
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama server URL for embeddings |
+
+### Optional — ChromaDB
+
+| Variable | Default | Description |
+|---|---|---|
+| `CHROMA_COLLECTION_LEADS` | `freelance_leads` | Collection name for lead storage |
+| `CHROMA_COLLECTION_OUTREACH` | `freelance_outreach_log` | Collection name for outreach logs |
+| `EMBEDDING_MODEL` | `nomic-embed-text` | Ollama model for embeddings |
+| `DEDUP_SIMILARITY_THRESHOLD` | `0.92` | Cosine similarity threshold for dedup |
+| `LEADS_DATA_DIR` | `""` | Override ChromaDB data directory |
+| `LEADS_ARCHIVE_DIR` | `""` | Override archive directory |
+| `LEADS_TRACKING_DIR` | `""` | Override tracking directory |
+| `LEADS_ALLOW_TEST_LEADS` | `false` | Allow test-source leads in production |
+
+### Optional — Search
+
+| Variable | Default | Description |
+|---|---|---|
+| `PREFERRED_NICHES` | `plugin_dev,reaper_scripts,rust_audio,audio_ml,game_audio_dev` | Comma-separated niches to search |
+| `MIN_RATE_CAD` | `3000` | Minimum project rate in CAD |
+| `HOURLY_FLOOR_CAD` | `150` | Minimum hourly rate in CAD |
+
+### Optional — Scoring
+
+| Variable | Default | Description |
+|---|---|---|
+| `HOT_THRESHOLD` | `10` | Score threshold for HOT verdict |
+| `WARM_THRESHOLD` | `5` | Score threshold for WARM verdict |
+
+### Optional — Operations
+
+| Variable | Default | Description |
+|---|---|---|
+| `COLD_ROTATION_DAYS` | `3` | Days before COLD leads are auto-rotated |
+| `LOG_LEVEL` | `INFO` | Logging level (DEBUG, INFO, WARNING, ERROR) |
+| `HOST` | `127.0.0.1` | Server bind address |
+| `PORT` | `8080` | Server port |
+| `CORS_ORIGINS` | `""` | Comma-separated additional CORS origins |
+| `PROFILE_PATH` | `""` | Override profile file path |
+| `COMPANIES_PATH` | `""` | Override companies data path |
+
+### Optional — Observability
+
+| Variable | Default | Description |
+|---|---|---|
+| `SENTRY_DSN` | `""` | Sentry DSN for error tracking (disabled if empty) |
+| `ENVIRONMENT` | `development` | Deployment environment (development/production) |
+
+## Production Readiness
+
+### Implementation and verification status
+
+| Capability | Implementation | Latest evidence |
+|---|---|---|
+| Configuration, JSON logging, correlation IDs, metrics | Implemented | Local static/unit checks pass; supported Python runtime CI is pending |
+| Bearer auth, CORS, security headers, rate limiting | Implemented | Focused local policy checks pass; full Python 3.12/3.13 runtime suite is pending |
+| Backups and data-integrity checks | Implemented | Source/tests present; container persistence gate awaits a working Actions runner |
+| Backend and outreach tests | Implemented | Outreach passes locally; backend Python 3.12/3.13 execution is pending |
+| Frontend unit tests | Implemented | Node unit tests pass locally |
+| Playwright smoke tests | Implemented in CI | Browser installation/execution is pending |
+| Docker images and Compose profiles | Implemented in CI | Build, profile, health, persistence, non-root, and image-scan job is pending |
+| OpenAPI documentation | Implemented | Interactive schemas at `/docs`; route inventory below |
+
+A capability is not release-verified merely because its implementation exists. See
+[`docs/remediation/06-independent-final-verification-report.md`](docs/remediation/06-independent-final-verification-report.md)
+for the current gate result and blocked evidence.
+
+### Known product limitations
+
+| Gap | Status |
+|---|---|
+| Multi-user / RBAC | Not implemented; this is currently a solo operator tool |
+| HTTPS in local development | Expected at a production reverse proxy such as nginx or Caddy |
+| Broad browser workflows | Current Playwright coverage is a deterministic dashboard smoke suite |
+
 ## API
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/health` | Health check |
-| `GET` | `/api/v1/status` | Lead counts + system status |
-| `GET` | `/api/v1/leads` | List leads (filterable by status) |
-| `POST` | `/api/v1/prospect/{niche}` | Run full search → dedup → score pipeline |
-| `POST` | `/api/v1/score` | Manually score a raw candidate |
-| `POST` | `/api/v1/outreach/{lead_id}` | Generate outreach draft |
-| `POST` | `/api/v1/proposal` | Generate structured proposal |
-| `GET` | `/api/v1/market` | Full market intelligence report |
-| `GET` | `/api/v1/market/trends` | Technology trends |
-| `GET` | `/api/v1/market/pricing` | Pricing benchmarks |
+All JSON routes are under `/api/v1` except `/briefing`. “Protected” routes require
+`Authorization: Bearer <API_KEY>` when configured and always require it when
+`ENVIRONMENT=production`. The four explicitly public operational/setup routes remain
+available without a token. OpenAPI at `/docs` is authoritative for request and response
+schemas.
 
-Full API documentation available at `http://localhost:8080/docs` (OpenAPI/Swagger).
+| Method | Path | Access | Response/purpose |
+|---|---|---|---|
+| `GET` | `/api/v1/health` | Public | JSON health, Ollama state, and timestamp |
+| `GET` | `/api/v1/metrics` | Public | Prometheus text exposition |
+| `GET` | `/api/v1/bookmarklet` | Public | HTML bookmarklet installer |
+| `GET` | `/api/v1/profile/status` | Public | JSON first-run profile status |
+| `GET` | `/api/v1/leads` | Protected | JSON lead list, optionally filtered by status |
+| `GET` | `/api/v1/leads/cold` | Protected | JSON archived cold leads |
+| `GET` | `/api/v1/leads/cold/stats` | Protected | JSON cold-lead counts by niche/source |
+| `POST` | `/api/v1/leads/rotate-cold` | Protected | JSON rotation result |
+| `GET` | `/api/v1/leads/rotation-status` | Protected | JSON rotation schedule/status |
+| `GET` | `/api/v1/leads/{lead_id}` | Protected | JSON lead detail |
+| `POST` | `/api/v1/leads/{lead_id}/status` | Protected | JSON status transition result |
+| `POST` | `/api/v1/prospect/{niche}` | Protected | JSON search, deduplication, and scoring result |
+| `POST` | `/api/v1/score` | Protected | JSON score for a raw candidate |
+| `POST` | `/api/v1/translate` | Protected | JSON client-facing translation |
+| `POST` | `/api/v1/leads/manual` | Protected | JSON manually created lead |
+| `POST` | `/api/v1/leads/bulk` | Protected | JSON bulk import result |
+| `POST` | `/api/v1/rate` | Protected | JSON rate tiers |
+| `POST` | `/api/v1/outreach/{lead_id}` | Protected | JSON outreach draft |
+| `POST` | `/api/v1/proposal` | Protected | JSON structured proposal |
+| `GET` | `/api/v1/status` | Protected | JSON lead counts and system status |
+| `POST` | `/api/v1/debug` | Protected | JSON diagnostics |
+| `GET` | `/api/v1/market` | Protected | JSON market intelligence report |
+| `GET` | `/api/v1/market/trends` | Protected | JSON technology trends |
+| `GET` | `/api/v1/market/pricing` | Protected | JSON pricing benchmarks |
+| `GET` | `/api/v1/market/opportunities` | Protected | JSON actionable opportunities |
+| `GET` | `/api/v1/tracking` | Protected | JSON tracking events |
+| `GET` | `/api/v1/tracking/active` | Protected | JSON active pursuits |
+| `POST` | `/api/v1/tracking/triage` | Protected | JSON single-lead triage result |
+| `POST` | `/api/v1/tracking/triage/batch` | Protected | JSON batch triage result |
+| `GET` | `/api/v1/tracking/won-lost` | Protected | JSON outcome summary |
+| `GET` | `/api/v1/tracking/{lead_id}` | Protected | JSON tracking history for one lead |
+| `GET` | `/api/v1/profile` | Protected | JSON profile |
+| `POST` | `/api/v1/profile` | Protected | JSON profile update result |
+| `DELETE` | `/api/v1/profile` | Protected | JSON profile deletion result |
+| `POST` | `/api/v1/profile/upload` | Protected | JSON bounded portfolio upload result |
+| `GET` | `/api/v1/companies` | Protected | JSON ATS company configuration |
+| `POST` | `/api/v1/companies` | Protected | JSON company-add result |
+| `DELETE` | `/api/v1/companies` | Protected | JSON company-removal result |
+| `GET` | `/api/v1/profile/blocked` | Protected | JSON blocked-company list |
+| `POST` | `/api/v1/profile/blocked` | Protected | JSON block result |
+| `DELETE` | `/api/v1/profile/blocked` | Protected | JSON unblock result |
+| `GET` | `/briefing` | Protected | Rendered HTML daily briefing |
 
-## Technology Stack
+## Market Intelligence
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| Backend | FastAPI + uvicorn | REST API server |
-| Frontend | Next.js 16 + React 19 | Dashboard UI |
-| Pipeline | LangGraph 0.2+ | DAG orchestration |
-| Vector DB | ChromaDB 0.6+ | Lead storage + dedup |
-| Embeddings | Ollama (nomic-embed-text) | Semantic similarity |
-| Search | Tavily → Serper → Firecrawl | Multi-API fallback |
-| ATS | Greenhouse, Lever, Ashby | Structured job data |
-| Scoring | Profile-based signal detection | Lead qualification |
-| Observability | Prometheus + Sentry + structlog | Metrics + errors + logging |
-| Deployment | Docker + Fly.io + GitHub Actions | CI/CD pipeline |
+The `research/market.py` engine searches 6 signal categories in parallel:
+
+| Category | What it finds |
+|----------|--------------|
+| **Funding** | Companies that raised money (hiring soon) |
+| **Tech Trends** | CLAP, Mamba/SSM, Rust Audio, ARA adoption |
+| **Product Launches** | New plugins, DAW features, AI music tools |
+| **Pricing** | Rate data from job posts and freelance platforms |
+| **Hiring Signals** | Companies actively building audio teams |
+| **GitHub Trending** | What's being built in audio open source |
+
+### Tracked Technologies
+
+CLAP, ARA 2, Mamba/SSM, Rust Audio, ONNX, LibTorch, REAPER, Web Audio, Neural Audio Codecs, Source Separation, FAUST, JUCE, RTNeural, MIR.
+
+## Deployment
+
+### One-Click (Fly.io)
+
+```bash
+# 1. Install Fly CLI
+curl -L https://fly.io/install.sh | sh
+
+# 2. Create app (first time only)
+fly apps create audio-freelance
+
+# 3. Set secrets
+fly secrets set TAVILY_API_KEY=your-key
+fly secrets set SERPER_API_KEY=your-key
+fly secrets set FIRECRAWL_API_KEY=your-key
+fly secrets set API_KEY=your-auth-key  # required when ENVIRONMENT=production
+
+# 4. Deploy
+fly deploy
+
+# Open dashboard
+fly open
+```
+
+The repository includes a `fly.toml` with sensible defaults (Seattle region, 1GB RAM, auto-stop on idle). It builds and deploys the FastAPI backend only; the Next.js frontend requires a separate deployment target.
+
+### Versioning and release procedure
+
+Public application surfaces use the SemVer value in `VERSION`. The Python package,
+FastAPI/OpenAPI, Next.js app, and default image tags
+must match it. Private `@sgm-outreach/*` workspace packages are never published and
+remain `private: true` at `0.0.0`.
+
+Prepare a release from a clean, updated `master` checkout:
+
+```bash
+python scripts/set_version.py 0.1.3
+# Move the CHANGELOG Unreleased entries into a dated [v0.1.3] section.
+python scripts/check_version.py
+# Run the complete clean-checkout verification matrix before tagging.
+git tag -a v0.1.3 -m "Audio-Freelance v0.1.3"
+git push origin v0.1.3
+```
+
+Use a `-rc.N` SemVer suffix for prereleases and mark the GitHub release as a
+prerelease. Never retag a failed release. Roll back Fly to the last verified image
+or deployment, publish a GitHub advisory note, and issue a new patch version with
+the corrective commit. Container rollback references must use the recorded image
+digest, not a mutable tag.
+
+### GitHub Actions CD
+
+Pushing a version tag (`v0.1.3`, `v1.0.0`) triggers automatic deployment via GitHub Actions. Requires `FLY_API_TOKEN` secret in repo settings.
+
+```bash
+# Generate token
+fly tokens create deploy -x 999999h
+
+# Add to GitHub repo secrets
+gh secret set FLY_API_TOKEN --body "your-fly-token"
+
+# Deploy by pushing a tag
+git tag v0.1.3 && git push origin v0.1.3
+```
+
+### Docker Compose (Self-Hosted)
+
+```bash
+# Clone and configure
+cp .env.example .env
+# Fill in API keys in .env
+
+# Start full stack (dev)
+docker compose up -d
+
+# Start full stack (production overrides)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# View logs
+docker compose logs -f backend
+
+# Destructive CI-style release gate using isolated synthetic credentials/project data
+# (builds all profiles, starts production services, checks auth/non-root/health/persistence,
+# then removes its containers and volumes)
+scripts/verify_containers.sh
+```
 
 ## Project Docs
 
-- **Roadmap:** [docs/ROADMAP.md](docs/ROADMAP.md) — where the project is going and how to help
+- **Roadmap:** [docs/ROADMAP.md](docs/ROADMAP.md) - where the project is going and how to help
 - [PRD](docs/PRD.md) and [ADR-001](docs/ADR-001.md) in `docs/`
 - Detailed engineering roadmap: [`docs/planning/`](docs/planning/UX_PRODUCT_ROADMAP.md)
 - Outreach engine spec, runbook & red-team review: [`docs/outreach/`](docs/outreach/OUTREACH_BUILD_SPEC.md)
+- Independent verification report: [`docs/remediation/`](docs/remediation/06-independent-final-verification-report.md)
 
 ## System Intelligence
 
-This project maintains a persistent knowledge graph in `graphify-out/` for architectural analysis and cross-file relationship tracking. Use the `graphify` tool to query the codebase structure.
-
-## Gallery
-
-![Dashboard](assets/screenshots/dashboard.png)
-*Main acquisition dashboard showing lead pipelines and scoring metrics.*
+This project maintains a persistent knowledge graph in `graphify-out/` for
+architectural analysis and cross-file relationship tracking. Use the `graphify`
+tool to query the codebase structure.
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for scope,
+Contributions are welcome - see [CONTRIBUTING.md](CONTRIBUTING.md) for scope,
 setup, and PR guidelines, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for
 community expectations. Good first contributions: new search-tier sources,
 market-intelligence signals, and dashboard polish.

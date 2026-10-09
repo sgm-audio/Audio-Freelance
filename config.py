@@ -7,6 +7,7 @@ Import `settings` from this module everywhere.
 
 from __future__ import annotations
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -78,6 +79,13 @@ class Settings(BaseSettings):
 
     # ── Paths ──
     companies_path: str = ""
+
+    @model_validator(mode="after")
+    def require_production_auth(self) -> Settings:
+        """Fail closed when a production deployment omits API authentication."""
+        if self.environment.strip().lower() == "production" and not self.api_key:
+            raise ValueError("API_KEY is required when ENVIRONMENT=production")
+        return self
 
     def as_niche_list(self) -> list[str]:
         """Return preferred_niches as a list."""

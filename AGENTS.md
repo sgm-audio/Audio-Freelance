@@ -8,7 +8,7 @@
 | Start dev (both) | `python run.py` (or `make dev` / `./run.sh`) |
 | Backend only | `make backend` → FastAPI on :8080 |
 | Frontend only | `make frontend` → Next.js on :3000 |
-| Run tests | `make test` (65+ pytest tests) |
+| Run backend tests | `make test` |
 | Build frontend | `make build` → `npx next build` |
 | Lint | `uv run --with ruff ruff check .` |
 | Typecheck | `uv run --with mypy mypy .` |
@@ -24,7 +24,7 @@ cp .env.example .env
 ollama pull nomic-embed-text  # for embeddings dedup
 ```
 
-Windows: use `activate.ps1` / `activate.bat` / `activate.sh` to enter uv venv.
+On POSIX, use `activate.sh` to enter the uv environment. On any platform, use `uv run <command>`; Windows activation wrappers are not currently included.
 
 ## Architecture
 
@@ -87,11 +87,12 @@ Mypy config ignores many errors in external-facing modules (leads.store, graph.p
 
 ## CI Pipeline (GitHub Actions)
 
-Runs on push/PR to main:
-1. **lint** — ruff check
+Runs on push/PR to `main` or `master`:
+1. **lint** — Ruff
 2. **test-backend** — pytest on Python 3.12 + 3.13 with coverage
-3. **build-frontend** — `npx next build` (Node 22)
-4. **docker** — builds/pushes to GHCR (on tags + master branch)
+3. **build-frontend** — ESLint + Next.js production build (Node 22)
+4. **test-outreach** — pnpm workspace build + Vitest suites (Node 22)
+5. **docker** — builds/pushes to GHCR on `master` pushes (tag pushes currently trigger CD, not this workflow)
 
 ## Deployment
 

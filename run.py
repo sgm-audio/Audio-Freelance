@@ -27,6 +27,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import TextIO
 
 ROOT = Path(__file__).resolve().parent
 IS_WINDOWS = sys.platform == "win32"
@@ -286,11 +287,11 @@ def preflight(*, force: bool = False) -> tuple[int, bool, bool]:
     return failures, reuse_backend, reuse_frontend
 
 
-def spawn(cmd: list[str], cwd: Path, log_path: Path) -> tuple[subprocess.Popen, object | None]:
+def spawn(cmd: list[str], cwd: Path, log_path: Path) -> tuple[subprocess.Popen, TextIO | None]:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    log_file = None
+    log_file: TextIO | None = None
     if VERBOSE:
-        out: int | object = None  # inherit
+        out: int | TextIO | None = None  # inherit
     else:
         log_file = open(log_path, "w", encoding="utf-8", errors="replace")
         out = log_file

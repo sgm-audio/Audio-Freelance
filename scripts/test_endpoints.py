@@ -4,7 +4,7 @@ sys.path.insert(0, ".")
 
 from fastapi.testclient import TestClient
 
-from api.routes import app
+from main import app
 
 client = TestClient(app)
 

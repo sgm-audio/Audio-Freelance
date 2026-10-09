@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveProfile } from "@/lib/api";
+import { ProfileData, saveProfile } from "@/lib/api";
 
 const STEPS = ["Welcome", "Skills", "Domains", "Rate", "Portfolio", "Finish"];
 
@@ -24,7 +24,7 @@ export default function SetupPage() {
   const [dealbreakers, setDealbreakers] = useState<string[]>([]);
   const [seniority, setSeniority] = useState<string[]>([]);
   const [niches, setNiches] = useState<string[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<ProfileData["portfolio"]["portfolio_files"]>([]);
   const [uploadError, setUploadError] = useState("");
 
   function toggle(arr: string[], set: (v: string[]) => void, item: string) {
@@ -51,7 +51,7 @@ export default function SetupPage() {
 
       {step===0&&<div className="space-y-6">
         <h1 className="text-2xl font-semibold">Welcome</h1>
-        <p className="text-muted-foreground">Let's set up your freelance profile. Everything is optional — skip or edit later.</p>
+        <p className="text-muted-foreground">Let&apos;s set up your freelance profile. Everything is optional — skip or edit later.</p>
         <p className="text-sm text-muted-foreground">The more you add, the better we can filter leads to match your skills and rate.</p>
         <div className="flex justify-between pt-4">
           <button onClick={()=>router.push("/")} className="text-sm text-muted-foreground hover:text-foreground">Skip for now</button>
@@ -107,26 +107,41 @@ export default function SetupPage() {
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
+              setUploadError("");
+              const allowed = file.type === "application/pdf"
+                || file.type.startsWith("image/")
+                || file.type === "application/msword"
+                || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+              if (!allowed) {
+                setUploadError("Unsupported file type. Choose PDF, DOCX, DOC, or an image.");
+                return;
+              }
+              if (file.size > 10 * 1024 * 1024) {
+                setUploadError("File too large (max 10MB). ");
+                return;
+              }
               const formData = new FormData();
               formData.append("file", file);
               formData.append("file_type", "resume");
               try {
                 const res = await fetch("/api/v1/profile/upload", { method: "POST", body: formData });
-                if (res.ok) {
-                  const data = await res.json();
-                  setUploadedFiles([...uploadedFiles, data]);
-                  setUploadError("");
-                } else {
-                  setUploadError("Upload failed. Check file size (max 10MB) and try again.");
+                if (!res.ok) {
+                  const detail = await res.json().catch(() => null) as { detail?: string } | null;
+                  setUploadError(detail?.detail || `Upload failed (${res.status}).`);
+                  return;
                 }
+                const data = await res.json();
+                setUploadedFiles([...uploadedFiles, data]);
               } catch {
-                setUploadError("Upload failed — is the backend running?");
+                setUploadError("Upload failed. Backend may be unavailable.");
               }
             }}
             className="text-sm"
           />
-          {uploadError && <p className="mt-3 text-sm text-red-400">{uploadError}</p>}
         </div>
+        {uploadError && (
+          <p role="alert" className="text-sm text-red-400">{uploadError}</p>
+        )}
         {uploadedFiles.length > 0 && (
           <div className="space-y-1">
             {uploadedFiles.map((f, i) => (

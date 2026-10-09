@@ -47,9 +47,15 @@ export async function runApproveCommand(argv: string[]): Promise<void> {
 
     if (sub === "serve") {
       const port = Number(parseFlag(argv, "--port") ?? "8788");
-      startApprovalWebhookServer({ db, port });
+      const secret = process.env["SGM_OUTREACH_APPROVAL_WEBHOOK_SECRET"] ?? "";
+      if (secret.length < 32) {
+        throw new Error(
+          "SGM_OUTREACH_APPROVAL_WEBHOOK_SECRET must be at least 32 characters",
+        );
+      }
+      startApprovalWebhookServer({ db, port, secret });
       console.log(
-        `approval webhook listening on http://127.0.0.1:${port}/webhook`,
+        `approval webhook listening on http://127.0.0.1:${port}/webhook (HMAC required)`,
       );
       await new Promise<void>(() => {
         /* keep alive */

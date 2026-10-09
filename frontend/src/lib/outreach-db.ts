@@ -10,6 +10,11 @@ const API = "/api/v1";
  * Shape of the outreach snapshot data used by the dashboard.
  * Matches the fields accessed in outreach-console.tsx.
  */
+interface LeadRow {
+  status?: string | null;
+  company?: string | null;
+}
+
 export interface OutreachSnapshot {
   lead_counts: {
     NEW: number; HOT: number; WARM: number; COLD: number;
@@ -97,7 +102,7 @@ export async function loadOutreachSnapshot(): Promise<OutreachSnapshot> {
     if (!leadsResponse.ok) {
       throw new Error(`Failed to fetch leads: ${leadsResponse.status}`);
     }
-    const leads: any[] = await leadsResponse.json();
+    const leads: LeadRow[] = (await leadsResponse.json()) as LeadRow[];
     
     // Compute lead counts by status from the leads array
     // Initialize all required lead count properties to 0
@@ -118,7 +123,7 @@ export async function loadOutreachSnapshot(): Promise<OutreachSnapshot> {
     };
     
     // Increment counts based on actual leads
-    leads.forEach((lead: any) => {
+    leads.forEach((lead) => {
       const status = lead.status?.toUpperCase() || "NEW";
       if (status in leadCounts) {
         leadCounts[status as keyof typeof leadCounts] = (leadCounts[status as keyof typeof leadCounts] || 0) + 1;
@@ -132,7 +137,7 @@ export async function loadOutreachSnapshot(): Promise<OutreachSnapshot> {
     // Compute distinct companies and contacts
     const companies = new Set(
       leads
-        .map((lead: any) => lead.company)
+        .map((lead) => lead.company)
         .filter((company): company is string => !!company)
     );
     

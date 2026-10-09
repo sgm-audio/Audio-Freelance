@@ -49,7 +49,7 @@ class TestSignalNarrowing:
 
 class TestBudgetAsIntentAndFit:
     def test_budget_counts_as_intent(self):
-        """budget_above_floor should be in INTENT_SIGNAL_NAMES (a dollar amount IS intent)."""
+        """budget_above_floor in INTENT_SIGNAL_NAMES (a dollar amount IS hiring intent)."""
         assert "budget_above_floor" in INTENT_SIGNAL_NAMES
 
     def test_budget_counts_as_fit(self):

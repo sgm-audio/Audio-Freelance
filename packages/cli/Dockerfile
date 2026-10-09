@@ -8,20 +8,18 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml tsconfig.base.json ./
-COPY packages/core/package.json packages/core/
-COPY packages/cli/package.json packages/cli/
+# Copy the frozen workspace before source so dependency installation is reproducible.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY packages packages
+RUN pnpm install --frozen-lockfile \
+  && pnpm build \
+  && CI=true pnpm install --prod --frozen-lockfile --offline
 
-RUN pnpm install --frozen-lockfile=false
-
-COPY packages/core packages/core
-COPY packages/cli packages/cli
-
-RUN pnpm --filter @sgm-outreach/core build \
-  && pnpm --filter @sgm-outreach/cli build
-
+ENV NODE_ENV=production
 ENV SGM_OUTREACH_DB=/data/outreach.sqlite
+RUN mkdir -p /data && chown -R node:node /app /data
 VOLUME ["/data"]
+USER node
 
 ENTRYPOINT ["node", "packages/cli/dist/bin.js"]
 CMD ["status"]

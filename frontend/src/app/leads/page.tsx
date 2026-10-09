@@ -43,7 +43,7 @@ export default function LeadsPage() {
     toastTimer.current = setTimeout(() => setToast(null), ms);
   }, []);
 
-  async function undoStatus() {
+  const undoStatus = useCallback(async () => {
     const u = undoRef.current;
     if (!u) return;
     undoRef.current = null;
@@ -54,7 +54,7 @@ export default function LeadsPage() {
     } catch {
       showToast({ text: "Undo failed" });
     }
-  }
+  }, [showToast]);
 
   function handleModalKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
     if (e.key === "Escape") {
@@ -110,6 +110,7 @@ export default function LeadsPage() {
   }, [filter]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset/load when the input changes
     load();
   }, [load]);
 
@@ -191,7 +192,7 @@ export default function LeadsPage() {
       showToast({ text: "Status update failed" });
     }
     setBusy(false);
-  }, [selectedId, leads, showToast]);
+  }, [selectedId, leads, showToast, undoStatus]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

@@ -8,9 +8,12 @@ build/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+.coverage
+coverage.xml
 
 # Local machine diagnostics (never belong in the repo)
 dxdiag_output.txt
+data/startup-review-attempt.log
 
 # ChromaDB data
 leads/data/
@@ -38,6 +41,8 @@ proposals/
 frontend/.next/
 frontend/node_modules/
 frontend/out/
+frontend/playwright-report/
+frontend/test-results/
 
 # SGM Outreach Engine (pnpm monorepo)
 node_modules/

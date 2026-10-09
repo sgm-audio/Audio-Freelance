@@ -82,7 +82,7 @@ async def test_search_all_node(sample_state):
     except ValueError as e:
         # ChromaDB embedding function init fails without ollama installed
         if "ollama" in str(e).lower():
-            pytest.skip("Ollama not available — ChromaDB embedding init skipped")
+            pytest.skip("Ollama integration unavailable; owner: maintainer; issue #74")
         raise
 
 

@@ -216,7 +216,7 @@ export default function PreferencesPage() {
       <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Blocked Companies</h2>
       <p className="text-xs text-muted-foreground mb-3">
         Leads mentioning these companies will be hidden from all search results.
-        Block companies you don't want to see (e.g., past employers, competitors).
+        Block companies you don&apos;t want to see (e.g., past employers, competitors).
       </p>
       <div className="flex flex-wrap gap-2 mb-3">
         {profile.preferences.blocked_companies?.map((c: string) => (

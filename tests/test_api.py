@@ -4,18 +4,34 @@ Tests the FastAPI app through TestClient (no real HTTP server).
 Validates that every route accepts requests and returns expected shapes.
 """
 
+import re
 import shutil
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
+from config import settings
 from main import app
 
 client = TestClient(app)
 
 # Profile path for save/restore during destructive tests
-_PROFILE_PATH = Path(__file__).resolve().parent.parent / "profile.yaml"
+_ROOT = Path(__file__).resolve().parent.parent
+_PROFILE_PATH = _ROOT / "profile.yaml"
+
+
+def test_readme_api_inventory_matches_application_routes():
+    """Keep the documented method/path table synchronized with OpenAPI routes."""
+    readme = (_ROOT / "README.md").read_text(encoding="utf-8")
+    documented = set(re.findall(r"\| `(GET|POST|PUT|PATCH|DELETE)` \| `([^`]+)`", readme))
+    implemented = {
+        (method.upper(), path)
+        for path, operations in app.openapi()["paths"].items()
+        for method in operations
+        if method.upper() in {"GET", "POST", "PUT", "PATCH", "DELETE"}
+    }
+    assert documented == implemented
 
 
 @pytest.fixture
@@ -113,7 +129,7 @@ class TestProspecting:
         resp = client.post("/api/v1/prospect/INVALID")
         assert resp.status_code == 400
 
-    @pytest.mark.skip(reason="Runs full pipeline — external APIs, 30s+")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_prospect_valid_niche(self):
         """POST /api/v1/prospect/plugin_dev runs full pipeline."""
         resp = client.post("/api/v1/prospect/plugin_dev", timeout=120)
@@ -224,26 +240,26 @@ class TestColdLeads:
 class TestMarket:
     """Market intelligence endpoints — skipped by default (external APIs, 60s+)."""
 
-    @pytest.mark.skip(reason="Market scan calls external APIs — run manually")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_market_overview(self):
         resp = client.get("/api/v1/market", timeout=120)
         assert resp.status_code == 200
 
-    @pytest.mark.skip(reason="Market scan calls external APIs — run manually")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_market_trends(self):
         resp = client.get("/api/v1/market/trends", timeout=120)
         assert resp.status_code == 200
         data = resp.json()
         assert "tech_trends" in data
 
-    @pytest.mark.skip(reason="Market scan calls external APIs — run manually")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_market_pricing(self):
         resp = client.get("/api/v1/market/pricing", timeout=120)
         assert resp.status_code == 200
         data = resp.json()
         assert "pricing_benchmarks" in data
 
-    @pytest.mark.skip(reason="Market scan calls external APIs — run manually")
+    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
     def test_market_opportunities(self):
         resp = client.get("/api/v1/market/opportunities", timeout=120)
         assert resp.status_code == 200
@@ -284,6 +300,29 @@ class TestProfile:
         """POST /api/v1/profile/upload without file returns 422."""
         resp = client.post("/api/v1/profile/upload")
         assert resp.status_code == 422
+
+    def test_upload_sanitizes_filename(self):
+        """Uploaded filenames cannot create attacker-controlled subdirectories."""
+        resp = client.post(
+            "/api/v1/profile/upload",
+            files={"file": ("../resume.pdf", b"%PDF-test", "application/pdf")},
+        )
+        assert resp.status_code == 200
+        stored_path = Path(__file__).resolve().parent.parent / resp.json()["path"]
+        try:
+            assert stored_path.parent.name == "portfolio"
+            assert stored_path.name.endswith("_resume.pdf")
+        finally:
+            stored_path.unlink(missing_ok=True)
+
+    def test_upload_rejects_oversized_content(self):
+        """Uploads larger than 10 MiB are rejected."""
+        resp = client.post(
+            "/api/v1/profile/upload",
+            files={"file": ("large.pdf", b"x" * (10 * 1024 * 1024 + 1), "application/pdf")},
+        )
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "File too large (max 10MB)"
 
     def test_blocked_companies_get(self):
         """GET /api/v1/profile/blocked returns list."""
@@ -327,8 +366,51 @@ class TestCompanies:
 class TestBriefing:
     """Daily briefing HTML page."""
 
-    def test_briefing_returns_html(self):
-        """GET /briefing returns HTML response."""
+    def test_briefing_returns_html_in_explicit_local_mode(self):
+        """GET /briefing stays available when local auth is explicitly disabled."""
+        assert settings.environment == "development"
+        assert not settings.api_key
         resp = client.get("/briefing")
         assert resp.status_code == 200
         assert "text/html" in resp.headers["content-type"]
+
+    def test_briefing_requires_bearer_token_when_configured(self):
+        """The non-API briefing route shares the protected auth boundary."""
+        original = settings.api_key
+        settings.api_key = "briefing-test-key"
+        try:
+            assert client.get("/briefing").status_code == 401
+            assert (
+                client.get(
+                    "/briefing",
+                    headers={"Authorization": "Bearer briefing-test-key"},
+                ).status_code
+                == 200
+            )
+        finally:
+            settings.api_key = original
+
+    def test_auth_denials_are_logged_without_credentials(self):
+        """Denied requests record only a reason, never supplied credentials."""
+        from unittest.mock import patch
+
+        original = settings.api_key
+        settings.api_key = "briefing-test-key"
+        try:
+            with patch("api.auth.logger.warning") as warning:
+                assert client.get("/briefing").status_code == 401
+                assert (
+                    client.get(
+                        "/briefing",
+                        headers={"Authorization": "Bearer attacker-supplied-token"},
+                    ).status_code
+                    == 401
+                )
+
+            assert warning.call_count == 2
+            warning.assert_any_call("api_auth_denied", reason="missing_authorization")
+            warning.assert_any_call("api_auth_denied", reason="invalid_credentials")
+            assert "attacker-supplied-token" not in repr(warning.call_args_list)
+            assert "briefing-test-key" not in repr(warning.call_args_list)
+        finally:
+            settings.api_key = original
