@@ -7,6 +7,7 @@ sources for audio companies.
 All three APIs are public and require no authentication.
 """
 
+import logging
 from pathlib import Path
 
 import httpx
@@ -14,6 +15,8 @@ import yaml
 
 from config import settings
 from search.base import RawCandidate, extract_contact_path
+
+logger = logging.getLogger(__name__)
 
 # ── Company list loader ──
 
@@ -90,18 +93,13 @@ async def fetch_greenhouse_jobs(company: str, timeout: int = 10) -> list[RawCand
                         raw_text=raw_text[:2000],
                         company=company,
                         tier=5,
-                        contact_path=extract_contact_path(
-                            content, raw_text, apply_url=job_url
-                        ),
+                        contact_path=extract_contact_path(content, raw_text, apply_url=job_url),
                     )
                 )
     except Exception:
-        pass
+        logger.debug("greenhouse fetch failed for %s", company, exc_info=True)
 
     return candidates
-
-
-# ── Lever client ──
 
 
 async def fetch_lever_jobs(company: str, timeout: int = 10) -> list[RawCandidate]:
@@ -143,13 +141,11 @@ async def fetch_lever_jobs(company: str, timeout: int = 10) -> list[RawCandidate
                         raw_text=raw_text[:2000],
                         company=company,
                         tier=5,
-                        contact_path=extract_contact_path(
-                            description, raw_text, apply_url=job_url
-                        ),
+                        contact_path=extract_contact_path(description, raw_text, apply_url=job_url),
                     )
                 )
     except Exception:
-        pass
+        logger.debug("lever fetch failed for %s", company, exc_info=True)
 
     return candidates
 
@@ -194,13 +190,11 @@ async def fetch_ashby_jobs(company: str, timeout: int = 10) -> list[RawCandidate
                         raw_text=raw_text[:2000],
                         company=company,
                         tier=5,
-                        contact_path=extract_contact_path(
-                            description, raw_text, apply_url=job_url
-                        ),
+                        contact_path=extract_contact_path(description, raw_text, apply_url=job_url),
                     )
                 )
     except Exception:
-        pass
+        logger.debug("ashby fetch failed for %s", company, exc_info=True)
 
     return candidates
 

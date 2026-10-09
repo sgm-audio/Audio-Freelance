@@ -6,14 +6,13 @@ With a full profile, it scores based on skills match, dealbreakers, rate,
 seniority, and contract type.
 """
 
-import re
-
 from config import settings
 from leads.schema import Lead, LeadStatus
 from scoring.profile import Profile
 from scoring.signals import (
     NEGATIVE_SIGNALS,
     POSITIVE_SIGNALS,
+    _parse_budget,
     check_hard_skip,
     classify_verdict,
     extract_signals,
@@ -161,14 +160,14 @@ def score_against_profile(
         if profile.contract_types and _any_match(combined_text, profile.contract_types):
             signals["contract_type_match"] = 3
 
-        # Rate floor check (if profile has a floor)
+        # Budget floor check (if profile has a floor)
         if profile.rate_floor > 0:
             budget = _parse_budget(combined_text)
             if budget is not None:
                 if budget >= profile.rate_floor:
-                    signals["rate_above_floor"] = 8
+                    signals["budget_above_floor"] = 8
                 else:
-                    signals["rate_below_floor"] = -15
+                    signals["budget_below_floor"] = -15
 
     # ── Step 7: Conjunctive verdict (tech + intent; HOT also needs fit) ──
     total = sum(signals.values())
@@ -186,32 +185,3 @@ def score_against_profile(
         verdict=verdict,
         status=status,
     )
-
-
-def _parse_budget(text: str) -> int | None:
-    """Extract a budget from raw text."""
-    for pat in [
-        r"\$\s*(\d+)\s*k\b",
-        r"\b(\d{2,4})\s*k\s*(?:budget|contract|usd|cad|freelance|remote)",
-        r"rate\s+(?:is|of|around)?\s*\$?\s*(\d{2,3})\s*k",
-    ]:
-        m = re.search(pat, text, re.IGNORECASE)
-        if m:
-            val = int(m.group(1)) * 1000
-            if val >= 500:
-                return val
-
-    patterns = [
-        r"\$\s*((?:\d{4,10}|\d{1,3}(?:,\d{3})*))(?:\.\d{2})?\s*(?:cad|usd)?",
-        r"(\d{4,5})\s*(?:cad|usd|dollars)",
-        r"budget\s*(?:of\s*)?[:$]?\s*\$?(\d[\d,]*)",
-        r"rate\s*(?:of\s*)?[:$]?\s*((?:\d{4,10}|\d{1,3}(?:,\d{3})*))",
-        r"\b\$(\d{2,3}(?:,\d{3})*)\s*(?:/hr|/hour|\s*(?:per|an?)\s*hour)",
-    ]
-    for pat in patterns:
-        m = re.search(pat, text, re.IGNORECASE)
-        if m:
-            val = int(m.group(1).replace(",", ""))
-            if val >= 100:
-                return val
-    return None

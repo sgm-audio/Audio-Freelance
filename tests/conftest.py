@@ -15,8 +15,13 @@ import pytest
 # monkeypatch runs too late — we must set os.environ directly here.
 _SAVED_ALLOW_TEST = os.environ.get("LEADS_ALLOW_TEST_LEADS")
 _SAVED_DATA_DIR = os.environ.get("LEADS_DATA_DIR")
+_SAVED_DISABLE_OLLAMA = os.environ.get("LEADS_DISABLE_OLLAMA")
 os.environ["LEADS_ALLOW_TEST_LEADS"] = "1"
 os.environ["LEADS_DATA_DIR"] = ""  # cleared; fixture sets per-test tmp_path
+# Deterministic embeddings: never call Ollama from tests. Without this, a
+# mid-run ROCm crash flips the embedding fn 768-dim ↔ 384-dim and every
+# collection created earlier fails with InvalidArgumentError.
+os.environ["LEADS_DISABLE_OLLAMA"] = "1"
 
 # config.Settings requires these at import time; supply dummies so the suite
 # runs without a .env (e.g. in CI). Real values from the environment still win.
@@ -35,6 +40,10 @@ def _restore_env():
         os.environ.pop("LEADS_DATA_DIR", None)
     else:
         os.environ["LEADS_DATA_DIR"] = _SAVED_DATA_DIR
+    if _SAVED_DISABLE_OLLAMA is None:
+        os.environ.pop("LEADS_DISABLE_OLLAMA", None)
+    else:
+        os.environ["LEADS_DISABLE_OLLAMA"] = _SAVED_DISABLE_OLLAMA
 
 
 @pytest.fixture(autouse=True)

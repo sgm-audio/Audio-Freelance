@@ -1,43 +1,18 @@
+import { JsonClient } from "./fetch-json.mts";
+
 const API = "/api/v1";
-
-// ponytail: simple TTL cache — upgrade to React Query when traffic justifies it
-type CacheEntry = { data: unknown; ts: number };
-const _cache = new Map<string, CacheEntry>();
-const _TTL = 30_000; // 30s
-
-function _cacheGet<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
-  const hit = _cache.get(key);
-  if (hit && Date.now() - hit.ts < _TTL) return Promise.resolve(hit.data as T);
-  return fetcher().then((data) => {
-    _cache.set(key, { data, ts: Date.now() });
-    return data;
-  });
-}
+const jsonClient = new JsonClient({ baseUrl: API });
 
 export function clearFetchCache() {
-  _cache.clear();
+  jsonClient.clear();
 }
 
 async function get<T>(path: string, timeoutMs = 10000): Promise<T> {
-  return _cacheGet(path, () => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    return fetch(`${API}${path}`, { signal: controller.signal })
-      .then((res) => { if (!res.ok) throw new Error(`${res.status} ${res.statusText}`); return res.json(); })
-      .finally(() => clearTimeout(timer));
-  });
+  return jsonClient.get<T>(path, timeoutMs);
 }
 
 async function post<T>(path: string, timeoutMs = 30000): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${API}${path}`, { method: "POST", signal: controller.signal });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    return res.json();
-  } finally {
-    clearTimeout(timer);
-  }
+  return jsonClient.post<T>(path, timeoutMs);
 }
 
 export interface LeadCounts {
@@ -267,7 +242,9 @@ export async function saveProfile(data: Record<string, unknown> | ProfileData): 
       signal: controller.signal,
     });
     if (!res.ok) throw new Error(`${res.status}`);
-    return res.json();
+    const result = await res.json();
+    clearFetchCache();
+    return result;
   } finally { clearTimeout(timer); }
 }
 
@@ -328,6 +305,55 @@ export async function removeBlockedCompany(company: string): Promise<{ status: s
       method: "DELETE", signal: controller.signal,
     });
     if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  } finally { clearTimeout(timer); }
+}
+
+// ── Manual lead creation ──
+
+export interface ManualLeadRequest {
+  title: string;
+  url: string;
+  snippet: string;
+  source?: string;
+  company?: string;
+  niche?: string;
+}
+
+export interface BulkImportResult {
+  imported: number;
+  errors: { title: string; error: string }[];
+  total: number;
+}
+
+export async function addManualLead(data: ManualLeadRequest): Promise<Lead> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(`${API}/leads/manual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    clearFetchCache();
+    return res.json();
+  } finally { clearTimeout(timer); }
+}
+
+export async function bulkImportLeads(leads: ManualLeadRequest[]): Promise<BulkImportResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const res = await fetch(`${API}/leads/bulk`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leads }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    clearFetchCache();
     return res.json();
   } finally { clearTimeout(timer); }
 }

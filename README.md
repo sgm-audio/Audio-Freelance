@@ -31,6 +31,17 @@
 
 Built for audio DSP engineers, plugin developers, and audio ML engineers who want to spend less time hunting and more time coding.
 
+## The Business Case
+
+A senior audio engineer's billable rate is $150-300/hr. Every hour spent manually
+searching job boards, Reddit threads, and startup funding announcements instead of
+building costs $150-300 in opportunity cost. At 20 hrs/week of manual prospecting,
+that's **$3,000-6,000/week in lost revenue**.
+
+Audio-Freelance eliminates this by running 5 parallel search tiers across 15+
+sources, deduplicating with embedding-based similarity, scoring against your
+profile, and generating outreach drafts - all in under 30 seconds.
+
 ## Features
 
 **Search & Score** — Multi-tier search across KVR Audio, JUCE Forum, Reddit, HN, GitHub, LinkedIn, and company career pages. Scored by signal detection (C++/Rust DSP, CLAP, Mamba/SSM, REAPER, on-device ML, etc.) with configurable thresholds.
@@ -81,12 +92,11 @@ python run.py
 
 ```powershell
 # Install backend + frontend dependencies
-uv sync
+uv sync --extra dev
 cd frontend; npm install; cd ..
 
 # Start both servers
 python run.py
-# or: .\run.bat
 ```
 
 Then open **http://localhost:3000**
@@ -113,17 +123,16 @@ To drop into the uv-managed venv for one-off commands:
 | Platform | Command |
 |---|---|
 | macOS / Linux | `./activate.sh` |
-| Windows PowerShell | `.\activate.ps1` |
-| Windows cmd | `activate.bat` |
+| All platforms | `uv run <command>` (runs one command in the managed environment) |
 
-Type `exit` to leave.
+`activate.sh` opens a subshell; type `exit` to leave it. No Windows activation wrapper is currently included.
 
 ### Individual Commands
 
 ```bash
 make backend    # FastAPI on :8080
 make frontend   # Next.js on :3000
-make test       # Run 65 backend tests
+make test       # Run the backend pytest suite
 make build      # Production frontend build
 ```
 
@@ -183,10 +192,11 @@ graph TB
 | Tier 2 | Weekly | We Work Remotely, RemoteOK, Wellfound, HN Algolia |
 | Tier 3 | Niche | Audio Programmer, GitHub bounties, music-tech boards |
 | Tier 4 | Outbound | Plugin companies, YC audio startups, AI-audio startups |
+| Tier 5 | Direct ATS | Public Greenhouse, Lever, and Ashby job-board APIs |
 
 ## Environment Variables
 
-All configuration is centralized in `config.py` (pydantic-settings). Copy `.env.example` to `.env` and fill in required values.
+Backend configuration is centralized in `config.py` (pydantic-settings); the separate outreach workspace reads its `SGM_OUTREACH_*` settings directly. Copy `.env.example` to `.env` and fill in the search keys (blank values are accepted at startup, but prospecting requires at least one usable provider key).
 
 ### Required
 
@@ -258,57 +268,83 @@ All configuration is centralized in `config.py` (pydantic-settings). Copy `.env.
 
 ## Production Readiness
 
-### What's Production-Grade
+### Implementation and verification status
 
-| Capability | Status |
+| Capability | Implementation | Latest evidence |
+|---|---|---|
+| Configuration, JSON logging, correlation IDs, metrics | Implemented | Local static/unit checks pass; supported Python runtime CI is pending |
+| Bearer auth, CORS, security headers, rate limiting | Implemented | Focused local policy checks pass; full Python 3.12/3.13 runtime suite is pending |
+| Backups and data-integrity checks | Implemented | Source/tests present; container persistence gate awaits a working Actions runner |
+| Backend and outreach tests | Implemented | Outreach passes locally; backend Python 3.12/3.13 execution is pending |
+| Frontend unit tests | Implemented | Node unit tests pass locally |
+| Playwright smoke tests | Implemented in CI | Browser installation/execution is pending |
+| Docker images and Compose profiles | Implemented in CI | Build, profile, health, persistence, non-root, and image-scan job is pending |
+| OpenAPI documentation | Implemented | Interactive schemas at `/docs`; route inventory below |
+
+A capability is not release-verified merely because its implementation exists. See
+[`docs/remediation/06-independent-final-verification-report.md`](docs/remediation/06-independent-final-verification-report.md)
+for the current gate result and blocked evidence.
+
+### Known product limitations
+
+| Gap | Status |
 |---|---|
-| Centralized config (pydantic-settings) | ✅ |
-| Structured JSON logging (structlog) | ✅ |
-| Request correlation IDs | ✅ |
-| Error tracking (Sentry, optional) | ✅ |
-| Prometheus metrics | ✅ |
-| API rate limiting (60 req/min) | ✅ |
-| Bearer token auth | ✅ |
-| CORS + security headers | ✅ |
-| Automated backups (retention: 7) | ✅ |
-| Data integrity checks | ✅ |
-| Docker images (GHCR) | ✅ |
-| Docker Compose (dev + prod profiles) | ✅ |
-| CI pipeline (lint + test + build + docker) | ✅ |
-| 81 unit tests | ✅ |
-| Input validation (Pydantic) | ✅ |
-| API documentation (OpenAPI at /docs) | ✅ |
-
-### Not Yet Implemented
-
-| Gap | Why Not |
-|---|---|
-| Frontend tests | Legacy — frontend is Next.js without test framework |
-| E2E tests | Requires running full stack with external APIs |
-| One-click cloud deploy | ✅ Fly.io `fly.toml` + CD workflow (needs Fly account + `FLY_API_TOKEN` secret) |
-| Multi-user / RBAC | Solo tool — not a SaaS product |
-| HTTPS in dev | Expected at reverse proxy level (nginx/Caddy) |
+| Multi-user / RBAC | Not implemented; this is currently a solo operator tool |
+| HTTPS in local development | Expected at a production reverse proxy such as nginx or Caddy |
+| Broad browser workflows | Current Playwright coverage is a deterministic dashboard smoke suite |
 
 ## API
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/health` | Health check |
-| `GET` | `/api/v1/status` | Lead counts + system status |
-| `GET` | `/api/v1/leads` | List leads (filterable by status) |
-| `POST` | `/api/v1/prospect/{niche}` | Search → dedup → score pipeline |
-| `POST` | `/api/v1/score` | Manually score a raw candidate |
-| `POST` | `/api/v1/translate` | Tech capability → client pitch |
-| `POST` | `/api/v1/outreach/{lead_id}` | Generate outreach draft |
-| `POST` | `/api/v1/proposal` | Generate structured proposal |
-| `POST` | `/api/v1/rate` | Rate tiers for a task |
-| `GET` | `/api/v1/market` | Full market intelligence report |
-| `GET` | `/api/v1/market/trends` | Technology trends |
-| `GET` | `/api/v1/market/pricing` | Pricing benchmarks |
-| `GET` | `/api/v1/market/opportunities` | Actionable opportunities |
-| `POST` | `/api/v1/debug` | Run diagnostics |
-| `GET` | `/briefing` | Plain-text daily briefing |
-| `POST` | `/dispatch` | Email briefing to configured address |
+All JSON routes are under `/api/v1` except `/briefing`. “Protected” routes require
+`Authorization: Bearer <API_KEY>` when configured and always require it when
+`ENVIRONMENT=production`. The four explicitly public operational/setup routes remain
+available without a token. OpenAPI at `/docs` is authoritative for request and response
+schemas.
+
+| Method | Path | Access | Response/purpose |
+|---|---|---|---|
+| `GET` | `/api/v1/health` | Public | JSON health, Ollama state, and timestamp |
+| `GET` | `/api/v1/metrics` | Public | Prometheus text exposition |
+| `GET` | `/api/v1/bookmarklet` | Public | HTML bookmarklet installer |
+| `GET` | `/api/v1/profile/status` | Public | JSON first-run profile status |
+| `GET` | `/api/v1/leads` | Protected | JSON lead list, optionally filtered by status |
+| `GET` | `/api/v1/leads/cold` | Protected | JSON archived cold leads |
+| `GET` | `/api/v1/leads/cold/stats` | Protected | JSON cold-lead counts by niche/source |
+| `POST` | `/api/v1/leads/rotate-cold` | Protected | JSON rotation result |
+| `GET` | `/api/v1/leads/rotation-status` | Protected | JSON rotation schedule/status |
+| `GET` | `/api/v1/leads/{lead_id}` | Protected | JSON lead detail |
+| `POST` | `/api/v1/leads/{lead_id}/status` | Protected | JSON status transition result |
+| `POST` | `/api/v1/prospect/{niche}` | Protected | JSON search, deduplication, and scoring result |
+| `POST` | `/api/v1/score` | Protected | JSON score for a raw candidate |
+| `POST` | `/api/v1/translate` | Protected | JSON client-facing translation |
+| `POST` | `/api/v1/leads/manual` | Protected | JSON manually created lead |
+| `POST` | `/api/v1/leads/bulk` | Protected | JSON bulk import result |
+| `POST` | `/api/v1/rate` | Protected | JSON rate tiers |
+| `POST` | `/api/v1/outreach/{lead_id}` | Protected | JSON outreach draft |
+| `POST` | `/api/v1/proposal` | Protected | JSON structured proposal |
+| `GET` | `/api/v1/status` | Protected | JSON lead counts and system status |
+| `POST` | `/api/v1/debug` | Protected | JSON diagnostics |
+| `GET` | `/api/v1/market` | Protected | JSON market intelligence report |
+| `GET` | `/api/v1/market/trends` | Protected | JSON technology trends |
+| `GET` | `/api/v1/market/pricing` | Protected | JSON pricing benchmarks |
+| `GET` | `/api/v1/market/opportunities` | Protected | JSON actionable opportunities |
+| `GET` | `/api/v1/tracking` | Protected | JSON tracking events |
+| `GET` | `/api/v1/tracking/active` | Protected | JSON active pursuits |
+| `POST` | `/api/v1/tracking/triage` | Protected | JSON single-lead triage result |
+| `POST` | `/api/v1/tracking/triage/batch` | Protected | JSON batch triage result |
+| `GET` | `/api/v1/tracking/won-lost` | Protected | JSON outcome summary |
+| `GET` | `/api/v1/tracking/{lead_id}` | Protected | JSON tracking history for one lead |
+| `GET` | `/api/v1/profile` | Protected | JSON profile |
+| `POST` | `/api/v1/profile` | Protected | JSON profile update result |
+| `DELETE` | `/api/v1/profile` | Protected | JSON profile deletion result |
+| `POST` | `/api/v1/profile/upload` | Protected | JSON bounded portfolio upload result |
+| `GET` | `/api/v1/companies` | Protected | JSON ATS company configuration |
+| `POST` | `/api/v1/companies` | Protected | JSON company-add result |
+| `DELETE` | `/api/v1/companies` | Protected | JSON company-removal result |
+| `GET` | `/api/v1/profile/blocked` | Protected | JSON blocked-company list |
+| `POST` | `/api/v1/profile/blocked` | Protected | JSON block result |
+| `DELETE` | `/api/v1/profile/blocked` | Protected | JSON unblock result |
+| `GET` | `/briefing` | Protected | Rendered HTML daily briefing |
 
 ## Market Intelligence
 
@@ -342,7 +378,7 @@ fly apps create audio-freelance
 fly secrets set TAVILY_API_KEY=your-key
 fly secrets set SERPER_API_KEY=your-key
 fly secrets set FIRECRAWL_API_KEY=your-key
-fly secrets set API_KEY=your-auth-key  # optional
+fly secrets set API_KEY=your-auth-key  # required when ENVIRONMENT=production
 
 # 4. Deploy
 fly deploy
@@ -351,7 +387,31 @@ fly deploy
 fly open
 ```
 
-The app includes a `fly.toml` with sensible defaults (Seattle region, 1GB RAM, auto-stop on idle).
+The repository includes a `fly.toml` with sensible defaults (Seattle region, 1GB RAM, auto-stop on idle). It builds and deploys the FastAPI backend only; the Next.js frontend requires a separate deployment target.
+
+### Versioning and release procedure
+
+Public application surfaces use the SemVer value in `VERSION`. The Python package,
+FastAPI/OpenAPI, Next.js app, and default image tags
+must match it. Private `@sgm-outreach/*` workspace packages are never published and
+remain `private: true` at `0.0.0`.
+
+Prepare a release from a clean, updated `master` checkout:
+
+```bash
+python scripts/set_version.py 0.1.3
+# Move the CHANGELOG Unreleased entries into a dated [v0.1.3] section.
+python scripts/check_version.py
+# Run the complete clean-checkout verification matrix before tagging.
+git tag -a v0.1.3 -m "Audio-Freelance v0.1.3"
+git push origin v0.1.3
+```
+
+Use a `-rc.N` SemVer suffix for prereleases and mark the GitHub release as a
+prerelease. Never retag a failed release. Roll back Fly to the last verified image
+or deployment, publish a GitHub advisory note, and issue a new patch version with
+the corrective commit. Container rollback references must use the recorded image
+digest, not a mutable tag.
 
 ### GitHub Actions CD
 
@@ -383,7 +443,33 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # View logs
 docker compose logs -f backend
+
+# Destructive CI-style release gate using isolated synthetic credentials/project data
+# (builds all profiles, starts production services, checks auth/non-root/health/persistence,
+# then removes its containers and volumes)
+scripts/verify_containers.sh
 ```
+
+## Project Docs
+
+- **Roadmap:** [docs/ROADMAP.md](docs/ROADMAP.md) - where the project is going and how to help
+- [PRD](docs/PRD.md) and [ADR-001](docs/ADR-001.md) in `docs/`
+- Detailed engineering roadmap: [`docs/planning/`](docs/planning/UX_PRODUCT_ROADMAP.md)
+- Outreach engine spec, runbook & red-team review: [`docs/outreach/`](docs/outreach/OUTREACH_BUILD_SPEC.md)
+- Independent verification report: [`docs/remediation/`](docs/remediation/06-independent-final-verification-report.md)
+
+## System Intelligence
+
+This project maintains a persistent knowledge graph in `graphify-out/` for
+architectural analysis and cross-file relationship tracking. Use the `graphify`
+tool to query the codebase structure.
+
+## Contributing
+
+Contributions are welcome - see [CONTRIBUTING.md](CONTRIBUTING.md) for scope,
+setup, and PR guidelines, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for
+community expectations. Good first contributions: new search-tier sources,
+market-intelligence signals, and dashboard polish.
 
 ## License
 

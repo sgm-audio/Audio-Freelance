@@ -66,4 +66,3 @@ export function writeCandidates(
     run(raw);
     return result;
 }
-//# sourceMappingURL=write.js.map

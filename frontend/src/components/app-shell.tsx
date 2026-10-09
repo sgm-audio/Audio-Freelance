@@ -44,12 +44,14 @@ function Sidebar() {
           <NavItem href="/preferences" label="Preferences" />
           <NavItem href="/api/v1/health" label="API Health" external />
           <NavItem href="/api/v1/debug" label="Diagnostics" external />
-          <NavItem href="http://127.0.0.1:8080/briefing" label="Daily Briefing" external />
+          <NavItem href="/briefing" label="Daily Briefing" external />
           <details className="pt-2">
             <summary className="px-3 py-1.5 text-xs text-muted-foreground cursor-pointer hover:text-foreground list-none">
               More…
             </summary>
             <div className="mt-1 space-y-1">
+              <NavItem href="/leads/import" label="Import Leads" />
+              <NavItem href="/bookmarklet" label="Bookmarklet" />
               <NavItem href="/outreach" label="SGM Outreach" />
             </div>
           </details>
@@ -67,7 +69,7 @@ function NavItem({ href, label, external }: { href: string; label: string; exter
     "flex items-center rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors";
   if (external) {
     return (
-      <a href={href} className={cls} target="_blank" rel="noopener">
+      <a href={href} className={cls} target="_blank" rel="noopener noreferrer">
         {label}
         <span className="ml-auto text-xs opacity-50">↗</span>
       </a>

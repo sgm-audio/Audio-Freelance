@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
         source: "/api/v1/:path*",
         destination: `http://${API_HOST}:8080/api/v1/:path*`,
       },
+      {
+        source: "/briefing",
+        destination: `http://${API_HOST}:8080/briefing`,
+      },
     ];
   },
 };

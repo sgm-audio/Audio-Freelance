@@ -1,0 +1,45 @@
+# Version control and local environment
+.git
+.github
+.env
+.env.*
+!.env.example
+
+# Dependency/build caches
+.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
+**/node_modules
+**/.next
+**/dist
+**/build
+**/coverage
+**/target
+
+# Local data, databases, logs, and generated input
+leads/data
+data
+inbox/*.csv
+*.sqlite
+*.sqlite3
+*.db
+*.log
+coverage.xml
+
+# Editor/OS and secrets
+.vscode
+.idea
+.DS_Store
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+
+# Source areas not needed by the backend/outreach image contexts
+frontend
+assets
+proposals
+outreach

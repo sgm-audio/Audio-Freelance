@@ -6,6 +6,7 @@ LangGraph wrapper provided for future graph-based extensions.
 
 import asyncio
 import contextlib
+import logging
 from typing import Any
 
 from langgraph.graph import END, START, StateGraph
@@ -25,6 +26,8 @@ from scoring.profile_score import score_against_profile
 from search import run_tier1, run_tier2, run_tier3, run_tier4, run_tier5
 from search.base import RawCandidate, extract_contact_path
 from search.fetch import fetch_and_extract
+
+logger = logging.getLogger(__name__)
 
 
 def dedupe_candidates(candidates: list[RawCandidate], niche: str) -> list[RawCandidate]:
@@ -150,9 +153,7 @@ async def run_pipeline(niche: str, max_per_tier: int = 10) -> PipelineState:
                 c.raw_text = full_text[:2000]  # cap at 2000 chars
                 fetched_count += 1
             if not c.contact_path:
-                c.contact_path = extract_contact_path(
-                    full_text or "", c.raw_text, c.snippet
-                )
+                c.contact_path = extract_contact_path(full_text or "", c.raw_text, c.snippet)
         except Exception:
             import logging
 
@@ -298,6 +299,7 @@ async def generate_translate(state: PipelineState) -> dict[str, Any]:
             result = translate_capability(lead.raw_text[:500])
             translations[str(lead.id)] = result
         except Exception:
+            logger.warning("translate_failed", extra={"lead_id": str(lead.id)}, exc_info=True)
             translations[str(lead.id)] = {"error": "translation failed"}
     return {"translations": translations}
 
@@ -324,6 +326,7 @@ async def generate_outreach(state: PipelineState) -> dict[str, Any]:
             result = generate_outreach(lead, template_key="A_plugin_contract")
             drafts[str(lead.id)] = result
         except Exception:
+            logger.warning("outreach_draft_failed", extra={"lead_id": str(lead.id)}, exc_info=True)
             drafts[str(lead.id)] = {"error": "outreach generation failed"}
     return {"outreach_drafts": drafts}
 

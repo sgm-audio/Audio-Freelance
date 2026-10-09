@@ -7,6 +7,7 @@ Import `settings` from this module everywhere.
 
 from __future__ import annotations
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -45,6 +46,10 @@ class Settings(BaseSettings):
 
     # ── Niches ──
     preferred_niches: str = "plugin_dev,reaper_scripts,rust_audio,audio_ml,game_audio_dev"
+    user_type: str = "audio"  # audio | automation | custom
+    automation_niches: str = (
+        "n8n_automation,zapier_make,api_integration,business_automation,ai_automation"
+    )
 
     # ── Rate floors ──
     min_rate_cad: int = 3000
@@ -75,6 +80,13 @@ class Settings(BaseSettings):
     # ── Paths ──
     companies_path: str = ""
 
+    @model_validator(mode="after")
+    def require_production_auth(self) -> Settings:
+        """Fail closed when a production deployment omits API authentication."""
+        if self.environment.strip().lower() == "production" and not self.api_key:
+            raise ValueError("API_KEY is required when ENVIRONMENT=production")
+        return self
+
     def as_niche_list(self) -> list[str]:
         """Return preferred_niches as a list."""
         return [n.strip() for n in self.preferred_niches.split(",") if n.strip()]
@@ -84,6 +96,10 @@ class Settings(BaseSettings):
         if not self.cors_origins:
             return []
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    def as_automation_niche_list(self) -> list[str]:
+        """Return automation_niches as a list."""
+        return [n.strip() for n in self.automation_niches.split(",") if n.strip()]
 
 
 # Singleton — crashes at import time if tavily_api_key etc are missing

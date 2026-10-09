@@ -1,12 +1,12 @@
 """FastAPI route definitions for the freelance acquisition system."""
 
 import contextlib
-import shutil
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from api.auth import require_api_key
@@ -58,6 +58,38 @@ class ScoreRequest(BaseModel):
 
 class LeadStatusUpdate(BaseModel):
     new_status: str = Field(min_length=1)
+
+
+class ManualLeadRequest(BaseModel):
+    """Manual lead creation — from bookmarklet, form, or bulk import."""
+
+    model_config = {"extra": "forbid"}
+
+    title: str = Field(min_length=1)
+    url: str = Field(min_length=1)
+    snippet: str = Field(min_length=1)
+    source: str = Field(default="manual")
+    company: str | None = None
+    niche: str = Field(default="plugin_dev")
+
+
+class BulkLeadItem(BaseModel):
+    """Single item in a bulk import request."""
+
+    model_config = {"extra": "forbid"}
+
+    title: str = Field(min_length=1)
+    url: str = Field(min_length=1)
+    snippet: str = Field(min_length=1)
+    source: str = Field(default="manual")
+    company: str | None = None
+    niche: str = Field(default="plugin_dev")
+
+
+class BulkLeadRequest(BaseModel):
+    """Bulk import request with 1-100 leads."""
+
+    leads: list[BulkLeadItem] = Field(min_length=1, max_length=100)
 
 
 @public.get("/health")
@@ -139,6 +171,7 @@ async def list_cold_leads(days: int = 7, niche: str | None = None):
                     if len(leads) >= 200:
                         break
         except Exception:
+            log.debug("cold_leads_archive_read_failed", exc_info=True)
             continue
         if len(leads) >= 200:
             break
@@ -171,6 +204,7 @@ async def cold_lead_stats():
                         source_counts[data.get("source", "unknown")] += 1
                         total += 1
             except Exception:
+                log.debug("cold_stats_read_failed", exc_info=True)
                 continue
 
     return {
@@ -321,6 +355,158 @@ async def translate_tech(technical_description: str):
     return result
 
 
+# ── Manual lead creation ──
+
+
+@router.post("/leads/manual")
+async def add_manual_lead(body: ManualLeadRequest):
+    """Add a single lead manually — from bookmarklet, form, or quick-add.
+
+    Scores the candidate and stores it in ChromaDB. Returns the scored lead.
+    """
+    if body.niche not in PREFERRED_NICHES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown niche '{body.niche}'. Valid: {', '.join(PREFERRED_NICHES)}",
+        )
+
+    candidate = RawCandidate(
+        source=body.source,
+        title=body.title,
+        url=body.url,
+        snippet=body.snippet,
+        company=body.company,
+        raw_text=body.snippet,
+        tier=1,
+    )
+    lead = score_candidate(candidate, body.niche)
+
+    try:
+        upsert_lead(lead)
+    except Exception as e:
+        log.warning("Manual lead storage failed", extra={"error": e})
+        raise HTTPException(status_code=500, detail=f"Failed to store lead: {e}")
+
+    return lead.model_dump(mode="json")
+
+
+@router.post("/leads/bulk")
+async def add_bulk_leads(body: BulkLeadRequest):
+    """Import multiple leads at once (max 100).
+
+    Each lead is scored and stored independently. Partial success: some may
+    succeed while others fail. Returns imported count and error details.
+    """
+    imported = 0
+    errors: list[dict] = []
+
+    for item in body.leads:
+        if item.niche not in PREFERRED_NICHES:
+            errors.append({"title": item.title, "error": f"Unknown niche '{item.niche}'"})
+            continue
+        try:
+            candidate = RawCandidate(
+                source=item.source,
+                title=item.title,
+                url=item.url,
+                snippet=item.snippet,
+                company=item.company,
+                raw_text=item.snippet,
+                tier=1,
+            )
+            lead = score_candidate(candidate, item.niche)
+            upsert_lead(lead)
+            imported += 1
+        except Exception as exc:
+            errors.append({"title": item.title, "error": str(exc)})
+
+    return {"imported": imported, "errors": errors, "total": len(body.leads)}
+
+
+# ── Bookmarklet ──
+
+
+@public.get("/bookmarklet", response_class=HTMLResponse)
+async def bookmarklet_page():
+    """HTML page with a drag-to-bookmarks-bar link for one-click lead capture."""
+    from fastapi.responses import HTMLResponse
+
+    js = (
+        "javascript:(function(){"
+        "var t=document.title||'';"
+        "var u=location.href;"
+        "var s=window.getSelection()?.toString()||'';"
+        "var d=JSON.stringify({title:t,url:u,snippet:s,source:'bookmarklet'});"
+        "var x=new XMLHttpRequest();"
+        "x.open('POST','/api/v1/leads/manual',true);"
+        "x.setRequestHeader('Content-Type','application/json');"
+        "x.send(d);"
+        "alert('Lead captured!');"
+        "})()"
+    )
+    # CSS styles for bookmarklet
+    BOOKMARKLET_CSS = """
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 600px;
+      margin: 4rem auto;
+      padding: 0 1rem;
+      line-height: 1.6;
+    }
+    a.bookmarklet {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: #3b82f6;
+      color: white;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: grab;
+    }
+    code {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+    }
+    """
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Bookmarklet — Audio-Freelance</title>
+<style>
+{BOOKMARKLET_CSS}
+</style></head>
+<body>
+<h1>📥 Capture Lead Bookmarklet</h1>
+<p>Drag this button to your bookmarks bar:</p>
+<p><a class="bookmarklet" href="{js}" onclick="return false;">📥 Capture Lead</a></p>
+<p>Then, when you find a lead on any page:</p>
+<ol>
+<li>Select some text on the page (the job description, requirements, etc.)</li>
+<li>Click the <strong>📥 Capture Lead</strong> bookmarklet</li>
+<li>The lead is scored and saved to your pipeline</li>
+</ol>
+<p>The bookmarklet captures:</p>
+<ul>
+<li><strong>Title:</strong> the page title</li>
+<li><strong>URL:</strong> the current page URL</li>
+<li><strong>Snippet:</strong> any text you have selected</li>
+</ul>
+<p>Leads are scored with niche <code>plugin_dev</code> by default. Edit in the dashboard.</p>
+<p><small>Requires the backend to be running on <code>localhost:8080</code>.</small></p>
+</body></html>"""
+    return HTMLResponse(content=html, media_type="text/html")
+
+
 @router.post("/rate")
 async def rate_work(task_description: str, estimated_hours: int):
     """Generate rate tiers for a given task."""
@@ -391,6 +577,8 @@ async def pipeline_status():
             leads = get_leads_by_status(status)
             counts[status.value] = len(leads)
         except Exception:
+            # Zeroing masks a store outage; warn so "0 leads" is distinguishable from "DB down".
+            log.warning("status_count_failed", status=status.value, exc_info=True)
             counts[status.value] = 0
 
     leads_stored.set(sum(counts.values()))
@@ -717,21 +905,34 @@ async def upload_profile_file(file: UploadFile = File(...), file_type: str = "re
     ):
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
 
-    if file.size and file.size > 10 * 1024 * 1024:
+    max_bytes = 10 * 1024 * 1024
+    if file.size and file.size > max_bytes:
         raise HTTPException(status_code=400, detail="File too large (max 10MB)")
 
     upload_dir = Path(__file__).resolve().parent.parent / "assets" / "portfolio"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    safe_name = f"{uuid.uuid4()}_{file.filename}"
-    file_path = upload_dir / safe_name
+    # Browsers normally send a basename, but UploadFile.filename is untrusted input.
+    # Normalize both POSIX and Windows separators before constructing the destination.
+    original_name = file.filename or "upload.bin"
+    basename = Path(original_name.replace("\\", "/")).name or "upload.bin"
+    file_path = upload_dir / f"{uuid.uuid4()}_{basename}"
 
-    with open(file_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    written = 0
+    try:
+        with open(file_path, "wb") as destination:
+            while chunk := file.file.read(1024 * 1024):
+                written += len(chunk)
+                if written > max_bytes:
+                    raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+                destination.write(chunk)
+    except Exception:
+        file_path.unlink(missing_ok=True)
+        raise
 
     return {
         "status": "uploaded",
-        "filename": file.filename,
+        "filename": original_name,
         "path": str(file_path.relative_to(Path(__file__).resolve().parent.parent)),
         "type": file_type,
     }
