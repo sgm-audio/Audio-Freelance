@@ -1,110 +1,39 @@
-# Audio-Freelance — Agent Instructions
+# AGENTS.md
 
-## Quick Commands
+## Cursor Cloud specific instructions
 
-| Task | Command |
-|------|---------|
-| Install all deps | `make install` (uv sync + npm install) |
-| Start dev (both) | `python run.py` (or `make dev` / `./run.sh`) |
-| Backend only | `make backend` → FastAPI on :8080 |
-| Frontend only | `make frontend` → Next.js on :3000 |
-| Run backend tests | `make test` |
-| Build frontend | `make build` → `npx next build` |
-| Lint | `uv run --with ruff ruff check .` |
-| Typecheck | `uv run --with mypy mypy .` |
-| Clean | `make clean` |
-| Release | `make release V=v0.2.0` (tags + pushes) |
+This repo is a hybrid monorepo with three components. The update script already installs all
+dependencies (`uv sync`, `npm --prefix frontend install`, `pnpm install`), so you normally only
+need to start/build/test services.
 
-## Environment Setup
+### Components & how to run them
 
-```bash
-cp .env.example .env
-# Required: TAVILY_API_KEY, SERPER_API_KEY, or FIRECRAWL_API_KEY
-# Optional: API_KEY (auth), GITHUB_TOKEN, OLLAMA_HOST, SENTRY_DSN
-ollama pull nomic-embed-text  # for embeddings dedup
-```
+| Component | Location | Run (dev) | Port | Test | Lint |
+|---|---|---|---|---|---|
+| FastAPI backend ("Audio-Freelance") | repo root (`main.py`, `api/`, `leads/`, ...) | `uv run python main.py` (`make backend`) | 8080 | `make test` | `uvx ruff@0.11.0 check .` |
+| Next.js 16 dashboard | `frontend/` | `cd frontend && npm run dev` (`make frontend`) | 3000 | Playwright e2e in `frontend/e2e` | see caveat below |
+| SGM Outreach Engine (TS pnpm monorepo) | `packages/*` | build then `pnpm sgm-outreach <cmd>` | n/a (CLI) | `pnpm test` | tsc |
 
-On POSIX, use `activate.sh` to enter the uv environment. On any platform, use `uv run <command>`; Windows activation wrappers are not currently included.
+Run both core services together with `python3 run.py` (or `./run.sh` / `make dev`). It runs
+pre-flight checks then starts backend + frontend and prints the URLs.
 
-## Architecture
+### Non-obvious caveats
 
-- **Backend**: FastAPI (Python 3.12+) on :8080 — `main.py` entrypoint
-- **Frontend**: Next.js 16 (React 19) on :3000 — `frontend/` directory
-- **Vector DB**: ChromaDB (collections: `freelance_leads`, `freelance_outreach_log`)
-- **Embeddings**: Ollama `nomic-embed-text` (fallback: sentence-transformers)
-- **Pipeline**: LangGraph DAG — search → dedup → score → generate → review
-- **Search APIs**: Tavily (primary), Serper, Firecrawl (fallbacks)
-
-## Key Directories
-
-```
-api/          # FastAPI routes
-graph/        # LangGraph pipeline nodes
-leads/        # Lead store (ChromaDB wrapper)
-search/       # 4-tier search implementations
-scoring/      # Signal scoring engine
-generate/     # LLM outreach/proposal generation
-research/     # Market intelligence scanner
-assets/       # Asset registry (asset_registry.yml)
-packages/     # pnpm monorepo (outreach CLI packages)
-frontend/     # Next.js dashboard
-tests/        # 65+ pytest tests
-scripts/      # Shell/python ops scripts (incl. test_endpoints.py smoke script)
-docs/         # PRD + ADRs; planning/ (backlog, build plan, audit), outreach/ (spec, runbook, review)
-```
-
-## Testing
-
-```bash
-# All tests
-make test
-
-# Single test file
-uv run --with pytest --with pytest-asyncio pytest tests/test_score.py -v
-
-# With coverage
-uv run --with pytest --with pytest-asyncio --with pytest-cov pytest tests/ --cov
-```
-
-Tests use `asyncio_mode = auto`, `pythonpath = ["."]`, fixtures in `conftest.py`.
-
-## Linting / Formatting
-
-```bash
-uv run --with ruff ruff check .       # lint
-uv run --with ruff ruff format .      # format
-```
-
-Config in `pyproject.toml`: line-length 100, double quotes, target py312. Per-file ignores for long lines in search/generate/scripts.
-
-## Type Checking
-
-```bash
-uv run --with mypy mypy .
-```
-
-Mypy config ignores many errors in external-facing modules (leads.store, graph.pipeline, research.sources, search.*).
-
-## CI Pipeline (GitHub Actions)
-
-Runs on push/PR to `main` or `master`:
-1. **lint** — Ruff
-2. **test-backend** — pytest on Python 3.12 + 3.13 with coverage
-3. **build-frontend** — ESLint + Next.js production build (Node 22)
-4. **test-outreach** — pnpm workspace build + Vitest suites (Node 22)
-5. **docker** — builds/pushes to GHCR on `master` pushes (tag pushes currently trigger CD, not this workflow)
-
-## Deployment
-
-- **Fly.io**: `fly deploy` (configured in `fly.toml`, needs `FLY_API_TOKEN` secret)
-- **Docker Compose**: `docker compose up -d` (dev) / `-f docker-compose.prod.yml` (prod)
-- **Version tags**: `git tag v0.1.3 && git push origin v0.1.3` triggers CD
-
-## Gotchas
-
-- `run.py` does pre-flight checks (uv, node, npm, ollama, .env, ports) — use `--check` to verify only
-- Ports 3000/8080 must be free; `run.py --force` kills existing listeners
-- Frontend uses Next.js 16 (breaking changes) — see `frontend/AGENTS.md`
-- No frontend unit tests (legacy); only Playwright E2E: `npm run test:e2e` in `frontend/`
-- pnpm workspace at `packages/` — outreach CLI packages (core, ingest, enrich, score, ops, send, cli)
-- ChromaDB data in `data/` (gitignored); backup via `scripts/backup.sh --retain 7`
+- **Use `python3`, not `python`.** There is no `python` alias on the PATH; `run.py`/`run.sh` docs
+  say `python run.py` but you must run `python3 run.py`.
+- **`.env` is required for the backend to boot.** `config.py` instantiates settings eagerly at
+  import and declares `TAVILY_API_KEY` / `SERPER_API_KEY` / `FIRECRAWL_API_KEY` as required fields.
+  They may be empty, but the variables must exist. Copy `.env.example` to `.env` (the update script
+  does not do this because `.env*` is gitignored — create it once if missing). Real keys are only
+  needed when actually calling the search/research pipeline.
+- **Ollama and real API keys are optional for local dev.** Ollama is not installed; embeddings fall
+  back to ChromaDB's built-in model, so lead storage/dedup and the dashboard work offline. Health
+  reports `"ollama": false` and the UI shows "Ollama unavailable — dedup disabled"; this is expected.
+- **`source: "test"` leads are blocked** unless `LEADS_ALLOW_TEST_LEADS=1`. When manually exercising
+  `POST /api/v1/score`, use a realistic source (e.g. `kvr_audio`) or storage returns 500.
+- **Frontend `npm run lint` is broken** due to a dependency incompatibility (ESLint 10 vs the
+  `react/display-name` rule bundled in `eslint-config-next`). This is pre-existing and unrelated to
+  setup; CI does not run frontend lint (only `next build`). Backend lint (`ruff`) works.
+- **The outreach TS packages must be built before use.** `pnpm test` builds them automatically;
+  to run the CLI directly, run `pnpm build` first. The dashboard's `opportunities` page reads the
+  outreach SQLite DB directly via `node:sqlite` (not through the Python backend).

@@ -1,0 +1,69 @@
+{
+  "name": "AF · Run Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pipeline",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_API_URL }}/api/v1/prospect/{{ $json.niche }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "call_backend",
+      "name": "Call Backend: Run Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [ { "node": "Call Backend: Run Pipeline", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Call Backend: Run Pipeline": {
+      "main": [
+        [ { "node": "Respond", "type": "main", "index": 0 } ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": { "instanceId": "audio-freelance" },
+  "id": "5f3a7292-3db2-4372-8541-ce0edebc1170",
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "0c60e528-216b-4170-95a2-b11550d6eebd"
+  },
+  "versionId": "1"
+}

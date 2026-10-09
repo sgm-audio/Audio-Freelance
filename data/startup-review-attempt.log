@@ -1,0 +1,31 @@
+[run.py] Pre-flight checks...
+[run.py] [OK] uv
+[run.py] [OK] node
+[run.py] [OK] npm
+[run.py] [OK] ollama is running
+[run.py] [OK] .env exists
+[run.py] [OK] frontend Next.js binary present
+[run.py] [OK] port 8080 free
+[run.py] [OK] port 3000 free
+[run.py] All pre-flight checks passed.
+
+[run.py] Starting backend (FastAPI on :8080)...
+{"asctime": "2026-07-24T13:29:15Z", "name": "main", "levelname": "WARNING", "message": "", "detail": "ALL API endpoints are unprotected. Set API_KEY in .env.", "event": "api_key_not_set", "level": "warning", "timestamp": "2026-07-24T19:29:15.476842Z"}
+{"asctime": "2026-07-24T13:29:15Z", "name": "main", "levelname": "WARNING", "message": "", "detail": "ALL API endpoints are unprotected. Set API_KEY in .env.", "event": "api_key_not_set", "level": "warning", "timestamp": "2026-07-24T19:29:15.480684Z"}
+INFO:     Started server process [16152]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+{"asctime": "2026-07-24T13:29:17Z", "name": "api", "levelname": "INFO", "message": "", "method": "GET", "path": "/api/v1/health", "status": 200, "duration": 0.084, "event": "request", "level": "info", "timestamp": "2026-07-24T19:29:17.006943Z"}
+INFO:     127.0.0.1:59885 - "GET /api/v1/health HTTP/1.1" 200 OK
+[run.py] Backend ready on http://localhost:8080
+[run.py] Starting frontend (Next.js on :3000)...
+Γû▓ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://169.254.83.107:3000
+Γ£ô Ready in 619ms
+[run.py] Frontend ready on http://localhost:3000
+
+{"asctime": "2026-07-24T13:30:11Z", "name": "api", "levelname": "INFO", "message": "", "method": "GET", "path": "/api/v1/health", "status": 200, "duration": 0.006, "event": "request", "level": "info", "timestamp": "2026-07-24T19:30:11.777801Z"}
+INFO:     127.0.0.1:54177 - "GET /api/v1/health HTTP/1.1" 200 OK
+ GET / 200 in 545ms (next.js: 193ms, application-code: 352ms)

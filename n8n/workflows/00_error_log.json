@@ -1,0 +1,105 @@
+{
+  "name": "AF · Error Logger",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "error_trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "workflow",
+              "type": "string",
+              "value": "={{ $json.workflow.name }}"
+            },
+            {
+              "id": "a2",
+              "name": "executionId",
+              "type": "string",
+              "value": "={{ $json.execution.id }}"
+            },
+            {
+              "id": "a3",
+              "name": "failedNode",
+              "type": "string",
+              "value": "={{ $json.execution.lastNodeExecuted }}"
+            },
+            {
+              "id": "a4",
+              "name": "errorCode",
+              "type": "string",
+              "value": "=AF-ERR-{{ $now.toFormat('yyyyMMddHHmmss') }}"
+            },
+            {
+              "id": "a5",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $json.execution.error.message }}"
+            },
+            {
+              "id": "a6",
+              "name": "content",
+              "type": "string",
+              "value": "=🚨 **n8n Workflow Error**\n\n**Workflow:** {{ $json.workflow.name }}\n**Code:** AF-ERR-{{ $now.toFormat('yyyyMMddHHmmss') }}\n**Failed Node:** {{ $json.execution.lastNodeExecuted }}\n**Execution:** {{ $json.execution.id }}\n**Message:** {{ $json.execution.error.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "build_payload",
+      "name": "Build Error Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ERROR_WEBHOOK_URL }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"content\": $json.content, \"username\": \"audio-freelance-bot\" } }}",
+        "options": {}
+      },
+      "id": "post_discord",
+      "name": "Post to Error Channel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          { "node": "Build Error Payload", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Build Error Payload": {
+      "main": [
+        [
+          { "node": "Post to Error Channel", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": { "instanceId": "audio-freelance" },
+  "id": "0c60e528-216b-4170-95a2-b11550d6eebd",
+  "settings": { "executionOrder": "v1" },
+  "versionId": "1"
+}
