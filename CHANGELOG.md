@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **API integration tests** — 38 smoke tests exercising every endpoint via `TestClient`. All 9 route groups covered.
 - **Architecture diagram** — Mermaid graph in README: User → Frontend → Backend → Pipeline DAG + Ollama/ChromaDB/Search/ATS/Monitoring.
 - **Environment reference** — complete env var table (25 fields from `config.py`) with defaults and descriptions.
-- **Production readiness checklist** — 16 production-grade items in README.
+- **Status table**: implementation and verification status table in the README.
 - **Fly.io deploy** — `fly.toml` config (Seattle region, auto-stop, HTTPS). CD workflow deploys on `v*` tags. Deployment docs in README.
 - **Frontend verification** — framework-free API-client unit tests plus six deterministic Playwright flows for offline, setup, lead, upload, theme, accessibility, and auth behavior. Run with `npm run test:unit` and `npm run test:e2e`.
 - **Release consistency** — `VERSION`, `scripts/set_version.py`, and `scripts/check_version.py` keep public Python, frontend, desktop, OpenAPI, and image metadata aligned while private outreach workspaces remain `0.0.0`.

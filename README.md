@@ -264,7 +264,7 @@ Backend configuration is centralized in `config.py` (pydantic-settings); the sep
 | `SENTRY_DSN` | `""` | Sentry DSN for error tracking (disabled if empty) |
 | `ENVIRONMENT` | `development` | Deployment environment (development/production) |
 
-## Production Readiness
+## Status
 
 ### Implementation and verification status
 
