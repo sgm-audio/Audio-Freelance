@@ -54,6 +54,15 @@ Verify: `uv run pytest tests/` and `cd frontend && npm run build`.
 - **`source: "test"` leads are blocked** unless `LEADS_ALLOW_TEST_LEADS=1`. To try `POST /api/v1/score` by hand, use a real source such as `kvr_audio`, or storage returns 500.
 - **Build the outreach TS packages before you use them.** `pnpm test` builds them for you; to run the CLI directly, run `pnpm build` first. The dashboard's `opportunities` page reads the outreach SQLite DB directly through `node:sqlite`, not through the Python backend.
 
+## Gotchas
+
+- **`.env` has to exist for the backend to boot.** `config.py` loads settings at import, and `TAVILY_API_KEY`, `SERPER_API_KEY` and `FIRECRAWL_API_KEY` are required fields. They can be empty, but the variables have to be there, so copy `.env.example` to `.env` once. You only need real keys to call the search/research pipeline.
+- **Ollama and real API keys are optional for local dev.** Without Ollama, embeddings fall back to ChromaDB's built-in model, so lead storage, dedupe and the dashboard work offline. Health reports `"ollama": false` and the UI shows "Ollama unavailable — dedup disabled". That's expected.
+- **`source: "test"` leads are blocked** unless `LEADS_ALLOW_TEST_LEADS=1`. To try `POST /api/v1/score` by hand, use a real source such as `kvr_audio`, or storage returns 500.
+- **Frontend `npm run lint` is broken.** ESLint 10 doesn't work with the `react/display-name` rule bundled in `eslint-config-next`. CI only runs `next build` for the frontend.
+- **Build the outreach TS packages before you use them.** `pnpm test` builds them for you; to run the CLI directly, run `pnpm build` first. The dashboard's `opportunities` page reads the outreach SQLite DB directly through `node:sqlite`, not through the Python backend.
+- On systems with no `python` alias, use `python3 run.py`.
+
 ## Conventions
 
 - **Lint** — `uv run ruff check .` (zero errors expected)
