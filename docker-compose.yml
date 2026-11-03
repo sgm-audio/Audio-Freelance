@@ -21,15 +21,8 @@ services:
               capabilities: [gpu]
 
   # ── Vector database ──
-  chromadb:
-    image: chromadb/chroma:latest
-    ports:
-      - "8001:8000"
-    volumes:
-      - chroma_data:/chroma/chroma
-    environment:
-      - IS_PERSISTENT=TRUE
-      - PERSIST_DIRECTORY=/chroma/chroma
+  # ChromaDB runs embedded in the backend via chromadb.PersistentClient.
+  # No network chromadb service is deployed (see tests/test_chroma_deployment_security.py).
 
   # ── FastAPI backend ──
   backend:
@@ -128,7 +121,6 @@ services:
 
 volumes:
   ollama_data:
-  chroma_data:
   lead_data:
   outreach_data:
   n8n_data:
