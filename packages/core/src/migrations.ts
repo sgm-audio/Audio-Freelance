@@ -81,4 +81,3 @@ CREATE TABLE IF NOT EXISTS settings (
 `,
     },
 ];
-//# sourceMappingURL=migrations.js.map

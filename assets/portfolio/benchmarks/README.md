@@ -1,5 +1,7 @@
 # RT inference benchmarks (in progress)
 
+<!-- STATUS: in progress — publish measured results only after the protocol below is run. -->
+
 **Status:** Methodology drafted — **no frozen public numbers yet.**  
 Do not cite sub-millisecond or "% CPU" figures in outreach until this page publishes measured results and this asset flips to `shipped` in `asset_registry.yml`.
 

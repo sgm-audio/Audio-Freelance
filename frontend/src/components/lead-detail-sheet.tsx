@@ -88,6 +88,7 @@ export function LeadDetailSheet({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset/load when the input changes
     setDraft(null);
     setDraftErr("");
     setCopied(false);

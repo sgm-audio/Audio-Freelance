@@ -26,15 +26,27 @@ class TestLeadModel:
         assert lead.discovered_at.tzinfo is not None
 
     def test_invalid_niche(self):
-        with pytest.raises(ValidationError, match="Unknown niche"):
+        with pytest.raises(ValidationError, match="Niche must be non-empty"):
             Lead(
                 source="test",
                 tier=1,
                 title="Bad Niche",
                 url="https://example.com",
                 raw_text="test",
-                niche="invalid_niche",
+                niche="bad niche!",
             )
+
+    def test_custom_niche_allowed(self):
+        """Custom slugs are allowed (open niche set, format-validated only)."""
+        lead = Lead(
+            source="test",
+            tier=1,
+            title="Custom Niche",
+            url="https://example.com",
+            raw_text="test",
+            niche="custom_audio_pipeline",
+        )
+        assert lead.niche == "custom_audio_pipeline"
 
     def test_empty_url(self):
         with pytest.raises(ValidationError, match="url must not be empty"):

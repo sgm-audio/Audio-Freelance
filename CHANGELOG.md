@@ -8,31 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Windows support** — cross-platform `run.py` launcher (pre-flight checks, backend + frontend startup, whole-tree shutdown on all platforms; `--check` and `--verbose` flags). `run.bat`, `activate.ps1`, `activate.bat` wrappers. Windows Quick Start in README. `run.sh`/`activate.sh` remain for POSIX.
+- **Cross-platform launcher** — `run.py` provides pre-flight checks, backend + frontend startup, whole-tree shutdown, `--check`, and `--verbose`. `run.sh`/`activate.sh` remain as POSIX helpers; Windows uses `python run.py` and `uv run` directly.
 - **Centralized configuration** — single `config.py` with `pydantic-settings`. All 20+ env vars validated at import time. Removed 6 scattered `load_dotenv()` calls. Required keys crash immediately if missing.
 - **Automated backup** — `scripts/backup.sh` tars ChromaDB, archives, tracking, and profile. `--retain N` (default 7), `--verify` flag. Integrated into Friday ritual.
 - **Data integrity check** — `scripts/check_integrity.sh` validates ChromaDB SQLite integrity, JSONL parse validity, and profile YAML.
-- **Docker CI job** — builds + pushes backend and frontend images to GHCR on every `master` push and tag. `docker-compose.prod.yml` override.
+- **Docker CI job** — builds + pushes backend and frontend images to GHCR on every `master` push. `docker-compose.prod.yml` override.
 - **Structured logging** — `structlog` with JSON output and `contextvars`-based correlation IDs. Every request gets a unique `X-Correlation-ID` header. Compatible with ELK, Loki, Datadog.
 - **Sentry error tracking** — optional `sentry-sdk[fastapi]` integration. Zero-config without `SENTRY_DSN`. Silenced exception handlers now log warnings.
-- **Prometheus metrics** — `GET /metrics` endpoint (no auth). Counters for pipeline runs, leads discovered, API requests. Gauges for lead count and Ollama availability. Histogram for request duration.
+- **Prometheus metrics** — `GET /api/v1/metrics` endpoint (no auth). Counters for pipeline runs, leads discovered, API requests. Gauges for lead count and Ollama availability. Histogram for request duration.
 - **API integration tests** — 38 smoke tests exercising every endpoint via `TestClient`. All 9 route groups covered.
 - **Architecture diagram** — Mermaid graph in README: User → Frontend → Backend → Pipeline DAG + Ollama/ChromaDB/Search/ATS/Monitoring.
 - **Environment reference** — complete env var table (25 fields from `config.py`) with defaults and descriptions.
 - **Production readiness checklist** — 16 production-grade items in README.
 - **Fly.io deploy** — `fly.toml` config (Seattle region, auto-stop, HTTPS). CD workflow deploys on `v*` tags. Deployment docs in README.
-- **Frontend e2e tests** — Playwright smoke tests (dashboard render, sidebar nav, theme toggle). Run with `npm run test:e2e`.
+- **Frontend verification** — framework-free API-client unit tests plus six deterministic Playwright flows for offline, setup, lead, upload, theme, accessibility, and auth behavior. Run with `npm run test:unit` and `npm run test:e2e`.
+- **Release consistency** — `VERSION`, `scripts/set_version.py`, and `scripts/check_version.py` keep public Python, frontend, desktop, OpenAPI, and image metadata aligned while private outreach workspaces remain `0.0.0`.
 - **Screenshots gallery** — placeholder table in README with headless capture instructions for Firefox/Chrome.
 
 ### Fixed
 - 3 incidental bugs: `setup_logger`→`get_logger` import, em-dash encoding crash, route ordering for `{lead_id}` catch-all.
 - Added `python-multipart` dependency (required by FastAPI `TestClient`).
 - Docker Compose missing env vars for API keys — now uses `.env` file in prod profile.
+- Removed the unused, unauthenticated Chroma HTTP container and host port from Compose; the backend uses its embedded persistent client, while affected Chroma server releases have published pre-auth code-injection advisories.
+- Updated Next.js to 16.3.8 to remediate published critical RCE advisories affecting 16.2.9, and refreshed patched AnyIO/urllib3 lock entries.
+- Profile uploads now sanitize client filenames and enforce the 10 MiB limit while copying, deleting partial files on failure.
+- Restored a clean frontend ESLint baseline and added frontend lint plus outreach workspace tests to CI.
+- Corrected stale setup, API, test, environment, and frontend-page documentation.
 
 ### Changed
 - Test suite: 65 → 119 tests (81 unit + 38 integration).
 - 13 files refactored to use centralized `config.settings`.
-- Docker Compose: `image:` fields enable GHCR pull with local `build:` fallback.
+- Docker Compose: versioned local images build by default; production can provide tested digest-pinned image references.
 
 ## [v0.1.2] - 2026-07-07
 

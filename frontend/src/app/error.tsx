@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect } from "react";
 
 export default function ErrorPage({
@@ -32,12 +34,12 @@ export default function ErrorPage({
         >
           Try again
         </button>
-        <a
+        <Link
           href="/"
           className="rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-accent transition-colors"
         >
           Go to Dashboard
-        </a>
+        </Link>
       </div>
       <p className="text-xs text-muted-foreground mt-8">
         If this persists, check that the backend is running (<code className="bg-muted rounded px-1 py-0.5">./run.sh</code>).

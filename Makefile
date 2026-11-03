@@ -11,8 +11,8 @@ backend:        # start backend only
 frontend:       # start frontend only
 	cd frontend && npm run dev
 
-install:        # install all dependencies
-	uv sync
+install:        # install all development dependencies
+	uv sync --extra dev
 	cd frontend && npm install
 
 build:          # build frontend for production
@@ -26,5 +26,5 @@ clean:          # clean build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 
-check:          # run ruff linter
-	ruff check .
+check:          # run ruff linter without requiring a global install
+	uv run --with ruff ruff check .

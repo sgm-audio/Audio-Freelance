@@ -14,6 +14,7 @@ primary_region = "sea"  # Seattle — closest to Vancouver
   PORT = "8080"
   HOST = "0.0.0.0"
   LOG_LEVEL = "INFO"
+  ENVIRONMENT = "production"
 
 [http_service]
   internal_port = 8080

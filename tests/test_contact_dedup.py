@@ -144,9 +144,7 @@ class TestAtsContactPath:
 class TestCanonicalizeUrl:
     def test_strips_www_trailing_slash_utm(self):
         assert (
-            canonicalize_url(
-                "https://WWW.Example.com/jobs/1/?utm_source=x&utm_medium=y"
-            )
+            canonicalize_url("https://WWW.Example.com/jobs/1/?utm_source=x&utm_medium=y")
             == "https://example.com/jobs/1"
         )
 

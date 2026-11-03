@@ -8,16 +8,6 @@ function Waveform() {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
   const count = 64;
 
-  const positions = useMemo(() => {
-    const pos = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      pos[i * 3] = (i / count - 0.5) * 12;
-      pos[i * 3 + 1] = 0;
-      pos[i * 3 + 2] = 0;
-    }
-    return pos;
-  }, [count]);
-
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   useFrame(({ clock }) => {
@@ -37,14 +27,14 @@ function Waveform() {
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
       <boxGeometry />
-      <meshStandardMaterial color="#4a7dff" transparent opacity={0.6} />
+      <meshStandardMaterial color="#d08b45" transparent opacity={0.6} />
     </instancedMesh>
   );
 }
 
 function Grid() {
   return (
-    <gridHelper args={[16, 12, "#2a2a3a", "#1a1a2a"]} position={[0, -2, -2]} />
+    <gridHelper args={[16, 12, "#383734", "#171716"]} position={[0, -2, -2]} />
   );
 }
 

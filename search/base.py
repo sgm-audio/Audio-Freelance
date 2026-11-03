@@ -1,5 +1,6 @@
 """Shared search utilities with Tavily → Serper → Firecrawl fallback chain."""
 
+import logging
 import re
 from dataclasses import dataclass
 
@@ -8,10 +9,10 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from config import settings
 
+logger = logging.getLogger(__name__)
+
 _MAILTO_RE = re.compile(r"mailto:([^\s\"'<>?]+)", re.IGNORECASE)
-_EMAIL_RE = re.compile(
-    r"(?<![/\w.-])([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b"
-)
+_EMAIL_RE = re.compile(r"(?<![/\w.-])([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b")
 # Skip noise emails from CDNs, trackers, placeholders
 _EMAIL_SKIP_SUBSTR = (
     "example.com",
@@ -148,6 +149,7 @@ async def _tavily_search(query: str, max_results: int = 10) -> list[SearchResult
                 )
             return results
     except Exception:
+        logger.warning("Tavily search failed; falling back to Serper", exc_info=True)
         return []
 
 
@@ -181,6 +183,7 @@ async def _serper_search(query: str, max_results: int = 10) -> list[SearchResult
                 )
             return results
     except Exception:
+        logger.warning("Serper search failed; falling back to Firecrawl", exc_info=True)
         return []
 
 
@@ -214,6 +217,7 @@ async def _firecrawl_search(query: str, max_results: int = 10) -> list[SearchRes
                 )
             return results
     except Exception:
+        logger.error("Firecrawl search failed; fallback chain exhausted", exc_info=True)
         return []
 
 
@@ -242,7 +246,10 @@ async def fetch_url(url: str, timeout: int = 15) -> str | None:
             resp.raise_for_status()
             text = resp.text
             if is_block_page(text):
+                logger.debug("block page detected, skipping: %s", url)
                 return None
             return text
     except Exception:
+        # Per-URL fetch failures are expected noise (dead links); debug only.
+        logger.debug("fetch failed: %s", url, exc_info=True)
         return None

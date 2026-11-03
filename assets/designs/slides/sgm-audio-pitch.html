@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGM Audio &mdash; Freelance Audio Engineering</title>
+
+    <!-- Brand Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=block" rel="stylesheet">
+
+    <!-- Design Tokens - SINGLE SOURCE OF TRUTH -->
+    <link rel="stylesheet" href="../../../assets/design-tokens.css">
+
+    <style>
+        /* ============================================
+           STRICT TOKEN USAGE - NO HARDCODED VALUES
+           All styles MUST use var(--token-name)
+           ============================================ */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: var(--typography-font-body);
+            background: var(--color-background);
+            color: var(--color-foreground);
+            line-height: var(--primitive-lineHeight-relaxed);
+        }
+
+        /* Slide Container - 16:9 aspect ratio */
+        .slide-deck {
+            width: 100%;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        .slide {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            padding: var(--slide-padding);
+            background: var(--slide-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide + .slide {
+            margin-top: var(--primitive-spacing-8);
+        }
+
+        /* Background Variants */
+        .slide--surface {
+            background: var(--slide-bg-surface);
+        }
+
+        .slide--gradient {
+            background: var(--slide-bg-gradient);
+        }
+
+        .slide--glow::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150%;
+            height: 150%;
+            background: var(--primitive-gradient-glow);
+            pointer-events: none;
+        }
+
+        /* Typography - MUST use token fonts and sizes */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--typography-font-heading);
+            font-weight: var(--primitive-fontWeight-bold);
+            line-height: var(--primitive-lineHeight-tight);
+        }
+
+        .slide-title {
+            font-size: var(--slide-title-size);
+            background: var(--primitive-gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .slide-heading {
+            font-size: var(--slide-heading-size);
+            color: var(--color-foreground);
+        }
+
+        .slide-subheading {
+            font-size: var(--primitive-fontSize-3xl);
+            color: var(--color-foreground-secondary);
+            font-weight: var(--primitive-fontWeight-medium);
+        }
+
+        .slide-body {
+            font-size: var(--slide-body-size);
+            color: var(--color-foreground-secondary);
+            max-width: 80ch;
+        }
+
+        /* Brand Colors - Primary/Secondary/Accent */
+        .text-primary { color: var(--color-primary); }
+        .text-secondary { color: var(--color-secondary); }
+        .text-accent { color: var(--color-accent); }
+        .text-muted { color: var(--color-foreground-muted); }
+
+        .bg-primary { background: var(--color-primary); }
+        .bg-secondary { background: var(--color-secondary); }
+        .bg-accent { background: var(--color-accent); }
+        .bg-surface { background: var(--color-surface); }
+
+        /* Cards - Using component tokens */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--card-radius);
+            padding: var(--card-padding);
+            box-shadow: var(--card-shadow);
+            transition: border-color var(--primitive-duration-base) var(--primitive-easing-out);
+        }
+
+        .card:hover {
+            border-color: var(--card-border-hover);
+        }
+
+        /* Buttons - Using component tokens */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--button-primary-padding-y) var(--button-primary-padding-x);
+            border-radius: var(--button-primary-radius);
+            font-size: var(--button-primary-font-size);
+            font-weight: var(--button-primary-font-weight);
+            font-family: var(--typography-font-body);
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all var(--primitive-duration-base) var(--primitive-easing-out);
+        }
+
+        .btn-primary {
+            background: var(--button-primary-bg);
+            color: var(--button-primary-fg);
+            box-shadow: var(--button-primary-shadow);
+        }
+
+        .btn-primary:hover {
+            background: var(--button-primary-bg-hover);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--color-primary);
+            border: 2px solid var(--color-primary);
+        }
+
+        /* Layout Utilities */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-4 { gap: var(--primitive-spacing-4); }
+        .gap-6 { gap: var(--primitive-spacing-6); }
+        .gap-8 { gap: var(--primitive-spacing-8); }
+
+        .grid { display: grid; }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+        .text-center { text-align: center; }
+        .mt-auto { margin-top: auto; }
+        .mb-4 { margin-bottom: var(--primitive-spacing-4); }
+        .mb-6 { margin-bottom: var(--primitive-spacing-6); }
+        .mb-8 { margin-bottom: var(--primitive-spacing-8); }
+
+        /* Metric Cards */
+        .metric {
+            text-align: center;
+            padding: var(--primitive-spacing-6);
+        }
+
+        .metric-value {
+            font-family: var(--typography-font-heading);
+            font-size: var(--primitive-fontSize-6xl);
+            font-weight: var(--primitive-fontWeight-bold);
+            background: var(--primitive-gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-label {
+            font-size: var(--primitive-fontSize-lg);
+            color: var(--color-foreground-secondary);
+            margin-top: var(--primitive-spacing-2);
+        }
+
+        /* Feature List */
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--primitive-spacing-4);
+            padding: var(--primitive-spacing-4) 0;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--primitive-radius-lg);
+            background: var(--color-surface-elevated);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-primary);
+            font-size: var(--primitive-fontSize-xl);
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: var(--primitive-fontSize-xl);
+            color: var(--color-foreground);
+            margin-bottom: var(--primitive-spacing-2);
+        }
+
+        .feature-content p {
+            color: var(--color-foreground-secondary);
+            font-size: var(--primitive-fontSize-base);
+        }
+
+        /* Testimonial */
+        .testimonial {
+            background: var(--color-surface);
+            border-radius: var(--primitive-radius-xl);
+            padding: var(--primitive-spacing-8);
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .testimonial-quote {
+            font-size: var(--primitive-fontSize-2xl);
+            color: var(--color-foreground);
+            font-style: italic;
+            margin-bottom: var(--primitive-spacing-6);
+        }
+
+        .testimonial-author {
+            font-size: var(--primitive-fontSize-lg);
+            color: var(--color-primary);
+            font-weight: var(--primitive-fontWeight-semibold);
+        }
+
+        .testimonial-role {
+            font-size: var(--primitive-fontSize-base);
+            color: var(--color-foreground-muted);
+        }
+
+        /* Badge/Tag */
+        .badge {
+            display: inline-block;
+            padding: var(--primitive-spacing-2) var(--primitive-spacing-4);
+            background: var(--color-surface-elevated);
+            border-radius: var(--primitive-radius-full);
+            font-size: var(--primitive-fontSize-sm);
+            color: var(--color-accent);
+            font-weight: var(--primitive-fontWeight-medium);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            background: var(--color-surface);
+            border-radius: var(--primitive-radius-xl);
+            padding: var(--primitive-spacing-6);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-title {
+            font-family: var(--typography-font-heading);
+            font-size: var(--primitive-fontSize-xl);
+            color: var(--color-foreground);
+            margin-bottom: var(--primitive-spacing-4);
+        }
+
+        /* CSS-only Bar Chart */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: var(--primitive-spacing-4);
+            height: 200px;
+            padding-top: var(--primitive-spacing-4);
+        }
+
+        .bar {
+            flex: 1;
+            background: var(--primitive-gradient-primary);
+            border-radius: var(--primitive-radius-md) var(--primitive-radius-md) 0 0;
+            position: relative;
+            min-width: 40px;
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: var(--primitive-fontSize-sm);
+            color: var(--color-foreground-muted);
+            white-space: nowrap;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: var(--primitive-fontSize-sm);
+            color: var(--color-foreground);
+            font-weight: var(--primitive-fontWeight-semibold);
+        }
+
+        /* Progress Bar */
+        .progress {
+            height: 12px;
+            background: var(--color-surface-elevated);
+            border-radius: var(--primitive-radius-full);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primitive-gradient-primary);
+            border-radius: var(--primitive-radius-full);
+        }
+
+        /* Footer */
+        .slide-footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: var(--primitive-spacing-6);
+            border-top: 1px solid var(--color-border);
+            color: var(--color-foreground-muted);
+            font-size: var(--primitive-fontSize-sm);
+        }
+
+        /* Glow Effects */
+        .glow-coral {
+            box-shadow: var(--primitive-shadow-glow-coral);
+        }
+
+        .glow-purple {
+            box-shadow: var(--primitive-shadow-glow-purple);
+        }
+
+        .glow-mint {
+            box-shadow: var(--primitive-shadow-glow-mint);
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-deck">
+        
+    <section class="slide slide--glow flex flex-col items-center justify-center text-center">
+        <div class="badge mb-6">Audio Engineering &middot; Vancouver</div>
+        <h1 class="slide-title mb-6">Mixes, Masters & Podcast Post &mdash; Done Right</h1>
+        <p class="slide-subheading mb-8">Independent audio engineering for artists, bands and podcasters who want radio-ready sound without the studio markup.</p>
+        <div class="flex gap-4">
+            <a href="#" class="btn btn-primary">Book a Session</a>
+            <a href="#" class="btn btn-secondary">See the Work</a>
+        </div>
+        <div class="slide-footer">
+            <span>SGM Audio</span>
+            <span>2026</span>
+        </div>
+    </section>
+    
+    <section class="slide slide--surface">
+        <div class="badge mb-6">The Problem</div>
+        <h2 class="slide-heading mb-8">Great tracks are being held back by their mix</h2>
+        <div class="grid grid-3 gap-8">
+            <div class="card">
+                <div class="text-primary" style="font-size: var(--primitive-fontSize-4xl); margin-bottom: var(--primitive-spacing-4);">01</div>
+                <h4 style="margin-bottom: var(--primitive-spacing-2); font-size: var(--primitive-fontSize-xl);">Amateur Mixes</h4>
+                <p class="text-muted">DIY and template mixes never translate &mdash; thin, harsh, and inconsistent across devices.</p>
+            </div>
+            <div class="card">
+                <div class="text-secondary" style="font-size: var(--primitive-fontSize-4xl); margin-bottom: var(--primitive-spacing-4);">02</div>
+                <h4 style="margin-bottom: var(--primitive-spacing-2); font-size: var(--primitive-fontSize-xl);">Podcast Post Overload</h4>
+                <p class="text-muted">Hours of editing, EQ and loudness work that eat the week of every indie podcaster.</p>
+            </div>
+            <div class="card">
+                <div class="text-accent" style="font-size: var(--primitive-fontSize-4xl); margin-bottom: var(--primitive-spacing-4);">03</div>
+                <h4 style="margin-bottom: var(--primitive-spacing-2); font-size: var(--primitive-fontSize-xl);">Studio Rates</h4>
+                <p class="text-muted">Vancouver studio rates price out independent artists and small teams entirely.</p>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>SGM Audio</span>
+            <span>2</span>
+        </div>
+    </section>
+    
+    <section class="slide">
+        <div class="badge mb-6">The Solution</div>
+        <h2 class="slide-heading mb-8">Full-service audio post from a real engineer</h2>
+        <div class="flex gap-8" style="flex: 1;">
+            <div style="flex: 1;">
+                <div class="feature-item">
+                    <div class="feature-icon">&#10003;</div>
+                    <div class="feature-content">
+                        <h4>Mix & Master</h4>
+                        <p>Broadcast-standard mixes, single-track through full album &mdash; masters ready for every streaming target.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">&#10003;</div>
+                    <div class="feature-content">
+                        <h4>Podcast Post</h4>
+                        <p>Edit, clean, mix and master voices, music and ads to loudness specs &mdash; delivered with chapters and metadata.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">&#10003;</div>
+                    <div class="feature-content">
+                        <h4>48h Turnaround</h4>
+                        <p>Set batches at the start of the week, delivered on schedule with revision notes included.</p>
+                    </div>
+                </div>
+            </div>
+            <div style="flex: 1;" class="card flex items-center justify-center">
+                <div class="text-center">
+                    <div class="text-accent" style="font-size: var(--primitive-fontSize-6xl); margin-bottom: var(--primitive-spacing-4);">+</div>
+                    <p class="text-muted">Product screenshot or demo</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>SGM Audio</span>
+            <span>3</span>
+        </div>
+    </section>
+    
+    <section class="slide slide--surface slide--glow">
+        <div class="badge mb-6">Traction</div>
+        <h2 class="slide-heading mb-8 text-center">Trusted by creators making the leap</h2>
+        <div class="grid grid-4 gap-6" style="flex: 1; align-items: center;">
+            
+        <div class="card metric">
+            <div class="metric-value">120+</div>
+            <div class="metric-label">Tracks Mastered</div>
+        </div>
+    
+        <div class="card metric">
+            <div class="metric-value">4.9/5</div>
+            <div class="metric-label">Client Rating</div>
+        </div>
+    
+        <div class="card metric">
+            <div class="metric-value">48h</div>
+            <div class="metric-label">Avg. Turnaround</div>
+        </div>
+    
+        <div class="card metric">
+            <div class="metric-value">-60%</div>
+            <div class="metric-label">vs Studio Rates</div>
+        </div>
+    
+        </div>
+        <div class="slide-footer">
+            <span>SGM Audio</span>
+            <span>4</span>
+        </div>
+    </section>
+    
+    <section class="slide">
+        <div class="badge mb-6">Podcast Post</div>
+        <h2 class="slide-heading mb-8">Podcast clients grew month over month</h2>
+        <div class="chart-container" style="flex: 1;">
+            <div class="chart-title">Monthly Podcast Post Completions</div>
+            <canvas id="lineChart" width="1000" height="360" style="width: 100%; height: 360px;"></canvas>
+        </div>
+        <div class="slide-footer">
+            <span>SGM Audio</span>
+            <span>5</span>
+        </div>
+    </section>
+    
+    <section class="slide slide--surface flex flex-col justify-center">
+        <div class="badge mb-6">What They Say</div>
+        <div class="testimonial" style="max-width: 900px;">
+            <p class="testimonial-quote">"I sent my album away as rough demos and got back a record that finally sounded like the one in my head. Same-day feedback on every revision."</p>
+            <p class="testimonial-author">Jordan W.</p>
+            <p class="testimonial-role">Independent Artist, Vancouver</p>
+        </div>
+        <div class="slide-footer">
+            <span>SGM Audio</span>
+            <span>6</span>
+        </div>
+    </section>
+    
+    <section class="slide slide--gradient flex flex-col items-center justify-center text-center">
+        <h2 class="slide-heading mb-6" style="color: var(--color-foreground);">Send the stems. Get the sound.</h2>
+        <p class="slide-body mb-8" style="color: rgba(255,255,255,0.8);">Book a session with your project files &mdash; mix review, reference track, and timeline within 48 hours.</p>
+        <div class="flex gap-4">
+            <a href="#" class="btn" style="background: var(--color-foreground); color: var(--color-primary);">hello@sgmaudio.com</a>
+        </div>
+        <div class="slide-footer" style="border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.6);">
+            <span>hello@sgmaudio.com</span>
+            <span>sgmaudio.com</span>
+        </div>
+    </section>
+    
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var ctx = document.getElementById('lineChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+        datasets: [{
+          label: 'Episodes Completed',
+          data: [4, 7, 11, 20],
+          borderColor: '#e85d04',
+          backgroundColor: 'rgba(232, 93, 4, 0.18)',
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#e85d04',
+          pointRadius: 5,
+          borderWidth: 3
+        }]
+      },
+      options: {
+        responsive: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { backgroundColor: '#0b0d12', borderColor: '#e85d04', borderWidth: 1 }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(122, 128, 137, 0.15)' },
+            ticks: { color: '#c5cad3', font: { family: 'Inter', size: 13 } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(122, 128, 137, 0.15)' },
+            ticks: { color: '#c5cad3', font: { family: 'Inter', size: 13 } }
+          }
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html>

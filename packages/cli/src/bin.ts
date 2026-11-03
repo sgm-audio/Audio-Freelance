@@ -47,7 +47,7 @@ approve subcommands:
   <draftId>                    Approve draft → APPROVED
   reject <draftId> [--reason]
   edit <draftId> --body <text> [--subject <s>]
-  serve [--port 8788]          n8n webhook receiver
+  serve [--port 8788]          HMAC-authenticated n8n webhook receiver
 
 queue:
   queue linkedin|upwork [--db path]

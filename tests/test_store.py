@@ -22,7 +22,7 @@ from leads.store import (
 
 pytestmark = pytest.mark.skipif(
     not check_ollama_available(),
-    reason="Ollama not available — requires running 'ollama serve' with 'nomic-embed-text' pulled",
+    reason="Ollama integration unavailable; owner: maintainer; issue #74",
 )
 
 

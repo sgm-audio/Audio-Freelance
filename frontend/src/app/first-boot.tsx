@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { fetchProfileStatus } from "@/lib/api";
 
 export function FirstBootDetector() {
   const pathname = usePathname();
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
-
   useEffect(() => {
     // Only check on root/dashboard pages, not on setup itself
-    if (pathname === "/setup") { setChecked(true); return; }
-    if (checked) return;
+    if (pathname === "/setup") return;
 
     fetchProfileStatus()
       .then((status) => {
@@ -20,9 +17,8 @@ export function FirstBootDetector() {
           if (pathname !== "/setup") router.push("/setup");
         }
       })
-      .catch(() => {})
-      .finally(() => setChecked(true));
-  }, [pathname, router, checked]);
+      .catch(() => {});
+  }, [pathname, router]);
 
   return null;
 }

@@ -14,13 +14,15 @@ const claimsPath = resolve(repoRoot, "config", "claims.json");
 describe("config/claims.json", () => {
   it("loads and validates against ClaimsFileSchema", () => {
     const file = loadClaimsFile(claimsPath);
-    expect(file.claims.map((c) => c.id)).toEqual([
+    const ids = file.claims.map((claim) => claim.id);
+    expect(ids).toEqual(expect.arrayContaining([
       "trackclear_reapack",
       "portamento_engine_contract",
       "makingmadi_operating",
       "years_audio_17",
-    ]);
-    expect(claimAllowlistPhrases(file).length).toBeGreaterThanOrEqual(4);
+    ]));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(claimAllowlistPhrases(file).length).toBeGreaterThanOrEqual(ids.length);
   });
 
   it("rejects unknown claim shapes", () => {

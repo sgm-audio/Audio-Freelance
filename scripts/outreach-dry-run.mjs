@@ -16,7 +16,7 @@ const { assertDryRunOk, runDryRun } = await import(
 const dbArgIdx = process.argv.indexOf("--db");
 const dbPath =
   dbArgIdx >= 0 && process.argv[dbArgIdx + 1]
-    ? resolve(process.argv[dbArgIdx + 1]!)
+    ? resolve(process.argv[dbArgIdx + 1])
     : resolve(root, "data", "outreach-dry-run.sqlite");
 
 mkdirSync(dirname(dbPath), { recursive: true });

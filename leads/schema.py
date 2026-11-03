@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from config import settings
 
-PREFERRED_NICHES: list[str] = settings.as_niche_list()
+PREFERRED_NICHES: list[str] = settings.as_niche_list() + settings.as_automation_niche_list()
 
 
 class LeadStatus(StrEnum):
@@ -58,8 +58,11 @@ class Lead(BaseModel):
     @field_validator("niche")
     @classmethod
     def validate_niche(cls, v: str) -> str:
-        if v not in PREFERRED_NICHES:
-            raise ValueError(f"Unknown niche '{v}'. Must be one of: {', '.join(PREFERRED_NICHES)}")
+        if not v or not re.match(r"^[a-zA-Z0-9_\-]+$", v):
+            raise ValueError(
+                "Niche must be non-empty and contain only letters, numbers, "
+                f"underscore, and hyphen (got: '{v}')"
+            )
         return v
 
     @field_validator("url")

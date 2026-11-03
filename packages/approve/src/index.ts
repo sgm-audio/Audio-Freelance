@@ -14,5 +14,7 @@ export {
 } from "./digest.js";
 export {
   createApprovalWebhookListener,
+  signApprovalPayload,
   startApprovalWebhookServer,
+  type ApprovalWebhookOptions,
 } from "./webhook.js";

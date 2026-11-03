@@ -185,6 +185,3 @@ def score_against_profile(
         verdict=verdict,
         status=status,
     )
-
-
-

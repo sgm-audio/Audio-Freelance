@@ -1,27 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { useSyncExternalStore } from "react";
+
+const subscribe = () => () => {};
 
 export function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
+  // next-themes reads persisted state on the client; defer controls to avoid hydration drift.
+  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
+  const { resolvedTheme, setTheme } = useTheme();
 
   if (!mounted) return <div className="h-6" />;
-
-  const toggle = () => {
-    const html = document.documentElement;
-    const isDark = html.classList.contains("dark");
-    html.classList.toggle("dark");
-    localStorage.setItem("theme", isDark ? "light" : "dark");
-  };
 
   return (
     <div className="flex items-center justify-between text-xs">
       <button
-        onClick={toggle}
+        onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         className="px-2 py-1 rounded hover:bg-accent transition-colors cursor-pointer"
         title="Toggle theme"
+        aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme`}
       >
         <span className="text-sm">☀</span> / <span className="text-sm">☾</span>
       </button>

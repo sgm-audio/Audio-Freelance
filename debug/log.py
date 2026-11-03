@@ -14,7 +14,7 @@ import os
 import sys
 
 import structlog
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 
 
 def setup_logging(log_level: str = "INFO") -> None:
@@ -27,7 +27,7 @@ def setup_logging(log_level: str = "INFO") -> None:
 
     level = getattr(logging, log_level.upper(), logging.INFO)
 
-    formatter = jsonlogger.JsonFormatter(
+    formatter = JsonFormatter(
         fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%dT%H:%M:%SZ",
     )

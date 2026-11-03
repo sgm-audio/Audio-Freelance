@@ -21,20 +21,6 @@
       }
     },
     {
-      "label": "Open Desktop App",
-      "type": "shell",
-      "command": "npm run tauri dev",
-      "options": {
-        "cwd": "${workspaceFolder}/desktop"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": true
-      }
-    },
-    {
       "label": "Preflight Audio-Freelance",
       "type": "shell",
       "command": "python run.py --check",

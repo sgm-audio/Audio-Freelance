@@ -28,6 +28,7 @@ class Profile:
     timezone: str = ""
     remote_ok: bool = True
     relocation_ok: bool = False
+    user_type: str = "audio"  # audio | automation | custom
 
     # Skills
     languages: list[str] = field(default_factory=list)
@@ -70,6 +71,10 @@ class Profile:
             and not self.seniority
         )
 
+    def is_custom(self) -> bool:
+        """True if user type is custom."""
+        return self.user_type == "custom"
+
     def completeness(self) -> int:
         """Return a 0-100 score indicating how complete the profile is."""
         fields_to_check = [
@@ -95,6 +100,7 @@ class Profile:
                 "timezone": self.timezone,
                 "remote_ok": self.remote_ok,
                 "relocation_ok": self.relocation_ok,
+                "user_type": self.user_type,
             },
             "skills": {
                 "languages": self.languages,
@@ -177,6 +183,7 @@ def _dict_to_profile(data: dict[str, Any]) -> Profile:
         timezone=identity.get("timezone", "") or "",
         remote_ok=identity.get("remote_ok", True),
         relocation_ok=identity.get("relocation_ok", False),
+        user_type=identity.get("user_type", "audio"),
         languages=skills.get("languages", []) or [],
         frameworks=skills.get("frameworks", []) or [],
         domains=skills.get("domains", []) or [],
@@ -206,6 +213,7 @@ def _profile_to_dict(profile: Profile) -> dict[str, Any]:
             "timezone": profile.timezone,
             "remote_ok": profile.remote_ok,
             "relocation_ok": profile.relocation_ok,
+            "user_type": profile.user_type,
         },
         "skills": {
             "languages": profile.languages,
@@ -217,6 +225,7 @@ def _profile_to_dict(profile: Profile) -> dict[str, Any]:
             "niches": profile.niches,
             "excluded_niches": profile.excluded_niches,
             "dealbreakers": profile.dealbreakers,
+            "blocked_companies": profile.blocked_companies,
             "rate_floor": profile.rate_floor,
             "hourly_floor": profile.hourly_floor,
             "contract_types": profile.contract_types,

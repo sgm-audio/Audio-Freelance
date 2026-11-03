@@ -15,7 +15,12 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 import { applyApprovalAction } from "../src/actions.js";
 import { buildDigest } from "../src/digest.js";
-import { createApprovalWebhookListener } from "../src/webhook.js";
+import {
+  createApprovalWebhookListener,
+  signApprovalPayload,
+} from "../src/webhook.js";
+
+const WEBHOOK_SECRET = "test-secret-with-at-least-32-characters";
 
 const dirs: string[] = [];
 
@@ -135,31 +140,86 @@ describe("approve actions", () => {
     db.close();
   });
 
-  it("webhook receiver approves via HTTP", async () => {
+  it("webhook receiver requires a valid HMAC and rejects replay", async () => {
     const db = tempDb();
     const { draftId, leadId } = seedPending(db);
-    const server = createServer(createApprovalWebhookListener(db));
+    const now = 1_800_000_000_000;
+    const server = createServer(
+      createApprovalWebhookListener(db, { secret: WEBHOOK_SECRET, now: () => now }),
+    );
     await new Promise<void>((resolve) => {
       server.listen(0, "127.0.0.1", () => resolve());
     });
     const addr = server.address();
     if (!addr || typeof addr === "string") throw new Error("no port");
-    const res = await fetch(`http://127.0.0.1:${addr.port}/webhook`, {
+    const url = `http://127.0.0.1:${addr.port}/webhook`;
+    const rawBody = JSON.stringify({ action: "approve", draft_id: draftId });
+    const timestamp = String(Math.floor(now / 1000));
+    const headers = {
+      "content-type": "application/json",
+      "x-sgm-timestamp": timestamp,
+      "x-sgm-signature": signApprovalPayload(WEBHOOK_SECRET, timestamp, rawBody),
+    };
+
+    const unsigned = await fetch(url, { method: "POST", body: rawBody });
+    expect(unsigned.status).toBe(401);
+    const invalid = await fetch(url, {
       method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "approve", draft_id: draftId }),
+      headers: { ...headers, "x-sgm-signature": "sha256=invalid" },
+      body: rawBody,
     });
+    expect(invalid.status).toBe(401);
+
+    const res = await fetch(url, { method: "POST", headers, body: rawBody });
     expect(res.status).toBe(200);
     const body = (await res.json()) as { ok: boolean; state: string };
-    expect(body.ok).toBe(true);
-    expect(body.state).toBe("APPROVED");
+    expect(body).toMatchObject({ ok: true, state: "APPROVED" });
     const state = db
       .prepare("SELECT state FROM leads WHERE id = ?")
       .get(leadId) as { state: string };
     expect(state.state).toBe("APPROVED");
+
+    const replay = await fetch(url, { method: "POST", headers, body: rawBody });
+    expect(replay.status).toBe(409);
+    expect(await replay.json()).toMatchObject({ error: "replayed_request" });
+
+    const staleTimestamp = String(Number(timestamp) - 301);
+    const stale = await fetch(url, {
+      method: "POST",
+      headers: {
+        "x-sgm-timestamp": staleTimestamp,
+        "x-sgm-signature": signApprovalPayload(WEBHOOK_SECRET, staleTimestamp, rawBody),
+      },
+      body: rawBody,
+    });
+    expect(stale.status).toBe(401);
+
+    const oversizedBody = JSON.stringify({ padding: "x".repeat(65 * 1024) });
+    const oversized = await fetch(url, {
+      method: "POST",
+      headers: {
+        "x-sgm-timestamp": timestamp,
+        "x-sgm-signature": signApprovalPayload(
+          WEBHOOK_SECRET,
+          timestamp,
+          oversizedBody,
+        ),
+      },
+      body: oversizedBody,
+    });
+    expect(oversized.status).toBe(413);
+
     await new Promise<void>((resolve, reject) => {
       server.close((err) => (err ? reject(err) : resolve()));
     });
+    db.close();
+  });
+
+  it("refuses weak webhook secrets", () => {
+    const db = tempDb();
+    expect(() => createApprovalWebhookListener(db, { secret: "too-short" })).toThrow(
+      "at least 32 characters",
+    );
     db.close();
   });
 });

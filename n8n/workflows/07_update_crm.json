@@ -1,0 +1,72 @@
+{
+  "name": "AF · Update CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm-update",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_API_URL }}/api/v1/leads/{{ $json.lead_id }}/status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "call_backend",
+      "name": "Call Backend: Update CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [ { "node": "Call Backend: Update CRM", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Call Backend: Update CRM": {
+      "main": [
+        [ { "node": "Respond", "type": "main", "index": 0 } ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": { "instanceId": "audio-freelance" },
+  "id": "58670713-0ae9-444c-a6eb-d369fc95bc5b",
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "0c60e528-216b-4170-95a2-b11550d6eebd"
+  },
+  "versionId": "1"
+}
