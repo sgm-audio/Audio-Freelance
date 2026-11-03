@@ -97,9 +97,9 @@ wait_for_url http://127.0.0.1:8080/api/v1/health
 "${production[@]}" exec -T backend rm /app/leads/data/.ci-persistence
 
 # Restart policy and health states must match the production configuration.
-[[ "$(docker inspect "$(${production[@]} ps -q backend)" --format '{{.HostConfig.RestartPolicy.Name}}')" == "unless-stopped" ]]
-[[ "$(docker inspect "$(${production[@]} ps -q frontend)" --format '{{.HostConfig.RestartPolicy.Name}}')" == "unless-stopped" ]]
-[[ "$(docker inspect "$(${production[@]} ps -q backend)" --format '{{.State.Health.Status}}')" == "healthy" ]]
-[[ "$(docker inspect "$(${production[@]} ps -q frontend)" --format '{{.State.Health.Status}}')" == "healthy" ]]
+[[ "$(docker inspect "$("${production[@]}" ps -q backend)" --format '{{.HostConfig.RestartPolicy.Name}}')" == "unless-stopped" ]]
+[[ "$(docker inspect "$("${production[@]}" ps -q frontend)" --format '{{.HostConfig.RestartPolicy.Name}}')" == "unless-stopped" ]]
+[[ "$(docker inspect "$("${production[@]}" ps -q backend)" --format '{{.State.Health.Status}}')" == "healthy" ]]
+[[ "$(docker inspect "$("${production[@]}" ps -q frontend)" --format '{{.State.Health.Status}}')" == "healthy" ]]
 
 echo "Container and Compose verification passed."

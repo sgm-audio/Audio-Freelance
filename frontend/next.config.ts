@@ -5,7 +5,7 @@ const API_HOST = process.env.API_HOST || "127.0.0.1";
 const nextConfig: NextConfig = {
   output: "standalone",
   turbopack: {
-    root: process.cwd(),
+    root: __dirname,
   },
   async rewrites() {
     // Only proxy /api/v1/* to FastAPI so Next handlers like /api/outreach stay local
