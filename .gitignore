@@ -91,3 +91,10 @@ branch*/
 desktop/src-tauri/target/
 desktop/target/
 
+
+# Local agent/tool files
+.playwright-mcp/
+AGENTS.md
+CLAUDE.md
+.claude/
+.cursor/

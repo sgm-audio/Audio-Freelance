@@ -1,0 +1,41 @@
+# Gitleaks ignore file - fingerprints to ignore
+# All .venv findings are from installed packages, not source code
+.venv/Lib/site-packages/google/protobuf/descriptor_pb2.py:generic-api-key:34
+.venv/Lib/site-packages/huggingface_hub/_eval_results.py:generic-api-key:62
+.venv/Lib/site-packages/huggingface_hub/cli/auth.py:generic-api-key:77
+.venv/Lib/site-packages/kubernetes/aio/config/kube_config_test.py:generic-api-key:586
+.venv/Lib/site-packages/kubernetes/aio/config/kube_config_test.py:generic-api-key:601
+.venv/Lib/site-packages/numpy/random/tests/test_generator_mt19937.py:generic-api-key:29
+.venv/Lib/site-packages/numpy/random/tests/test_generator_mt19937.py:generic-api-key:30
+.venv/Lib/site-packages/numpy/random/tests/test_generator_mt19937.py:generic-api-key:35
+.venv/Lib/site-packages/numpy/random/tests/test_generator_mt19937.py:generic-api-key:36
+.venv/Lib/site-packages/numpy/random/tests/test_generator_mt19937.py:generic-api-key:41
+.venv/Lib/site-packages/numpy/random/tests/test_generator_mt19937.py:generic-api-key:42
+.venv/Lib/site-packages/oauthlib/oauth1/rfc5849/parameters.py:generic-api-key:30
+.venv/Lib/site-packages/oauthlib/oauth1/rfc5849/parameters.py:generic-api-key:33
+.venv/Lib/site-packages/oauthlib/oauth2/rfc6749/parameters.py:generic-api-key:329
+.venv/Lib/site-packages/oauthlib/oauth2/rfc6749/parameters.py:generic-api-key:407
+.venv/Lib/site-packages/oauthlib/oauth2/rfc6749/parameters.py:generic-api-key:410
+.venv/Lib/site-packages/onnxruntime/tools/symbolic_shape_infer.py:generic-api-key:2203
+.venv/Lib/site-packages/requests_oauthlib/oauth1_session.py:generic-api-key:231
+.venv/Lib/site-packages/requests_oauthlib/oauth1_session.py:generic-api-key:246
+.venv/Lib/site-packages/requests_oauthlib/oauth1_session.py:generic-api-key:278
+.venv/Lib/site-packages/requests_oauthlib/oauth1_session.py:generic-api-key:305
+.venv/Lib/site-packages/requests_oauthlib/oauth1_session.py:generic-api-key:311
+.venv/Lib/site-packages/requests_oauthlib/oauth1_session.py:generic-api-key:335
+.venv/Lib/site-packages/requests_oauthlib/oauth1_session.py:generic-api-key:75
+.venv/Lib/site-packages/requests_oauthlib/oauth1_session.py:generic-api-key:87
+.venv/Lib/site-packages/requests_oauthlib/oauth1_session.py:generic-api-key:93
+.venv/Lib/site-packages/websocket/tests/test_websocket.py:generic-api-key:120
+.venv/Lib/site-packages/websocket/tests/test_websocket.py:generic-api-key:484
+# frontend build artifacts
+frontend/.next/cache/.previewinfo:generic-api-key:1
+frontend/.next/cache/.rscinfo:generic-api-key:1
+frontend/.next/prerender-manifest.json:generic-api-key:327
+frontend/.next/prerender-manifest.json:generic-api-key:328
+frontend/.next/server/server-reference-manifest.json:generic-api-key:4
+frontend/.next/standalone/.next/prerender-manifest.json:generic-api-key:327
+frontend/.next/standalone/.next/prerender-manifest.json:generic-api-key:328
+frontend/.next/standalone/.next/server/server-reference-manifest.json:generic-api-key:4
+# Known synthetic value in scripts/verify_containers.sh:81 - "synthetic-ci-bearer-key"
+scripts/verify_containers.sh:curl-auth-header:81

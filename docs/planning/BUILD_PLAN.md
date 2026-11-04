@@ -131,7 +131,7 @@ FastAPI Server (standalone)
 ## Complete File Inventory (when finished)
 
 ```
-/var/home/sgm/Github Repo's/Audio Freelance Dev System/
+Audio-Freelance/
 ├── BUILD_PLAN.md
 ├── README.md
 ├── pyproject.toml

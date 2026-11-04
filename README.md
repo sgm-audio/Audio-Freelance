@@ -31,24 +31,22 @@
 
 Built for audio DSP engineers, plugin developers, and audio ML engineers who want to spend less time hunting and more time coding.
 
-## The Business Case
+## What it does
 
-A senior audio engineer's billable rate is $150-300/hr. Every hour spent manually
-searching job boards, Reddit threads, and startup funding announcements instead of
-building costs $150-300 in opportunity cost. At 20 hrs/week of manual prospecting,
-that's **$3,000-6,000/week in lost revenue**.
-
-Audio-Freelance eliminates this by running 5 parallel search tiers across 15+
-sources, deduplicating with embedding-based similarity, scoring against your
-profile, and generating outreach drafts - all in under 30 seconds.
+`POST /api/v1/prospect/{niche}` runs 5 search tiers concurrently (`asyncio.gather`,
+`graph/pipeline.py:97`) over search-API queries against 15+ sites, removes
+near-duplicates with Ollama embeddings in ChromaDB (`leads/store.py`), scores the
+rest against `profile.yaml`, and stores HOT/WARM leads. Outreach drafts are filled
+from four fixed templates (`generate/outreach.py:21-60`); no LLM is called.
+Run time depends on the search APIs and was not measured.
 
 ## Features
 
-**Search & Score** — Multi-tier search across KVR Audio, JUCE Forum, Reddit, HN, GitHub, LinkedIn, and company career pages. Scored by signal detection (C++/Rust DSP, CLAP, Mamba/SSM, REAPER, on-device ML, etc.) with configurable thresholds.
+**Search & Score** — Multi-tier search via Tavily/Serper/Firecrawl queries (KVR Audio, JUCE Forum, Cockos forum, Reddit, HN Algolia, GitHub, Upwork, RemoteOK, Wellfound, Indeed and others; see `search/tier*.py`) plus the public Greenhouse, Lever and Ashby job-board APIs. LinkedIn is not queried. Scored by signal detection (C++/Rust DSP, CLAP, Mamba/SSM, REAPER, on-device ML, etc.) with configurable thresholds.
 
 **Market Intelligence** — 6-category market scanner: funding rounds, technology trends, product launches, pricing benchmarks, hiring signals, and GitHub activity. Tracks 14+ technologies (CLAP, ARA, Mamba/SSM, Rust Audio, JUCE, etc.) with rising/stable/declining status.
 
-**Outreach Generator** — Templated outreach drafts (A-D) with asset registry claim validation. Proposal generator with pricing tiers and IP licensing notes. Ready-to-send application materials for live opportunities.
+**Outreach Generator** — Template-filled outreach drafts (A–D, no LLM) with asset registry claim validation. Proposal generator with pricing tiers and IP licensing notes.
 
 **Dashboard** — Next.js 16 dark-mode dashboard with lead management, market trends, pricing benchmarks, and one-click prospecting. Theme toggle, keyboard navigable.
 
@@ -159,7 +157,7 @@ graph TB
     subgraph Pipeline[DAG Pipeline]
         Search[5-Tier Search] --> Dedup[ChromaDB Dedup]
         Dedup --> Score[Signal Scoring]
-        Score --> Generate[LLM Outreach]
+        Score --> Generate[Template Outreach]
         Generate --> Review[Review Queue]
     end
 
@@ -179,7 +177,7 @@ graph TB
 
 1. **Prospect**: User clicks "Prospect plugin_dev" → `POST /api/v1/prospect/{niche}` → Pipeline runs 5 search tiers in parallel → Dedup via ChromaDB embeddings → Score against user profile → Store HOT/WARM in ChromaDB, archive COLD/SKIP
 2. **Dashboard**: `GET /api/v1/status` + `GET /api/v1/market` → Aggregated lead counts, technology trends, pricing benchmarks
-3. **Outreach**: `POST /api/v1/outreach/{lead_id}` → LLM generates draft from template → Logged to outreach collection
+3. **Outreach**: `POST /api/v1/outreach/{lead_id}` → Draft filled from a template → Logged to outreach collection
 4. **Triage**: `POST /api/v1/tracking/triage` → Keyword classifier → Suggested action (proposal/rate/archive/dead)
 5. **Backup**: `scripts/backup.sh --retain 7` → Tars ChromaDB + archives + tracking + profile → Prunes old backups
 6. **Metrics**: Prometheus scrapes `GET /api/v1/metrics` every 15s → Counters for pipeline runs, leads discovered, API requests
@@ -266,7 +264,7 @@ Backend configuration is centralized in `config.py` (pydantic-settings); the sep
 | `SENTRY_DSN` | `""` | Sentry DSN for error tracking (disabled if empty) |
 | `ENVIRONMENT` | `development` | Deployment environment (development/production) |
 
-## Production Readiness
+## Status
 
 ### Implementation and verification status
 
@@ -275,7 +273,7 @@ Backend configuration is centralized in `config.py` (pydantic-settings); the sep
 | Configuration, JSON logging, correlation IDs, metrics | Implemented | Local static/unit checks pass; supported Python runtime CI is pending |
 | Bearer auth, CORS, security headers, rate limiting | Implemented | Focused local policy checks pass; full Python 3.12/3.13 runtime suite is pending |
 | Backups and data-integrity checks | Implemented | Source/tests present; container persistence gate awaits a working Actions runner |
-| Backend and outreach tests | Implemented | Outreach passes locally; backend Python 3.12/3.13 execution is pending |
+| Backend and outreach tests | Implemented | 2026-10-31, Linux, Python 3.12, `uv run pytest tests/`: 156 passed, 14 skipped, **1 failed** — `test_compose_files_do_not_publish_a_chroma_service`, because `docker-compose.yml` still runs `chromadb/chroma:latest` with port `8001:8000` published |
 | Frontend unit tests | Implemented | Node unit tests pass locally |
 | Playwright smoke tests | Implemented in CI | Browser installation/execution is pending |
 | Docker images and Compose profiles | Implemented in CI | Build, profile, health, persistence, non-root, and image-scan job is pending |
@@ -457,12 +455,6 @@ scripts/verify_containers.sh
 - Detailed engineering roadmap: [`docs/planning/`](docs/planning/UX_PRODUCT_ROADMAP.md)
 - Outreach engine spec, runbook & red-team review: [`docs/outreach/`](docs/outreach/OUTREACH_BUILD_SPEC.md)
 - Independent verification report: [`docs/remediation/`](docs/remediation/06-independent-final-verification-report.md)
-
-## System Intelligence
-
-This project maintains a persistent knowledge graph in `graphify-out/` for
-architectural analysis and cross-file relationship tracking. Use the `graphify`
-tool to query the codebase structure.
 
 ## Contributing
 

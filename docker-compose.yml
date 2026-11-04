@@ -20,10 +20,6 @@ services:
               count: all
               capabilities: [gpu]
 
-  # ── Vector database ──
-  # ChromaDB runs embedded in the backend via chromadb.PersistentClient.
-  # No network chromadb service is deployed (see tests/test_chroma_deployment_security.py).
-
   # ── FastAPI backend ──
   backend:
     image: ghcr.io/sgm-audio/audio-freelance/backend:latest
@@ -34,13 +30,10 @@ services:
       - "8080:8080"
     environment:
       - OLLAMA_HOST=http://ollama:11434
-      - CHROMA_HOST=http://chromadb:8000
       - EMBEDDING_MODEL=nomic-embed-text
       - PREFERRED_NICHES=plugin_dev,reaper_scripts,rust_audio,audio_ml,game_audio_dev
       - MIN_RATE_CAD=3000
       - HOURLY_FLOOR_CAD=150
-    depends_on:
-      - chromadb
     volumes:
       - lead_data:/app/leads/data
     command: >
