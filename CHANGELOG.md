@@ -23,9 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fly.io deploy** — `fly.toml` config (Seattle region, auto-stop, HTTPS). CD workflow deploys on `v*` tags. Deployment docs in README.
 - **Frontend verification** — framework-free API-client unit tests plus six deterministic Playwright flows for offline, setup, lead, upload, theme, accessibility, and auth behavior. Run with `npm run test:unit` and `npm run test:e2e`.
 - **Release consistency** — `VERSION`, `scripts/set_version.py`, and `scripts/check_version.py` keep public Python, frontend, desktop, OpenAPI, and image metadata aligned while private outreach workspaces remain `0.0.0`.
-- **Screenshots gallery** — placeholder table in README with headless capture instructions for Firefox/Chrome.
+- **One-click launch** — `start.bat` (Windows) and `start.sh` (macOS/Linux): double-click to start backend + frontend and open the browser. No venv activation, no separate frontend/backend install, no `activate.sh`.
+- **`.env` auto-generation** — the launcher creates `.env` from `.env.example` on first run if it's missing.
+- **Browser auto-open** — `run.py` opens `http://localhost:3000` once both services are healthy (`--no-browser` to opt out).
 
 ### Fixed
+- **Backend hard crash without `.env`** — `tavily_api_key`, `serper_api_key`, `firecrawl_api_key` are now optional (`str = ""`) in `config.py`; an empty `.env` boots fine with a startup warning naming degraded features (Prospect search) instead of a pydantic `ValidationError`. `config.env_file` is anchored to the project root so CWD never matters.
+- **Stale `VIRTUAL_ENV` trap** — the empty `venv/` and `activate.sh` are removed; `run.py` clears a foreign `VIRTUAL_ENV` before `uv run`, so the project's own `.venv` is always used.
+- **Frontend `npm run lint`** — reverted manifest/lockfile drift; eslint 9 + eslint-config-next 16.2.12 lint clean.
+- **Next.js build failure** — added missing `react-is` dependency for recharts.
 - 3 incidental bugs: `setup_logger`→`get_logger` import, em-dash encoding crash, route ordering for `{lead_id}` catch-all.
 - Added `python-multipart` dependency (required by FastAPI `TestClient`).
 - Docker Compose missing env vars for API keys — now uses `.env` file in prod profile.

@@ -71,67 +71,36 @@ firefox --screenshot frontend/public/screenshots/pipeline.png http://localhost:3
 google-chrome --headless --screenshot=frontend/public/screenshots/dashboard.png --window-size=1280,800 http://localhost:3000/
 ```
 
-## Quick Start
+## Quick Start — one click
 
-Works on macOS, Linux, and Windows — the launcher (`run.py`) is plain Python with no extra dependencies.
+**Windows — double-click `start.bat`** (or run `start.bat` in cmd/PowerShell).
 
-**macOS / Linux**
+**macOS / Linux — `./start.sh`**
 
-```bash
-# Install backend + frontend dependencies
-make install
+That's it. The launcher:
 
-# Start both servers
-python run.py
-# or: ./run.sh / make dev
-```
+1. uses this project's own Python environment via `uv` — **no venv activation**,
+2. creates `.env` from `.env.example` if it's missing (search keys stay empty; add them later via the `/setup` wizard),
+3. installs frontend dependencies if `node_modules` is missing,
+4. starts the backend (FastAPI on `:8080`) and frontend (Next.js on `:3000`),
+5. opens **http://localhost:3000** in your browser.
 
-**Windows (PowerShell or cmd)**
-
-```powershell
-# Install backend + frontend dependencies
-uv sync --extra dev
-cd frontend; npm install; cd ..
-
-# Start both servers
-python run.py
-```
-
-Then open **http://localhost:3000**
-
-The launcher runs pre-flight checks (uv, Node, `.env`, free ports) before starting anything — `python run.py --check` runs just the checks, `--verbose` shows server output.
+No git-bash, no PowerShell activation, no separate frontend/backend install, and no "which shell do I use" guesswork. Stop with **Ctrl+C**.
 
 ### Prerequisites
 
-- Python 3.12+
-- Node.js 22+
-- [Ollama](https://ollama.ai) with `nomic-embed-text` (for dedup)
-- Search API keys (Tavily, Serper, or Firecrawl) — set in `.env`
+- Python 3.12+ and Node.js 22+ — the launcher boots `uv` and warns if either is missing
+- [Ollama](https://ollama.ai) with `nomic-embed-text` (optional; dedup falls back without it)
+- Search API keys (Tavily, Serper, Firecrawl) — **optional**; Prospect degrades with a clear warning until you add them via `/setup`
+
+### Individual commands
 
 ```bash
-cp .env.example .env          # Windows: copy .env.example .env
-# Add your API keys
-ollama pull nomic-embed-text
-```
-
-### Virtualenv Shell
-
-To drop into the uv-managed venv for one-off commands:
-
-| Platform | Command |
-|---|---|
-| macOS / Linux | `./activate.sh` |
-| All platforms | `uv run <command>` (runs one command in the managed environment) |
-
-`activate.sh` opens a subshell; type `exit` to leave it. No Windows activation wrapper is currently included.
-
-### Individual Commands
-
-```bash
-make backend    # FastAPI on :8080
-make frontend   # Next.js on :3000
-make test       # Run the backend pytest suite
-make build      # Production frontend build
+start.bat                 # Windows: backend + frontend + browser
+./start.sh                # macOS / Linux: same
+python run.py             # any platform: run.py directly (no activation needed)
+uv run pytest tests/      # backend test suite
+cd frontend && npm run build   # production frontend build
 ```
 
 ## Architecture

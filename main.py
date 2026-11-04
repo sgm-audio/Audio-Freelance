@@ -32,6 +32,19 @@ if not _api_key:
         detail="ALL API endpoints are unprotected. Set API_KEY in .env.",
     )
 
+# Search keys degrade gracefully — warn, don't crash.
+_missing_search_keys = settings.missing_search_keys()
+if _missing_search_keys:
+    log = get_logger("main")
+    log.warning(
+        "search_keys_not_configured",
+        detail=(
+            "Web search degraded until keys are set in .env: "
+            + ", ".join(_missing_search_keys)
+            + ". ATS lists, manual lead import, scoring, outreach, and tracking still work."
+        ),
+    )
+
 # ── Auto-rotate cold leads on startup (laptop-friendly, no cron needed) ──
 try:
     from leads.store import auto_rotate_if_needed

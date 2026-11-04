@@ -32,6 +32,15 @@ from typing import TextIO
 ROOT = Path(__file__).resolve().parent
 IS_WINDOWS = sys.platform == "win32"
 
+# Neutralize a stale VIRTUAL_ENV (e.g. an empty unrelated venv) so `uv run`
+# always targets this project's own .venv instead of the wrong interpreter.
+if os.environ.get("VIRTUAL_ENV"):
+    try:
+        if Path(os.environ["VIRTUAL_ENV"]).resolve() != ROOT / ".venv":
+            os.environ.pop("VIRTUAL_ENV", None)
+    except OSError:
+        os.environ.pop("VIRTUAL_ENV", None)
+
 BACKEND_PORT = 8080
 FRONTEND_PORT = 3000
 HEALTH_URL = f"http://127.0.0.1:{BACKEND_PORT}/api/v1/health"
@@ -247,16 +256,36 @@ def preflight(*, force: bool = False) -> tuple[int, bool, bool]:
         vlog(f"{GREEN}[OK]{NC} .env exists")
     else:
         print(
-            f"{YELLOW}[WARN]{NC} .env missing — copy .env.example (settings need it to import). "
-            "Prospect web search needs Tavily, Serper, or Firecrawl; ATS lists work without them."
+            f"{YELLOW}[WARN]{NC} .env missing — generating from .env.example. "
+            "Search keys stay empty (Prospect degrades); add keys later via /setup."
         )
+        shutil.copyfile(ROOT / ".env.example", ROOT / ".env")
+        vlog(f"{GREEN}[OK]{NC} .env generated from .env.example")
 
     next_bin = ROOT / "frontend" / "node_modules" / "next" / "dist" / "bin" / "next"
     if next_bin.is_file():
         vlog(f"{GREEN}[OK]{NC} frontend Next.js binary present")
     else:
-        print(f"{RED}[MISSING]{NC} frontend deps — run: cd frontend && npm install")
-        failures += 1
+        log("Installing frontend dependencies (npm install --legacy-peer-deps)...")
+        npm = shutil.which("npm")
+        if not npm:
+            print(f"{RED}[MISSING]{NC} npm not found — install Node.js: https://nodejs.org")
+            failures += 1
+        else:
+            proc = subprocess.run(
+                [npm, "install", "--legacy-peer-deps"],
+                cwd=ROOT / "frontend",
+                capture_output=True,
+                text=True,
+            )
+            if proc.returncode != 0:
+                print(f"{RED}[FAIL]{NC} frontend npm install failed")
+                for stream in (proc.stdout, proc.stderr):
+                    if stream:
+                        print(stream[-3000:])
+                failures += 1
+            else:
+                vlog(f"{GREEN}[OK]{NC} frontend dependencies installed")
 
     if force:
         for port in (BACKEND_PORT, FRONTEND_PORT):
@@ -362,6 +391,11 @@ def main() -> int:
         action="store_true",
         help="kill listeners on :3000 and :8080 and exit",
     )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="do not open the dashboard browser tab automatically",
+    )
     args = parser.parse_args()
     if args.verbose:
         VERBOSE = True
@@ -448,6 +482,10 @@ def main() -> int:
                 return 1
 
         print_service_urls()
+        if not args.no_browser:
+            import webbrowser
+
+            webbrowser.open(f"http://localhost:{FRONTEND_PORT}")
         print("Press Ctrl+C to stop services started by this launcher.")
         print()
 

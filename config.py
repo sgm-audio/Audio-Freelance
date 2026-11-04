@@ -7,23 +7,36 @@ Import `settings` from this module everywhere.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+ROOT = Path(__file__).resolve().parent
+
+SEARCH_KEYS = ("tavily_api_key", "serper_api_key", "firecrawl_api_key")
+
 
 class Settings(BaseSettings):
-    """All configuration for the Audio-Freelance system."""
+    """All configuration for the Audio-Freelance system.
+
+    Search API keys are optional with empty defaults. Leaving them unset degrades
+    Prospect/web search but does not block boot: ATS lists, manual lead import,
+    scoring, outreach drafts, and tracking all work without them.
+    """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ROOT / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
-    # ── Required API keys ──
-    tavily_api_key: str
-    serper_api_key: str
-    firecrawl_api_key: str
+    # ── Optional search API keys ──
+    # Unset keys disable web search for the corresponding provider only;
+    # this is the deliberate local-first default.
+    tavily_api_key: str = ""
+    serper_api_key: str = ""
+    firecrawl_api_key: str = ""
 
     # ── Optional auth ──
     api_key: str = ""
@@ -79,6 +92,10 @@ class Settings(BaseSettings):
 
     # ── Paths ──
     companies_path: str = ""
+
+    def missing_search_keys(self) -> list[str]:
+        """Return the names of configured-but-empty search providers."""
+        return [key for key in SEARCH_KEYS if not getattr(self, key)]
 
     @model_validator(mode="after")
     def require_production_auth(self) -> Settings:
