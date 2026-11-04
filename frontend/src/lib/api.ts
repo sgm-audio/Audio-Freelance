@@ -38,6 +38,18 @@ export interface HealthResponse {
   status: string; ollama: boolean; timestamp: string;
 }
 
+export interface ConfigStatus {
+  tavily: boolean; serper: boolean; firecrawl: boolean;
+}
+
+export interface SearchKeysRequest {
+  tavily_api_key?: string; serper_api_key?: string; firecrawl_api_key?: string;
+}
+
+export interface SearchKeysResponse {
+  status: string; configured: string[];
+}
+
 export interface TechTrend {
   technology: string; mentions: number; direction: "rising" | "stable" | "declining"; contexts: string[];
 }
@@ -92,6 +104,27 @@ export interface ColdStats {
 
 export async function fetchHealth(): Promise<HealthResponse> {
   return get("/health");
+}
+
+export async function fetchConfigStatus(): Promise<ConfigStatus> {
+  return get("/config/status");
+}
+
+export async function updateSearchKeys(
+  keys: SearchKeysRequest,
+): Promise<SearchKeysResponse> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(`${API}/config/keys`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(keys),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json();
+  } finally { clearTimeout(timer); }
 }
 
 export async function fetchStatus(): Promise<StatusResponse> {

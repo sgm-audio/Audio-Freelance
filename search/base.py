@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from config import settings
+import config
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +87,19 @@ _BLOCK_SIGNATURES = [
     "automated access",
 ]
 
-_TAVILY_API_KEY = settings.tavily_api_key
-_SERPER_API_KEY = settings.serper_api_key
-_FIRECRAWL_API_KEY = settings.firecrawl_api_key
+def _tavily_api_key() -> str:
+    """Read the Tavily key live from settings (picks up onboarding writes)."""
+    return config.settings.tavily_api_key
+
+
+def _serper_api_key() -> str:
+    """Read the Serper key live from settings."""
+    return config.settings.serper_api_key
+
+
+def _firecrawl_api_key() -> str:
+    """Read the Firecrawl key live from settings."""
+    return config.settings.firecrawl_api_key
 
 
 def _is_key_valid(key: str, min_len: int = 20) -> bool:
@@ -122,15 +132,15 @@ def is_block_page(text: str) -> bool:
 )
 async def _tavily_search(query: str, max_results: int = 10) -> list[SearchResult]:
     """Search via Tavily API."""
-    if not _is_key_valid(_TAVILY_API_KEY, min_len=20):
+    if not _is_key_valid(_tavily_api_key(), min_len=20):
         return []
 
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
                 _TAVILY_URL,
-                json={
-                    "api_key": _TAVILY_API_KEY,
+            json={
+                "api_key": _tavily_api_key(),
                     "query": query,
                     "max_results": max_results,
                 },
@@ -159,7 +169,7 @@ async def _tavily_search(query: str, max_results: int = 10) -> list[SearchResult
 )
 async def _serper_search(query: str, max_results: int = 10) -> list[SearchResult]:
     """Search via Serper (Google) API."""
-    if not _is_key_valid(_SERPER_API_KEY, min_len=20):
+    if not _is_key_valid(_serper_api_key(), min_len=20):
         return []
 
     try:
@@ -167,7 +177,7 @@ async def _serper_search(query: str, max_results: int = 10) -> list[SearchResult
             resp = await client.post(
                 _SERPER_URL,
                 json={"q": query, "num": max_results},
-                headers={"X-API-KEY": _SERPER_API_KEY},
+                headers={"X-API-KEY": _serper_api_key()},
             )
             resp.raise_for_status()
             data = resp.json()
@@ -193,7 +203,7 @@ async def _serper_search(query: str, max_results: int = 10) -> list[SearchResult
 )
 async def _firecrawl_search(query: str, max_results: int = 10) -> list[SearchResult]:
     """Search via Firecrawl API."""
-    if not _is_key_valid(_FIRECRAWL_API_KEY, min_len=20):
+    if not _is_key_valid(_firecrawl_api_key(), min_len=20):
         return []
 
     try:
@@ -201,7 +211,7 @@ async def _firecrawl_search(query: str, max_results: int = 10) -> list[SearchRes
             resp = await client.post(
                 _FIRECRAWL_SEARCH_URL,
                 json={"query": query, "limit": max_results},
-                headers={"Authorization": f"Bearer {_FIRECRAWL_API_KEY}"},
+                headers={"Authorization": f"Bearer {_firecrawl_api_key()}"},
             )
             resp.raise_for_status()
             data = resp.json()

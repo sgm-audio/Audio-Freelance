@@ -273,6 +273,8 @@ schemas.
 | `GET` | `/api/v1/health` | Public | JSON health, Ollama state, and timestamp |
 | `GET` | `/api/v1/metrics` | Public | Prometheus text exposition |
 | `GET` | `/api/v1/bookmarklet` | Public | HTML bookmarklet installer |
+| `GET` | `/api/v1/config/status` | Public | JSON which search providers are configured (booleans only) |
+| `POST` | `/api/v1/config/keys` | Public | Persist search API keys to `.env` (dev only; refused in production) |
 | `GET` | `/api/v1/profile/status` | Public | JSON first-run profile status |
 | `GET` | `/api/v1/leads` | Protected | JSON lead list, optionally filtered by status |
 | `GET` | `/api/v1/leads/cold` | Protected | JSON archived cold leads |

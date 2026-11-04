@@ -7,6 +7,8 @@ Import `settings` from this module everywhere.
 
 from __future__ import annotations
 
+import contextlib
+import os
 from pathlib import Path
 
 from pydantic import model_validator
@@ -15,6 +17,79 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 ROOT = Path(__file__).resolve().parent
 
 SEARCH_KEYS = ("tavily_api_key", "serper_api_key", "firecrawl_api_key")
+SEARCH_KEYS_UPPER = {k.upper() for k in SEARCH_KEYS}
+
+
+def reload_settings(env_path: Path | None = None) -> Settings:
+    """Re-instantiate `settings` from `.env` so newly written keys take effect
+    without restarting the server. Safe to call after `write_search_keys`.
+
+    `env_path` overrides the default `.env` location (used by tests for
+    isolation).
+    """
+    global settings
+    settings = Settings(_env_file=env_path or (ROOT / ".env"))
+    return settings
+
+
+def write_search_keys(
+    keys: dict[str, str], env_path: Path | None = None
+) -> None:
+    """Persist search API keys to `.env`, preserving all other lines/comments.
+
+    Only provided, non-empty keys are written. Search keys are stored UPPERCASE
+    in `.env` (pydantic reads them case-insensitively). After writing, `settings`
+    is reloaded so the new keys take effect live. Refuses to run when
+    ENVIRONMENT=production (fail-closed: secrets must never be written via UI
+    in production).
+
+    `env_path` overrides the default `.env` location (used by tests for
+    isolation).
+    """
+    if settings.environment.strip().lower() == "production":
+        raise PermissionError("Cannot write search keys when ENVIRONMENT=production")
+
+    target = env_path or (ROOT / ".env")
+    lines = target.read_text(encoding="utf-8").splitlines() if target.is_file() else []
+    # .env keys are UPPERCASE; pydantic field names are lowercase. Normalize on
+    # write so lookups match regardless of case.
+    upper = {k.upper(): v for k, v in keys.items() if v}
+    written: set[str] = set()
+    out: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            raw_k, _, raw_v = line.partition("=")
+            k = raw_k.strip().upper()
+            v = raw_v.strip()
+            if k in SEARCH_KEYS_UPPER:
+                # Normalise search keys to UPPERCASE; apply new value if provided.
+                out.append(f"{k}={upper.get(k, v)}")
+                if k in upper:
+                    written.add(k)
+                continue
+        out.append(line)
+    for k, v in upper.items():
+        if k not in written:
+            out.append(f"{k}={v}")
+    # Dedupe: keep the LAST occurrence of each search key so stray duplicates
+    # (e.g. from a previous case-mismatched write) collapse to a single line.
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for line in reversed(out):
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            k = line.partition("=")[0].strip().upper()
+            if k in SEARCH_KEYS_UPPER:
+                if k in seen:
+                    continue
+                seen.add(k)
+        deduped.append(line)
+    deduped.reverse()
+    target.write_text("\n".join(deduped) + "\n", encoding="utf-8")
+    with contextlib.suppress(OSError):
+        os.chmod(target, 0o600)
+    reload_settings(env_path=target)
 
 
 class Settings(BaseSettings):

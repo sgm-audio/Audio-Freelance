@@ -9,9 +9,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
+import config
 from api.auth import require_api_key
 from api.metrics import leads_discovered, leads_stored, ollama_available, pipeline_runs
-from config import settings
 from debug.log import get_logger
 from graph.pipeline import run_pipeline
 from leads.schema import PREFERRED_NICHES, LeadStatus
@@ -101,6 +101,55 @@ async def health_check():
         "status": "ok",
         "ollama": ollama_ok,
         "timestamp": datetime.now(tz=UTC).isoformat(),
+    }
+
+
+# ── Config / onboarding (search API keys) ──
+
+
+@public.get("/config/status")
+async def config_status():
+    """Which search providers are configured (booleans only — never values)."""
+    return {
+        "tavily": bool(config.settings.tavily_api_key),
+        "serper": bool(config.settings.serper_api_key),
+        "firecrawl": bool(config.settings.firecrawl_api_key),
+    }
+
+
+class SearchKeysRequest(BaseModel):
+    """Search API keys submitted via the onboarding wizard."""
+
+    model_config = {"extra": "forbid"}
+
+    tavily_api_key: str | None = None
+    serper_api_key: str | None = None
+    firecrawl_api_key: str | None = None
+
+
+@public.post("/config/keys")
+async def update_search_keys(body: SearchKeysRequest):
+    """Persist search API keys to .env (local dev only; refused in production).
+
+    Keys take effect live without restarting the server. Values are never
+    echoed back in the response.
+    """
+    keys = {
+        k: v
+        for k, v in {
+            "tavily_api_key": body.tavily_api_key,
+            "serper_api_key": body.serper_api_key,
+            "firecrawl_api_key": body.firecrawl_api_key,
+        }.items()
+        if v
+    }
+    try:
+        config.write_search_keys(keys)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    return {
+        "status": "saved",
+        "configured": [k for k in config.SEARCH_KEYS if getattr(config.settings, k)],
     }
 
 
@@ -243,7 +292,7 @@ async def rotation_status():
     return {
         "last_rotation": last.isoformat() if last else None,
         "hours_ago": round((now - last).total_seconds() / 3600, 1) if last else None,
-        "rotation_due_days": settings.cold_rotation_days,
+        "rotation_due_days": config.settings.cold_rotation_days,
     }
 
 

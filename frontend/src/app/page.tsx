@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { fetchStatus, fetchHealth, StatusResponse } from "@/lib/api";
+import { fetchStatus, fetchHealth, fetchConfigStatus, StatusResponse, ConfigStatus } from "@/lib/api";
 import AudioVis from "@/components/audio-vis";
 
 export default function Dashboard() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [health, setHealth] = useState<{ status: string; ollama: boolean } | null>(null);
+  const [configStatus, setConfigStatus] = useState<ConfigStatus | null>(null);
   const [backendDown, setBackendDown] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -17,6 +18,7 @@ export default function Dashboard() {
     Promise.allSettled([
       fetchStatus().then((s) => { if (!cancelled) setStatus(s); }),
       fetchHealth().then((h) => { if (!cancelled) setHealth(h); }),
+      fetchConfigStatus().then((c) => { if (!cancelled) setConfigStatus(c); }),
     ]).then((results) => {
       if (cancelled) return;
       const healthFailed = results[1]?.status === "rejected";
@@ -78,6 +80,20 @@ export default function Dashboard() {
           <span className="mx-2">·</span>
           <a href="/market" className="underline hover:text-foreground">Open market scan →</a>
         </p>
+        {configStatus &&
+          !(configStatus.tavily || configStatus.serper || configStatus.firecrawl) && (
+          <p className="text-sm mt-2 text-yellow-900 bg-yellow-100 border border-yellow-200 rounded-md px-3 py-2">
+            ⚠ No search API keys configured — Prospect web search is disabled. Add keys in{" "}
+            <a href="/setup" className="underline hover:text-yellow-800">Setup</a>
+            to enable Tavily, Serper, or Firecrawl.
+          </p>
+        )}
+        {configStatus &&
+          (configStatus.tavily || configStatus.serper || configStatus.firecrawl) && (
+          <p className="text-sm mt-2 text-green-900 bg-green-100 border border-green-200 rounded-md px-3 py-2">
+            ✓ Search API keys configured — Prospect web search is active.
+          </p>
+        )}
       </div>
 
       <AudioVis />
