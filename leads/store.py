@@ -210,6 +210,18 @@ def check_duplicate(lead: Lead) -> str | None:
 # ── helpers ──
 
 
+def _parse_optional_dt(val: str | None) -> datetime | None:
+    if not val:
+        return None
+    try:
+        dt = datetime.fromisoformat(val)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt
+    except (ValueError, TypeError):
+        return None
+
+
 def _lead_to_metadata(lead: Lead) -> dict:
     return {
         "id": str(lead.id),
@@ -225,6 +237,14 @@ def _lead_to_metadata(lead: Lead) -> dict:
         "verdict": lead.verdict,
         "status": lead.status.value,
         "contact_path": lead.contact_path or "",
+        "contact_email": lead.contact_email or "",
+        "channel": lead.channel or "",
+        "sent_at": lead.sent_at.isoformat() if lead.sent_at else "",
+        "next_follow_up_at": lead.next_follow_up_at.isoformat() if lead.next_follow_up_at else "",
+        "follow_up_count": int(lead.follow_up_count or 0),
+        "last_message_id": lead.last_message_id or "",
+        "last_subject": lead.last_subject or "",
+        "last_asset_id": lead.last_asset_id or "",
         "discovered_at": lead.discovered_at.isoformat(),
         "last_updated": lead.last_updated.isoformat(),
         "notes": lead.notes or "",
@@ -250,6 +270,14 @@ def _metadata_to_lead(metadata: dict) -> Lead:
         verdict=metadata.get("verdict", "COLD"),
         status=LeadStatus(metadata.get("status", "NEW")),
         contact_path=metadata.get("contact_path") or None,
+        contact_email=metadata.get("contact_email") or None,
+        channel=metadata.get("channel") or None,
+        sent_at=_parse_optional_dt(metadata.get("sent_at")),
+        next_follow_up_at=_parse_optional_dt(metadata.get("next_follow_up_at")),
+        follow_up_count=int(metadata.get("follow_up_count", 0) or 0),
+        last_message_id=metadata.get("last_message_id") or None,
+        last_subject=metadata.get("last_subject") or None,
+        last_asset_id=metadata.get("last_asset_id") or None,
         discovered_at=datetime.fromisoformat(
             metadata.get("discovered_at", datetime.now(tz=UTC).isoformat())
         ),
@@ -258,6 +286,7 @@ def _metadata_to_lead(metadata: dict) -> Lead:
         ),
         notes=metadata.get("notes") or None,
     )
+
 
 
 # ── CRUD ──
@@ -493,6 +522,222 @@ def log_outreach(
             }
         ],
     )
+
+
+def record_outreach_send(
+    lead_id: str,
+    step: str,
+    channel: str,
+    recipient: str | None,
+    target_url: str | None,
+    subject: str | None,
+    final_body_sent: str,
+    asset_used: str | None,
+    transport: str,
+    message_id: str | None = None,
+    sent_at: datetime | None = None,
+) -> dict:
+    """Write an immutable send entry to freelance_outreach_log and tracking JSONL."""
+    _init()
+    ts = sent_at or datetime.now(tz=UTC)
+    ts_iso = ts.isoformat()
+    norm_recipient = (recipient or "").strip().lower()
+    norm_url = canonicalize_url(target_url or "")
+    entry_id = f"{lead_id}_{step}_{uuid.uuid4().hex[:8]}"
+
+    metadata = {
+        "id": entry_id,
+        "lead_id": str(lead_id),
+        "step": step,
+        "channel": channel or "web",
+        "recipient": norm_recipient,
+        "target_url": norm_url,
+        "subject": subject or "",
+        "final_body_sent": final_body_sent,
+        "asset_used": asset_used or "",
+        "transport": transport,
+        "message_id": message_id or "",
+        "status": "SENT",
+        "sent_at": ts_iso,
+        "created_at": ts_iso,
+    }
+
+    _outreach_collection.upsert(
+        ids=[entry_id],
+        documents=[final_body_sent or subject or entry_id],
+        metadatas=[metadata],
+    )
+
+    from leads.tracking import log_tracking_event
+
+    log_tracking_event(
+        str(lead_id),
+        "outreach_sent",
+        {
+            "step": step,
+            "channel": channel,
+            "recipient": norm_recipient,
+            "target_url": norm_url,
+            "subject": subject or "",
+            "asset_used": asset_used or "",
+            "transport": transport,
+            "message_id": message_id or "",
+            "sent_at": ts_iso,
+        },
+    )
+    return metadata
+
+
+def get_outreach_history(
+    lead_id: str | None = None,
+    sent_only: bool = False,
+    limit: int = 50,
+) -> list[dict]:
+    """Return outreach log entries from freelance_outreach_log, newest first."""
+    _init()
+    where_clause: dict | None = None
+    if lead_id and sent_only:
+        where_clause = {"$and": [{"lead_id": str(lead_id)}, {"status": "SENT"}]}
+    elif lead_id:
+        where_clause = {"lead_id": str(lead_id)}
+    elif sent_only:
+        where_clause = {"status": "SENT"}
+
+    if where_clause:
+        res = _outreach_collection.get(where=where_clause, include=["metadatas", "documents"])
+    else:
+        res = _outreach_collection.get(include=["metadatas", "documents"])
+
+    metadatas = res.get("metadatas") or []
+    documents = res.get("documents") or []
+    items: list[dict] = []
+    for idx, meta in enumerate(metadatas):
+        if not meta:
+            continue
+        item = dict(meta)
+        if "final_body_sent" not in item and idx < len(documents) and documents[idx]:
+            item["final_body_sent"] = documents[idx]
+        items.append(item)
+
+    items.sort(key=lambda m: m.get("sent_at") or m.get("created_at") or "", reverse=True)
+    return items[:limit]
+
+
+def check_recent_outreach(
+    recipient: str | None = None,
+    target_url: str | None = None,
+    lead_id: str | None = None,
+    step: str = "initial",
+    days: int | None = None,
+) -> dict | None:
+    """Check if this lead step or recipient/URL was already pitched within `days` days."""
+    _init()
+    dedup_days = settings.outreach_dedup_days if days is None else days
+    cutoff = datetime.now(tz=UTC) - timedelta(days=dedup_days)
+    norm_recipient = (recipient or "").strip().lower()
+    norm_url = canonicalize_url(target_url or "")
+
+    sent_entries = get_outreach_history(sent_only=True, limit=500)
+    for entry in sent_entries:
+        # 1. Exact lead + step already sent
+        if lead_id and entry.get("lead_id") == str(lead_id) and entry.get("step") == step:
+            return {
+                "reason": "already_sent_step",
+                "message": f"Step '{step}' was already sent for this lead.",
+                "prior_send": entry,
+            }
+
+        # 2. For initial pitches, check 30-day window across all leads by recipient email or URL
+        if step == "initial":
+            sent_dt = _parse_optional_dt(entry.get("sent_at") or entry.get("created_at"))
+            if sent_dt and sent_dt < cutoff:
+                continue
+            if norm_recipient and entry.get("recipient") == norm_recipient:
+                return {
+                    "reason": "duplicate_recipient",
+                    "message": (
+                        f"Recipient '{norm_recipient}' was already pitched on "
+                        f"{entry.get('sent_at', 'recently')[:10]}."
+                    ),
+                    "prior_send": entry,
+                }
+            if (
+                norm_url
+                and entry.get("target_url") == norm_url
+                and entry.get("lead_id") != str(lead_id or "")
+            ):
+                return {
+                    "reason": "duplicate_url",
+
+                    "message": (
+                        f"Target URL '{norm_url}' was already pitched on "
+                        f"{entry.get('sent_at', 'recently')[:10]}."
+                    ),
+                    "prior_send": entry,
+                }
+
+    return None
+
+
+def get_follow_up_queue(now: datetime | None = None) -> dict:
+    """Return due and upcoming follow-up leads.
+
+    Automatically transitions SENT leads whose `next_follow_up_at <= now`
+    into `FOLLOW_UP_1_DUE`.
+    """
+    _init()
+    current_time = now or datetime.now(tz=UTC)
+    all_leads = get_all_leads()
+    due: list[Lead] = []
+    upcoming: list[Lead] = []
+
+    eligible_statuses = {
+        LeadStatus.SENT,
+        LeadStatus.CONTACTED,
+        LeadStatus.FOLLOW_UP_1_DUE,
+    }
+
+    for lead in all_leads:
+        if lead.status not in eligible_statuses:
+            continue
+        if (lead.follow_up_count or 0) >= 1:
+            continue
+
+        due_at = lead.next_follow_up_at
+        if due_at is None:
+            base_ts = lead.sent_at or lead.last_updated
+            if base_ts.tzinfo is None:
+                base_ts = base_ts.replace(tzinfo=UTC)
+            delay_days = (
+                settings.follow_up_email_days
+                if lead.channel == "email"
+                else settings.follow_up_dm_days
+            )
+            due_at = base_ts + timedelta(days=delay_days)
+            lead.next_follow_up_at = due_at
+
+        if due_at.tzinfo is None:
+            due_at = due_at.replace(tzinfo=UTC)
+
+        if due_at <= current_time:
+            if lead.status == LeadStatus.SENT:
+                lead.status = LeadStatus.FOLLOW_UP_1_DUE
+                with contextlib.suppress(Exception):
+                    upsert_lead(lead)
+            due.append(lead)
+        else:
+            upcoming.append(lead)
+
+    due.sort(key=lambda item: item.next_follow_up_at or current_time)
+    upcoming.sort(key=lambda item: item.next_follow_up_at or current_time)
+
+    return {
+        "due": due,
+        "upcoming": upcoming,
+        "due_count": len(due),
+        "upcoming_count": len(upcoming),
+    }
+
 
 
 # ── Rotation tracking (laptop-friendly: on-startup, not cron) ──

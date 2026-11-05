@@ -17,9 +17,23 @@ import {
 } from "@/lib/api";
 
 const STATUSES = [
-  "NEW", "HOT", "WARM", "COLD", "SKIPPED", "CONTACTED",
-  "PROPOSAL_SENT", "WON", "LOST", "DEAD",
+  "NEW",
+  "HOT",
+  "WARM",
+  "COLD",
+  "SENT",
+  "FOLLOW_UP_1_DUE",
+  "FOLLOW_UP_1_SENT",
+  "REPLIED",
+  "CONTACTED",
+  "PROPOSAL_SENT",
+  "WON",
+  "LOST",
+  "ARCHIVED",
+  "SKIPPED",
+  "DEAD",
 ];
+
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -426,6 +440,14 @@ export default function LeadsPage() {
                 </div>
                 <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                   <span>{new Date(lead.discovered_at).toLocaleDateString()}</span>
+                  {lead.contact_email && (
+                    <span className="text-emerald-400">✉ {lead.contact_email}</span>
+                  )}
+                  {lead.next_follow_up_at && (
+                    <span className="text-amber-400">
+                      Follow-up: {new Date(lead.next_follow_up_at).toLocaleDateString()}
+                    </span>
+                  )}
                   {lead.company && !isBlocked && (
                     <button
                       type="button"
@@ -451,8 +473,12 @@ export default function LeadsPage() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         onStatus={handleStatus}
+        onLeadUpdated={(updated) =>
+          setLeads((prev) => prev.map((l) => (l.id === updated.id ? updated : l)))
+        }
         busy={busy}
       />
+
 
       {/* Quick Add Modal */}
       {showQuickAdd && (

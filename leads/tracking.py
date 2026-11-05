@@ -84,7 +84,15 @@ def get_all_tracking(limit: int = 200) -> list[dict]:
 
 def get_active_pursuit_lead_ids() -> list[str]:
     """Return lead IDs currently in active pursuit (latest event has active status)."""
-    ACTIVE_STATUSES = {"CONTACTED", "REPLIED", "PROPOSAL_SENT"}
+    ACTIVE_STATUSES = {
+        "APPROVED",
+        "SENT",
+        "CONTACTED",
+        "FOLLOW_UP_1_DUE",
+        "FOLLOW_UP_1_SENT",
+        "REPLIED",
+        "PROPOSAL_SENT",
+    }
     _ensure_dir()
     active: list[str] = []
     for p in TRACKING_DIR.glob("*.jsonl"):
@@ -100,3 +108,4 @@ def get_active_pursuit_lead_ids() -> list[str]:
                     active.append(lead_id)
                 break
     return active
+

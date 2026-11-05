@@ -120,11 +120,36 @@ class TestLeadModel:
     def test_lead_status_values(self):
         assert LeadStatus.NEW.value == "NEW"
         assert LeadStatus.HOT.value == "HOT"
+        assert LeadStatus.SENT.value == "SENT"
+        assert LeadStatus.FOLLOW_UP_1_DUE.value == "FOLLOW_UP_1_DUE"
+        assert LeadStatus.FOLLOW_UP_1_SENT.value == "FOLLOW_UP_1_SENT"
+        assert LeadStatus.ARCHIVED.value == "ARCHIVED"
         assert LeadStatus.WON.value == "WON"
         assert LeadStatus.DEAD.value == "DEAD"
-        # 12 statuses: NEW, SCORED, HOT, WARM, COLD, SKIPPED,
-        # CONTACTED, REPLIED, PROPOSAL_SENT, WON, LOST, DEAD
-        assert len(LeadStatus) == 12
+        assert len(LeadStatus) == 18
+
+    def test_auto_extracts_email_and_channel(self):
+        lead_email = Lead(
+            source="manual",
+            tier=1,
+            title="C++ JUCE Plugin Role",
+            url="https://indieaudio.io/jobs/1",
+            raw_text="Reach out to founders@indieaudio.io with your portfolio.",
+            niche="plugin_dev",
+        )
+        assert lead_email.contact_email == "founders@indieaudio.io"
+        assert lead_email.channel == "email"
+
+        lead_reddit = Lead(
+            source="reddit",
+            tier=2,
+            title="[Hiring] Audio programmer for Unity game",
+            url="https://www.reddit.com/r/gameDevClassifieds/comments/xyz",
+            raw_text="DM me on Reddit with rates.",
+            niche="game_audio_dev",
+        )
+        assert lead_reddit.contact_email is None
+        assert lead_reddit.channel == "reddit"
 
     def test_preferred_niches(self):
         assert "plugin_dev" in PREFERRED_NICHES
@@ -132,6 +157,7 @@ class TestLeadModel:
         assert "rust_audio" in PREFERRED_NICHES
         assert "audio_ml" in PREFERRED_NICHES
         assert "game_audio_dev" in PREFERRED_NICHES
+
 
 
 class TestRawCandidate:

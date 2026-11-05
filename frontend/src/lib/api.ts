@@ -42,8 +42,10 @@ async function post<T>(path: string, timeoutMs = 30000): Promise<T> {
 
 export interface LeadCounts {
   NEW?: number; HOT?: number; WARM?: number; COLD?: number;
-  CONTACTED?: number; REPLIED?: number; PROPOSAL_SENT?: number;
-  SKIPPED?: number; WON?: number; LOST?: number; DEAD?: number;
+  DRAFT_READY?: number; APPROVED?: number; SENT?: number;
+  CONTACTED?: number; FOLLOW_UP_1_DUE?: number; FOLLOW_UP_1_SENT?: number;
+  REPLIED?: number; PROPOSAL_SENT?: number;
+  SKIPPED?: number; WON?: number; LOST?: number; ARCHIVED?: number; DEAD?: number;
 }
 
 export interface StatusResponse {
@@ -56,7 +58,16 @@ export interface Lead {
   id: string; source: string; tier: number; title: string; company?: string;
   url: string; raw_text: string; niche: string; signals: Record<string, number>;
   score: number; verdict: "HOT" | "WARM" | "COLD" | "SKIP"; status: string;
-  contact_path?: string; discovered_at: string; last_updated: string; notes?: string;
+  contact_path?: string;
+  contact_email?: string;
+  channel?: "email" | "reddit" | "discord" | "upwork" | "web" | string;
+  sent_at?: string;
+  next_follow_up_at?: string;
+  follow_up_count?: number;
+  last_message_id?: string;
+  last_subject?: string;
+  last_asset_id?: string;
+  discovered_at: string; last_updated: string; notes?: string;
 }
 
 export interface HealthResponse {
@@ -149,7 +160,7 @@ export async function updateLeadStatus(
   }
 }
 
-// ── Outreach drafts (never auto-send) ──
+// ── Outreach drafts, send, & follow-up engine ──
 
 export type OutreachTemplateKey =
   | "A_plugin_contract"
@@ -157,22 +168,172 @@ export type OutreachTemplateKey =
   | "C_game_audio"
   | "D_cold_outbound";
 
+export interface PortfolioAsset {
+  id: string;
+  status: string;
+  description: string;
+  proof: string;
+  pitch_value: string;
+}
+
 export interface OutreachDraft {
   lead_id: string;
-  template: string;
+  template?: string;
+  step?: "initial" | "follow_up_1";
   draft: string;
+  subject: string;
+  body: string;
+  in_reply_to?: string;
+  contact_email: string;
+  channel: string;
+  target_url: string;
+  selected_asset_id: string;
+  available_assets: PortfolioAsset[];
+  smtp_configured: boolean;
   generated_at: string;
   violations: string[];
   safe_to_send: boolean;
 }
 
+export interface OutreachSendPayload {
+  body: string;
+  subject?: string;
+  recipient_email?: string;
+  target_url?: string;
+  step?: "initial" | "follow_up_1";
+  mode?: "auto" | "email" | "compose" | "assisted";
+  asset_id?: string;
+  force?: boolean;
+}
+
+export interface OutreachLogEntry {
+  id: string;
+  lead_id: string;
+  step: "initial" | "follow_up_1" | string;
+  channel: string;
+  recipient: string;
+  target_url: string;
+  subject: string;
+  final_body_sent: string;
+  asset_used: string;
+  transport: "smtp" | "compose" | "assisted" | string;
+  message_id: string;
+  status: string;
+  sent_at: string;
+}
+
+export interface OutreachSendResponse {
+  status: string;
+  lead_id: string;
+  step: string;
+  channel: string;
+  transport: "smtp" | "compose" | "assisted";
+  message_id: string;
+  recipient_email: string;
+  target_url: string;
+  subject: string;
+  sent_at: string;
+  next_follow_up_at: string | null;
+  compose_urls: { mailto_url?: string; gmail_url?: string };
+  lead: Lead;
+  log_entry: OutreachLogEntry;
+}
+
+export interface FollowUpQueueResponse {
+  due_count: number;
+  upcoming_count: number;
+  due: Lead[];
+  upcoming: Lead[];
+  smtp_configured: boolean;
+  timestamp: string;
+}
+
+export class OutreachConflictError extends Error {
+  reason: string;
+  prior_send?: OutreachLogEntry;
+  constructor(reason: string, message: string, prior_send?: OutreachLogEntry) {
+    super(message);
+    this.name = "OutreachConflictError";
+    this.reason = reason;
+    this.prior_send = prior_send;
+  }
+}
+
 export async function generateOutreach(
   leadId: string,
   templateKey?: OutreachTemplateKey,
+  assetId?: string,
 ): Promise<OutreachDraft> {
-  const qs = templateKey ? `?template_key=${encodeURIComponent(templateKey)}` : "";
-  return post(`/outreach/${leadId}${qs}`, 30000);
+  const params = new URLSearchParams();
+  if (templateKey) params.set("template_key", templateKey);
+  if (assetId) params.set("asset_id", assetId);
+  const qs = params.toString();
+  return post(`/outreach/${leadId}${qs ? `?${qs}` : ""}`, 30000);
 }
+
+export async function generateFollowUpDraft(
+  leadId: string,
+  assetId?: string,
+): Promise<OutreachDraft> {
+  const qs = assetId ? `?asset_id=${encodeURIComponent(assetId)}` : "";
+  return post(`/outreach/${leadId}/follow-up/draft${qs}`, 30000);
+}
+
+export async function sendOutreach(
+  leadId: string,
+  payload: OutreachSendPayload,
+): Promise<OutreachSendResponse> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch(`${API}/outreach/${leadId}/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    if (res.status === 409) {
+      const errJson = await res.json().catch(() => ({}));
+      const detail = errJson?.detail || {};
+      throw new OutreachConflictError(
+        detail.reason || "duplicate",
+        detail.message || "Duplicate outreach detected within 30 days.",
+        detail.prior_send,
+      );
+    }
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      const detail = errJson?.detail;
+      const msg =
+        typeof detail === "string"
+          ? detail
+          : detail?.violations?.join("; ") || `${res.status} ${res.statusText}`;
+      throw new Error(msg);
+    }
+    clearFetchCache();
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function fetchFollowUps(): Promise<FollowUpQueueResponse> {
+  return get("/outreach/follow-ups");
+}
+
+export async function fetchOutreachLog(
+  leadId?: string,
+  limit = 50,
+): Promise<{ count: number; entries: OutreachLogEntry[] }> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (leadId) params.set("lead_id", leadId);
+  return get(`/outreach/log?${params.toString()}`);
+}
+
+export async function fetchPortfolioAssets(): Promise<{ count: number; assets: PortfolioAsset[] }> {
+  return get("/assets");
+}
+
 
 export async function fetchMarket(): Promise<MarketReport> {
   return get("/market", 60000);

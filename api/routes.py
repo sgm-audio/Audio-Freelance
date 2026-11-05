@@ -93,6 +93,22 @@ class BulkLeadRequest(BaseModel):
     leads: list[BulkLeadItem] = Field(min_length=1, max_length=100)
 
 
+class OutreachSendRequest(BaseModel):
+    """Request body for sending an initial outreach or Follow-Up #1."""
+
+    model_config = {"extra": "forbid"}
+
+    body: str = Field(min_length=1)
+    subject: str | None = None
+    recipient_email: str | None = None
+    target_url: str | None = None
+    step: str = Field(default="initial")  # "initial" | "follow_up_1"
+    mode: str = Field(default="auto")  # "auto" | "email" | "compose" | "assisted"
+    asset_id: str | None = None
+    force: bool = False
+
+
+
 @public.get("/health")
 async def health_check():
     """Health check endpoint."""
@@ -517,10 +533,45 @@ async def rate_work(task_description: str, estimated_hours: int):
     return result
 
 
+@router.get("/assets")
+async def list_portfolio_assets():
+    """Return shipped portfolio assets from asset_registry.yml."""
+    from generate.outreach import list_shipped_assets
+
+    assets = list_shipped_assets()
+    return {"count": len(assets), "assets": assets}
+
+
+@router.get("/outreach/follow-ups")
+async def outreach_follow_ups():
+    """Return leads with Follow-Up #1 due now and upcoming scheduled follow-ups."""
+    from leads.store import get_follow_up_queue
+
+    queue = get_follow_up_queue()
+    return {
+        "due_count": queue["due_count"],
+        "upcoming_count": queue["upcoming_count"],
+        "due": [lead.model_dump(mode="json") for lead in queue["due"]],
+        "upcoming": [lead.model_dump(mode="json") for lead in queue["upcoming"]],
+        "smtp_configured": settings.is_smtp_configured(),
+        "timestamp": datetime.now(tz=UTC).isoformat(),
+    }
+
+
+@router.get("/outreach/log")
+async def list_outreach_log(lead_id: str | None = None, sent_only: bool = True, limit: int = 50):
+    """Return immutable outreach log entries from freelance_outreach_log."""
+    from leads.store import get_outreach_history
+
+    entries = get_outreach_history(lead_id=lead_id, sent_only=sent_only, limit=limit)
+    return {"count": len(entries), "entries": entries}
+
+
 @router.post("/outreach/{lead_id}")
 async def generate_outreach_draft(
     lead_id: str,
     template_key: str | None = None,
+    asset_id: str | None = None,
 ):
     """Generate an outreach draft for a lead (draft only — never auto-sends)."""
     from generate.outreach import TEMPLATES, generate_outreach, template_for_niche
@@ -537,9 +588,78 @@ async def generate_outreach_draft(
         )
 
     try:
-        return generate_outreach(lead, key)
+        return generate_outreach(lead, key, asset_id=asset_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/outreach/{lead_id}/follow-up/draft")
+async def create_follow_up_draft(
+    lead_id: str,
+    asset_id: str | None = None,
+):
+    """Generate an on-demand Follow-Up #1 draft (threaded Re: subject + 2-3 sentence bump)."""
+    from generate.outreach import generate_follow_up
+
+    lead = get_lead_by_id(lead_id)
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    return generate_follow_up(lead, asset_id=asset_id)
+
+
+@router.post("/outreach/{lead_id}/send")
+async def send_outreach_for_lead(
+    lead_id: str,
+    payload: OutreachSendRequest,
+):
+    """Execute initial or follow-up outreach (SMTP, Compose fallback, or Assisted Platform).
+
+    Enforces 30-day duplicate recipient/URL guard, asset claim safety,
+    Message-ID threading on Follow-Up #1, and logs to freelance_outreach_log.
+    """
+    from generate.sender import (
+        ClaimViolationError,
+        DuplicateOutreachError,
+        execute_outreach_send,
+    )
+
+    lead = get_lead_by_id(lead_id)
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    try:
+        return execute_outreach_send(
+            lead=lead,
+            body=payload.body,
+            subject=payload.subject,
+            recipient_email=payload.recipient_email,
+            target_url=payload.target_url,
+            step=payload.step,
+            mode=payload.mode,
+            asset_id=payload.asset_id,
+            force=payload.force,
+        )
+    except ClaimViolationError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"reason": "claim_violation", "violations": exc.violations},
+        ) from exc
+    except DuplicateOutreachError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": exc.reason,
+                "message": exc.message,
+                "prior_send": exc.prior_send,
+            },
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        log.warning("outreach_send_failed", extra={"lead_id": lead_id, "error": str(exc)})
+        raise HTTPException(status_code=500, detail=f"Outreach send failed: {exc}") from exc
+
 
 
 @router.post("/proposal")

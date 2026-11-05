@@ -79,6 +79,25 @@ class Settings(BaseSettings):
     # ── Paths ──
     companies_path: str = ""
 
+    # ── Outreach Send & Follow-Up (SMTP + Cadence) ──
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_name: str = ""
+    smtp_use_tls: bool = True
+    follow_up_email_days: int = 4
+    follow_up_dm_days: int = 3
+    outreach_dedup_days: int = 30
+
+    def is_smtp_configured(self) -> bool:
+        """Return True when SMTP host, user, and password are all configured."""
+        return bool(
+            self.smtp_host.strip()
+            and self.smtp_user.strip()
+            and self.smtp_password.strip()
+        )
+
     def as_niche_list(self) -> list[str]:
         """Return preferred_niches as a list."""
         return [n.strip() for n in self.preferred_niches.split(",") if n.strip()]
@@ -96,3 +115,4 @@ class Settings(BaseSettings):
 
 # Singleton — crashes at import time if tavily_api_key etc are missing
 settings = Settings()  # type: ignore[call-arg]  # pydantic-settings loads from .env
+
