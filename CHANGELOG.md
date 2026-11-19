@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Frontend verification restored** — pinned ESLint 9 for `eslint-config-next` compatibility, added `npm run test:unit`, and wired frontend lint + unit tests into CI with a lockfile cache and `npm ci`.
 - **Launcher false "backend failed to start"** — raised the health probe timeout from 2s to 10s. `/api/v1/health` takes ~2s when Ollama is absent, so the old probe timed out against a healthy backend.
 - **Python 3.15 startup failure** — pinned the app to Python 3.14 (`.python-version`, `requires-python = ">=3.12,<3.15"`) because `onnxruntime` has no cp315 wheels. Rebuilt `.venv` and refreshed `uv.lock`.
 
@@ -37,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Backend hard crash without `.env`** — `tavily_api_key`, `serper_api_key`, `firecrawl_api_key` are now optional (`str = ""`) in `config.py`; an empty `.env` boots fine with a startup warning naming degraded features (Prospect search) instead of a pydantic `ValidationError`. `config.env_file` is anchored to the project root so CWD never matters.
 - **Stale `VIRTUAL_ENV` trap** — the empty `venv/` and `activate.sh` are removed; `run.py` clears a foreign `VIRTUAL_ENV` before `uv run`, so the project's own `.venv` is always used.
-- **Frontend `npm run lint`** — reverted manifest/lockfile drift; eslint 9 + eslint-config-next 16.2.12 lint clean.
+- **Frontend `npm run lint`** — reverted manifest/lockfile drift; eslint 9 + eslint-config-next 16.4.5 lint clean.
 - **Next.js build failure** — added missing `react-is` dependency for recharts.
 - 3 incidental bugs: `setup_logger`→`get_logger` import, em-dash encoding crash, route ordering for `{lead_id}` catch-all.
 - Added `python-multipart` dependency (required by FastAPI `TestClient`).

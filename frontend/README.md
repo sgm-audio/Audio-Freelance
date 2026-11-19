@@ -5,7 +5,7 @@ Next.js 16 dashboard for the Audio-Freelance acquisition system.
 ## Quick Start
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -38,6 +38,7 @@ Requires the backend running on `http://localhost:8080`. Start both with `make d
 
 ```bash
 npm run lint
+npm run test:unit
 npm run build
 npm start
 ```
