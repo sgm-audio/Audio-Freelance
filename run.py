@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Cross-platform dev launcher: pre-flight checks, then backend + frontend.
+"""Single cross-platform entry point: install, check, and run the platform.
 
-Works on Windows, macOS, and Linux with no dependencies beyond Python 3.9+.
-Equivalent to run.sh, which remains for POSIX users.
+This is the only launcher implementation. start.bat / start.sh / make / VS Code
+tasks are thin wrappers around it. The host Python only runs this stdlib script;
+the application itself always uses the project's pinned Python 3.14 via uv.
 
 Usage:
-    python run.py            # checks + start both servers
-    python run.py --check    # pre-flight checks only
-    python run.py --verbose  # show subprocess output (or set VERBOSE=1)
-    python run.py --force    # kill listeners on :3000/:8080 before start
-    python run.py --shutdown # kill listeners on :3000/:8080 and exit
+    python run.py              # pre-flight checks, then start both servers
+    python run.py install      # install backend + frontend dependencies (one command)
+    python run.py check        # pre-flight checks only (legacy: --check)
+    python run.py shutdown     # stop listeners on :3000/:8080 (legacy: --shutdown)
+    python run.py --verbose    # show subprocess output (or set VERBOSE=1)
+    python run.py --force      # kill listeners on :3000/:8080 before start
+    python run.py --no-browser # do not open the dashboard automatically
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ from typing import TextIO
 
 ROOT = Path(__file__).resolve().parent
 IS_WINDOWS = sys.platform == "win32"
+PYTHON_VERSION = "3.14"  # mirrored in .python-version and pyproject.toml
 
 # Neutralize a stale VIRTUAL_ENV (e.g. an empty unrelated venv) so `uv run`
 # always targets this project's own .venv instead of the wrong interpreter.
@@ -81,6 +85,98 @@ def check_cmd(name: str, install_hint: str) -> int:
         print(f"{RED}[MISSING]{NC} {name} — install: {install_hint}")
         return 1
     vlog(f"{GREEN}[OK]{NC} {name}")
+    return 0
+
+
+def uv_install_hint() -> str:
+    return (
+        'powershell -c "irm https://astral.sh/uv/install.ps1 | iex"'
+        if IS_WINDOWS
+        else "curl -LsSf https://astral.sh/uv/install.sh | sh"
+    )
+
+
+def ensure_env() -> None:
+    """Create .env from .env.example on first run (API keys stay empty)."""
+    if (ROOT / ".env").is_file():
+        vlog(f"{GREEN}[OK]{NC} .env exists")
+        return
+    print(
+        f"{YELLOW}[WARN]{NC} .env missing — generating from .env.example. "
+        "Search keys stay empty (Prospect degrades); add them later via /setup."
+    )
+    shutil.copyfile(ROOT / ".env.example", ROOT / ".env")
+    vlog(f"{GREEN}[OK]{NC} .env generated from .env.example")
+
+
+def check_runtime(uv: str) -> int:
+    """Verify uv resolves a supported interpreter for this project."""
+    probe = "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
+    try:
+        proc = subprocess.run(
+            [uv, "run", "python", "-c", probe],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        proc = None
+    if proc is None or proc.returncode != 0:
+        details = (proc.stderr if proc else "") or ""
+        print(f"{RED}[FAIL]{NC} project environment is broken — run: python run.py install")
+        if details.strip():
+            print(details.strip()[-1500:])
+        return 1
+    version = proc.stdout.strip()
+    major, _, minor = version.partition(".")
+    if major == "3" and minor.isdigit() and int(minor) >= 15:
+        print(
+            f"{RED}[FAIL]{NC} Python {version} is unsupported (missing onnxruntime wheels). "
+            f"Run: python run.py install (pins {PYTHON_VERSION})"
+        )
+        return 1
+    vlog(f"{GREEN}[OK]{NC} Python {version} project environment")
+    return 0
+
+
+def install() -> int:
+    """One-command setup: backend environment + frontend dependencies."""
+    uv = shutil.which("uv")
+    if not uv:
+        print(f"{RED}[MISSING]{NC} uv — install: {uv_install_hint()}")
+        return 1
+    ensure_env()
+
+    log(f"Installing backend dependencies (uv sync --extra dev, Python {PYTHON_VERSION})...")
+    proc = subprocess.run(
+        [uv, "sync", "--extra", "dev", "--python", PYTHON_VERSION],
+        cwd=ROOT,
+        check=False,
+    )
+    if proc.returncode != 0:
+        print(f"{RED}[FAIL]{NC} backend install failed")
+        return 1
+    vlog(f"{GREEN}[OK]{NC} backend dependencies installed")
+
+    npm = shutil.which("npm")
+    if not npm:
+        print(f"{RED}[MISSING]{NC} npm — install Node.js: https://nodejs.org")
+        return 1
+    log("Installing frontend dependencies (npm install --legacy-peer-deps)...")
+    proc = subprocess.run(
+        [npm, "install", "--legacy-peer-deps"],
+        cwd=ROOT / "frontend",
+        check=False,
+    )
+    if proc.returncode != 0:
+        print(f"{RED}[FAIL]{NC} frontend npm install failed")
+        return 1
+    vlog(f"{GREEN}[OK]{NC} frontend dependencies installed")
+
+    print()
+    log("Install complete. Start with: start.bat | ./start.sh | python run.py")
     return 0
 
 
@@ -220,12 +316,10 @@ def preflight(*, force: bool = False) -> tuple[int, bool, bool]:
     reuse_frontend = False
     log("Pre-flight checks...")
 
-    uv_hint = (
-        'powershell -c "irm https://astral.sh/uv/install.ps1 | iex"'
-        if IS_WINDOWS
-        else "curl -LsSf https://astral.sh/uv/install.sh | sh"
-    )
-    failures += check_cmd("uv", uv_hint)
+    failures += check_cmd("uv", uv_install_hint())
+    uv = shutil.which("uv")
+    if uv:
+        failures += check_runtime(uv)
     failures += check_cmd("node", "https://nodejs.org")
     failures += check_cmd("npm", "bundled with Node.js")
 
@@ -252,15 +346,7 @@ def preflight(*, force: bool = False) -> tuple[int, bool, bool]:
         )
 
     # .env is required for settings import; empty search keys still boot but limit Prospect.
-    if (ROOT / ".env").is_file():
-        vlog(f"{GREEN}[OK]{NC} .env exists")
-    else:
-        print(
-            f"{YELLOW}[WARN]{NC} .env missing — generating from .env.example. "
-            "Search keys stay empty (Prospect degrades); add keys later via /setup."
-        )
-        shutil.copyfile(ROOT / ".env.example", ROOT / ".env")
-        vlog(f"{GREEN}[OK]{NC} .env generated from .env.example")
+    ensure_env()
 
     next_bin = ROOT / "frontend" / "node_modules" / "next" / "dist" / "bin" / "next"
     if next_bin.is_file():
@@ -379,7 +465,14 @@ def dump_log(path: Path, label: str) -> None:
 def main() -> int:
     global VERBOSE
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="run pre-flight checks only")
+    parser.add_argument(
+        "command",
+        nargs="?",
+        choices=("start", "install", "check", "shutdown"),
+        default="start",
+        help="action to perform (default: start)",
+    )
+    parser.add_argument("--check", action="store_true", help="legacy alias for 'check'")
     parser.add_argument("--verbose", action="store_true", help="show subprocess output")
     parser.add_argument(
         "--force",
@@ -389,7 +482,7 @@ def main() -> int:
     parser.add_argument(
         "--shutdown",
         action="store_true",
-        help="kill listeners on :3000 and :8080 and exit",
+        help="legacy alias for 'shutdown'",
     )
     parser.add_argument(
         "--no-browser",
@@ -400,7 +493,16 @@ def main() -> int:
     if args.verbose:
         VERBOSE = True
 
+    action = args.command
+    if args.check:
+        action = "check"
     if args.shutdown:
+        action = "shutdown"
+
+    if action == "install":
+        return install()
+
+    if action == "shutdown":
         log("Shutting down listeners on :3000 and :8080...")
         kill_listeners(FRONTEND_PORT)
         kill_listeners(BACKEND_PORT)
@@ -416,7 +518,7 @@ def main() -> int:
         print(f"\n{RED}{failures} pre-flight check(s) failed.{NC} Fix them and re-run.")
         return 1
     log("All pre-flight checks passed.")
-    if args.check:
+    if action == "check":
         return 0
 
     # Both already healthy (orphaned prior launch): exit cleanly for Task relaunch.

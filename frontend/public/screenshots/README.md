@@ -3,7 +3,7 @@
 Replace these placeholders with actual screenshots using:
 
 ```bash
-# Start the app first: ./run.sh
+# Start the app first: python run.py
 
 # Option A: Firefox (recommended — handles dark mode well)
 firefox --screenshot dashboard.png http://localhost:3000/ --window-size=1280,800

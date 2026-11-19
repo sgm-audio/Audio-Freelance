@@ -3,7 +3,7 @@
 run: dev        # default: start both
 
 dev:            # start backend + frontend with unified launcher (all platforms)
-	python run.py
+	uv run python run.py
 
 backend:        # start backend only
 	uv run python main.py
@@ -11,9 +11,8 @@ backend:        # start backend only
 frontend:       # start frontend only
 	cd frontend && npm run dev
 
-install:        # install all development dependencies
-	uv sync --extra dev
-	cd frontend && npm install
+install:        # single-command setup: backend + frontend dependencies
+	python run.py install
 
 build:          # build frontend for production
 	cd frontend && npm run build

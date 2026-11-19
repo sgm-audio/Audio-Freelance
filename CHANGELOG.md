@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Python 3.15 startup failure** — pinned the app to Python 3.14 (`.python-version`, `requires-python = ">=3.12,<3.15"`) because `onnxruntime` has no cp315 wheels. Rebuilt `.venv` and refreshed `uv.lock`.
+
+### Changed
+- **One install command** — `python run.py install` creates `.env`, syncs backend dependencies and installs frontend dependencies. `run.sh` was removed; `start.bat`, `start.sh`, `make` targets and VS Code tasks are thin wrappers around `run.py`.
+
 ### Added
-- **Cross-platform launcher** — `run.py` provides pre-flight checks, backend + frontend startup, whole-tree shutdown, `--check`, and `--verbose`. `run.sh`/`activate.sh` remain as POSIX helpers; Windows uses `python run.py` and `uv run` directly.
+- **Cross-platform launcher** — `run.py` provides pre-flight checks, backend + frontend startup, whole-tree shutdown, and `install` / `check` / `shutdown` commands (legacy flags still work).
 - **Centralized configuration** — single `config.py` with `pydantic-settings`. All 20+ env vars validated at import time. Removed 6 scattered `load_dotenv()` calls. Required keys crash immediately if missing.
 - **Automated backup** — `scripts/backup.sh` tars ChromaDB, archives, tracking, and profile. `--retain N` (default 7), `--verify` flag. Integrated into Friday ritual.
 - **Data integrity check** — `scripts/check_integrity.sh` validates ChromaDB SQLite integrity, JSONL parse validity, and profile YAML.

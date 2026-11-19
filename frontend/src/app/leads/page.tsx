@@ -253,7 +253,7 @@ export default function LeadsPage() {
         <h1 className="text-2xl font-semibold tracking-tight mb-3">Backend Not Running</h1>
         <p className="text-muted-foreground mb-4">{error}</p>
         <code className="block bg-muted rounded p-2 text-xs text-left">
-          ./run.sh
+          python run.py
           <br />
           make backend
           <br />

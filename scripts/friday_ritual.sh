@@ -11,7 +11,7 @@ echo "1. System health..."
 HEALTH=$(curl -s "$API/health" 2>/dev/null || echo '{"status":"down"}')
 STATUS=$(echo "$HEALTH" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','down'))" 2>/dev/null || echo "down")
 if [ "$STATUS" != "ok" ]; then
-  echo "   Backend down. Start with: ./run.sh"
+  echo "   Backend down. Start with: python run.py"
   exit 1
 fi
 echo "   Backend: OK"

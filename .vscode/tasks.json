@@ -4,7 +4,7 @@
     {
       "label": "Launch Audio-Freelance",
       "type": "shell",
-      "command": "python run.py",
+      "command": "uv run python run.py",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {}
@@ -23,7 +23,7 @@
     {
       "label": "Preflight Audio-Freelance",
       "type": "shell",
-      "command": "python run.py --check",
+      "command": "uv run python run.py check",
       "options": {
         "cwd": "${workspaceFolder}"
       },

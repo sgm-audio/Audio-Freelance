@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.12%2B-blue" alt="Python">
+  <img src="https://img.shields.io/badge/python-3.12--3.14-blue" alt="Python">
   <img src="https://img.shields.io/badge/next.js-16-black" alt="Next.js">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
 </p>
@@ -60,7 +60,7 @@ Run time depends on the search APIs and was not measured.
 
 ```bash
 # 1. Start the app
-./run.sh
+python run.py
 
 # 2. Take screenshots (Firefox)
 firefox --screenshot frontend/public/screenshots/dashboard.png http://localhost:3000/
@@ -71,35 +71,46 @@ firefox --screenshot frontend/public/screenshots/pipeline.png http://localhost:3
 google-chrome --headless --screenshot=frontend/public/screenshots/dashboard.png --window-size=1280,800 http://localhost:3000/
 ```
 
-## Quick Start — one click
+## Quick Start
 
-**Windows — double-click `start.bat`** (or run `start.bat` in cmd/PowerShell).
+### 1. Install — one command, once
 
-**macOS / Linux — `./start.sh`**
+```bash
+python run.py install
+```
 
-That's it. The launcher:
+This creates `.env` from `.env.example`, installs the backend environment with `uv`,
+and installs the frontend dependencies with `npm`. No venv activation and no separate
+frontend/backend setup.
 
-1. uses this project's own Python environment via `uv` — **no venv activation**,
-2. creates `.env` from `.env.example` if it's missing (search keys stay empty; add them later via the `/setup` wizard),
-3. installs frontend dependencies if `node_modules` is missing,
-4. starts the backend (FastAPI on `:8080`) and frontend (Next.js on `:3000`),
-5. opens **http://localhost:3000** in your browser.
+The app is pinned to **Python 3.14** (`.python-version`) because `onnxruntime` has no
+cp315 wheels. Python 3.15 can stay on your PATH — uv always uses the pinned 3.14
+environment for the application.
 
-No git-bash, no PowerShell activation, no separate frontend/backend install, and no "which shell do I use" guesswork. Stop with **Ctrl+C**.
+### 2. Start
+
+**Windows:** double-click `start.bat`. **macOS / Linux:** `./start.sh`.
+**Any platform:** `python run.py`.
+
+`run.py` is the single launcher implementation; `start.bat` and `start.sh` are thin
+wrappers. It checks prerequisites, starts the backend (FastAPI `:8080`) and frontend
+(Next.js `:3000`), and opens **http://localhost:3000**. Stop with **Ctrl+C**.
 
 ### Prerequisites
 
-- Python 3.12+ and Node.js 22+ — the launcher boots `uv` and warns if either is missing
+- Python 3.12–3.14 installed (3.14 is pinned locally) and Node.js 22+; `uv` is used to build the project environment (`start.bat` bootstraps uv/Node on Windows)
 - [Ollama](https://ollama.ai) with `nomic-embed-text` (optional; dedup falls back without it)
 - Search API keys (Tavily, Serper, Firecrawl) — **optional**; Prospect degrades with a clear warning until you add them via `/setup`
 
-### Individual commands
+### Commands
 
 ```bash
-start.bat                 # Windows: backend + frontend + browser
-./start.sh                # macOS / Linux: same
-python run.py             # any platform: run.py directly (no activation needed)
-uv run pytest tests/      # backend test suite
+python run.py install   # one-command setup (backend + frontend)
+python run.py           # start both services + browser
+python run.py check     # pre-flight checks only
+python run.py shutdown  # stop listeners on :3000/:8080
+python run.py --force   # kill existing listeners before starting
+uv run pytest tests/    # backend test suite
 cd frontend && npm run build   # production frontend build
 ```
 

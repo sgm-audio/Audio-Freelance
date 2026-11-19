@@ -34,16 +34,15 @@ drift.
 
 ## Development setup
 
-**One click:** double-click `start.bat` (Windows) or run `./start.sh` (macOS/Linux).
+**Install once, one command:** `python run.py install` (or `python3 run.py install`).
 
-Equivalent manual steps (one-time installs):
+It creates `.env`, installs the Python 3.14 backend environment via `uv`, and installs
+frontend dependencies via `npm`. The app is pinned to Python 3.14 in `.python-version`;
+Python 3.15 is not supported (no `onnxruntime` wheels).
 
-```bash
-uv sync --extra dev          # backend deps
-cd frontend && npm install   # frontend deps
-python run.py                # backend :8080 + frontend :3000
-# or just: start.bat  |  ./start.sh
-```
+**Start:** double-click `start.bat` (Windows), run `./start.sh` (macOS/Linux), or
+`python run.py` anywhere. `run.py` is the only launcher; the two `start` scripts are
+thin wrappers around it.
 
 Verify: `uv run pytest tests/` and `cd frontend && npm run build`.
 

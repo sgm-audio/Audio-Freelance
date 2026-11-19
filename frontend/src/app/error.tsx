@@ -42,7 +42,7 @@ export default function ErrorPage({
         </Link>
       </div>
       <p className="text-xs text-muted-foreground mt-8">
-        If this persists, check that the backend is running (<code className="bg-muted rounded px-1 py-0.5">./run.sh</code>).
+        If this persists, check that the backend is running (<code className="bg-muted rounded px-1 py-0.5">python run.py</code>).
       </p>
     </div>
   );

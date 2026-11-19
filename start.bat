@@ -2,17 +2,13 @@
 setlocal EnableDelayedExpansion
 
 REM ================================================================
-REM  Audio-Freelance — one-click launcher
+REM  Audio-Freelance — one-click launcher (wrapper around run.py)
 REM ================================================================
-REM Double-click this file. Everything else is automatic:
-REM   * uses the project's own Python environment (uv) — no activation
-REM   * creates .env from .env.example if it's missing
-REM   * installs frontend dependencies if node_modules is missing
-REM   * starts backend (FastAPI :8080) + frontend (Next.js :3000)
-REM   * opens the dashboard in your browser
+REM Double-click to start backend (:8080) + frontend (:3000) and open
+REM the dashboard. No venv activation or shell guesswork needed.
 REM
-REM No git-bash, no PowerShell activation, no separate frontend/backend
-REM install, and no "which shell do I use" guesswork.
+REM First-time setup is one command:  python run.py install
+REM The app uses the Python 3.14 environment pinned in .python-version.
 REM ================================================================
 
 cd /d "%~dp0"

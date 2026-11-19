@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Audio-Freelance — one-click launcher (macOS / Linux).
+# Audio-Freelance — one-click launcher (macOS / Linux), wrapper around run.py.
 # ./start.sh — backend + frontend start, browser opens automatically.
-# No venv activation; uv and Node.js are bootstrapped if missing.
+# First-time setup is one command: python3 run.py install
+# The app uses the Python 3.14 environment pinned in .python-version.
 
 cd "$(dirname "$0")"
 
