@@ -48,6 +48,9 @@ if os.environ.get("VIRTUAL_ENV"):
 BACKEND_PORT = 8080
 FRONTEND_PORT = 3000
 HEALTH_URL = f"http://127.0.0.1:{BACKEND_PORT}/api/v1/health"
+# /health probes Ollama, which can take ~2s when Ollama is absent. A 2s client
+# timeout races that response and makes a healthy backend look dead.
+HEALTH_TIMEOUT = 10
 LOG_DIR = ROOT / "data"
 BACKEND_LOG = LOG_DIR / "run-backend.log"
 FRONTEND_LOG = LOG_DIR / "run-frontend.log"
@@ -192,7 +195,7 @@ def port_listening(port: int) -> bool:
 
 def backend_healthy() -> bool:
     try:
-        with urllib.request.urlopen(HEALTH_URL, timeout=2):
+        with urllib.request.urlopen(HEALTH_URL, timeout=HEALTH_TIMEOUT):
             return True
     except (urllib.error.URLError, OSError):
         return False

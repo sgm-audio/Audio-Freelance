@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Launcher false "backend failed to start"** — raised the health probe timeout from 2s to 10s. `/api/v1/health` takes ~2s when Ollama is absent, so the old probe timed out against a healthy backend.
 - **Python 3.15 startup failure** — pinned the app to Python 3.14 (`.python-version`, `requires-python = ">=3.12,<3.15"`) because `onnxruntime` has no cp315 wheels. Rebuilt `.venv` and refreshed `uv.lock`.
 
 ### Changed
