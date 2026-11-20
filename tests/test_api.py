@@ -414,3 +414,37 @@ class TestBriefing:
             assert "briefing-test-key" not in repr(warning.call_args_list)
         finally:
             settings.api_key = original
+
+
+class TestApiKeyBoundary:
+    """API_KEY guards protected routes while public exceptions stay open."""
+
+    def test_protected_routes_require_the_configured_key(self):
+        original = settings.api_key
+        settings.api_key = "boundary-test-key"
+        try:
+            assert client.get("/api/v1/status").status_code == 401
+            resp = client.get(
+                "/api/v1/status",
+                headers={"Authorization": "Bearer boundary-test-key"},
+            )
+            assert resp.status_code == 200
+        finally:
+            settings.api_key = original
+
+    def test_public_exceptions_stay_open_with_a_key_configured(self):
+        from unittest.mock import patch
+
+        original = settings.api_key
+        settings.api_key = "boundary-test-key"
+        try:
+            assert client.get("/api/v1/health").status_code == 200
+            assert client.get("/api/v1/config/status").status_code == 200
+            assert client.get("/api/v1/profile/status").status_code == 200
+            with patch("config.write_search_keys") as write:
+                resp = client.post("/api/v1/config/keys", json={})
+            assert resp.status_code == 200
+            assert resp.json()["status"] == "saved"
+            write.assert_called_once_with({})
+        finally:
+            settings.api_key = original

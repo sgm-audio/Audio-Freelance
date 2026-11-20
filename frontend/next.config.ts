@@ -1,24 +1,9 @@
 import type { NextConfig } from "next";
 
-const API_HOST = process.env.API_HOST || "127.0.0.1";
-
 const nextConfig: NextConfig = {
   output: "standalone",
   turbopack: {
     root: __dirname,
-  },
-  async rewrites() {
-    // Only proxy /api/v1/* to FastAPI so Next handlers like /api/outreach stay local
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: `http://${API_HOST}:8080/api/v1/:path*`,
-      },
-      {
-        source: "/briefing",
-        destination: `http://${API_HOST}:8080/briefing`,
-      },
-    ];
   },
 };
 

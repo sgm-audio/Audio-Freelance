@@ -279,6 +279,12 @@ All JSON routes are under `/api/v1` except `/briefing`. “Protected” routes r
 available without a token. OpenAPI at `/docs` is authoritative for request and response
 schemas.
 
+The browser never sends this token. Next.js route handlers proxy `/api/v1/*` and
+`/briefing` to the backend and inject `Authorization: Bearer <API_KEY>` server-side,
+reading `API_KEY`, `API_HOST` (default `127.0.0.1`) and `API_PORT` (default `8080`)
+from the environment or the project-root `.env`. Set `API_HOST`/`API_PORT` only when
+the backend is not on the local default.
+
 | Method | Path | Access | Response/purpose |
 |---|---|---|---|
 | `GET` | `/api/v1/health` | Public | JSON health, Ollama state, and timestamp |

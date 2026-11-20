@@ -139,6 +139,24 @@ test.describe("deterministic application flows", () => {
     expect(hydrationErrors).toEqual([]);
   });
 
+  test("never exposes the API key to browser requests", async ({ page }) => {
+    const browserAuthHeaders: string[] = [];
+    page.on("request", (request) => {
+      const authorization = request.headers()["authorization"];
+      if (authorization) browserAuthHeaders.push(`${request.url()} ${authorization}`);
+    });
+    await mockProfileReady(page);
+    await page.route("**/api/v1/status", (route) =>
+      route.fulfill({ json: { lead_counts: {}, ollama_available: false, timestamp: "now" } }),
+    );
+    await page.route("**/api/v1/health", (route) =>
+      route.fulfill({ json: { status: "ok", ollama: false, timestamp: "now" } }),
+    );
+    await page.goto("/");
+    await expect(page.getByRole("navigation")).toBeVisible();
+    expect(browserAuthHeaders).toEqual([]);
+  });
+
   test("preserves protected endpoint denial and principal landmarks", async ({ page }) => {
     await page.route("**/briefing", (route) =>
       route.fulfill({ status: 401, contentType: "application/json", body: '{"detail":"Missing Authorization"}' }),
