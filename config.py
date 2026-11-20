@@ -113,6 +113,10 @@ class Settings(BaseSettings):
     serper_api_key: str = ""
     firecrawl_api_key: str = ""
 
+    # ── SGM Outreach engine (separate SQLite pipeline) ──
+    # Empty defaults to <project>/data/outreach.sqlite, matching the CLI.
+    sgm_outreach_db: str = ""
+
     # ── Optional auth ──
     api_key: str = ""
 

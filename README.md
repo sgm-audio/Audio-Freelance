@@ -309,6 +309,8 @@ the backend is not on the local default.
 | `POST` | `/api/v1/outreach/{lead_id}` | Protected | JSON outreach draft |
 | `POST` | `/api/v1/proposal` | Protected | JSON structured proposal |
 | `GET` | `/api/v1/status` | Protected | JSON lead counts and system status |
+| `GET` | `/api/v1/outreach/status` | Protected | JSON sgm-outreach SQLite pipeline snapshot (honest zeros if absent) |
+| `POST` | `/api/v1/outreach/pause` | Protected | JSON kill-switch state (`{"paused": true|false}`) |
 | `POST` | `/api/v1/debug` | Protected | JSON diagnostics |
 | `GET` | `/api/v1/market` | Protected | JSON market intelligence report |
 | `GET` | `/api/v1/market/trends` | Protected | JSON technology trends |

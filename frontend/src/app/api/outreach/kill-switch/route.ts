@@ -1,22 +1,9 @@
-import { NextResponse } from "next/server";
-import { setOutreachPaused } from "@/lib/outreach-db";
+import { proxyBackend } from "@/lib/backend-proxy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
-  try {
-    const body = (await request.json()) as { paused?: unknown };
-    if (typeof body.paused !== "boolean") {
-      return NextResponse.json(
-        { error: "Body must include boolean paused" },
-        { status: 400 },
-      );
-    }
-    const result = setOutreachPaused(body.paused);
-    return NextResponse.json(result);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Kill switch failed";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+/** Forward the kill switch to the backend; it validates the body and owns the DB write. */
+export function POST(request: Request): Promise<Response> {
+  return proxyBackend(request, "/api/v1/outreach/pause");
 }

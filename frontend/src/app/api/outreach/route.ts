@@ -1,15 +1,9 @@
-import { NextResponse } from "next/server";
-import { loadOutreachSnapshot } from "@/lib/outreach-db";
+import { proxyBackend } from "@/lib/backend-proxy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    const snapshot = loadOutreachSnapshot();
-    return NextResponse.json(snapshot);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to read outreach DB";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+/** Same-origin view of the backend's real SQLite pipeline snapshot. */
+export function GET(request: Request): Promise<Response> {
+  return proxyBackend(request, "/api/v1/outreach/status");
 }

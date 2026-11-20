@@ -2,10 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import type { OutreachSnapshot } from "@/lib/outreach-db";
+import {
+  fetchOutreachSnapshot,
+  setOutreachPaused,
+  type OutreachSnapshot,
+} from "@/lib/outreach-db";
 
-function formatState(state: string): string {
-  return state.replace(/_/g, " ");
+function formatState(state?: string | null): string {
+  return state ? state.replace(/_/g, " ") : "";
+}
+
+function sourceLabel(source: string): string {
+  if (source === "sqlite") return "live sqlite";
+  if (source === "missing") return "no database";
+  if (source === "sqlite-uninitialized") return "db not initialized";
+  if (source === "loading") return "loading";
+  return "unavailable";
 }
 
 function relativeTime(iso: string): string {
@@ -36,9 +48,7 @@ export function OutreachConsole({ initial }: { initial: OutreachSnapshot }) {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/outreach", { cache: "no-store" });
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const data = (await res.json()) as OutreachSnapshot;
+      const data = await fetchOutreachSnapshot();
       startTransition(() => {
         setSnap(data);
         setError(null);
@@ -67,16 +77,7 @@ export function OutreachConsole({ initial }: { initial: OutreachSnapshot }) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/outreach/kill-switch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paused: !snap.paused }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `kill switch ${res.status}`);
-      }
-      await refresh();
+      setSnap(await setOutreachPaused(!snap.paused));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kill switch failed");
     } finally {
@@ -126,7 +127,7 @@ export function OutreachConsole({ initial }: { initial: OutreachSnapshot }) {
               </>
             )}
             <span style={{ margin: "0 0.55rem", opacity: 0.4 }}>·</span>
-            {snap.source === "sqlite" ? "live sqlite" : "no db — empty fixture"}
+            {sourceLabel(snap.source)}
           </p>
         </div>
 
@@ -167,9 +168,13 @@ export function OutreachConsole({ initial }: { initial: OutreachSnapshot }) {
           <p className="sgm-zero-kicker">Stage clear</p>
           <h2 className="sgm-zero-title">Ready when you are</h2>
           <p className="sgm-zero-copy">
-            {dbMissing
+            {snap.source === "missing"
               ? "No outreach.sqlite yet. Run the CLI once and this page binds to real counts."
-              : "Database is online with zero leads. Ingest a Sales Nav CSV or add a company to wake the funnel."}
+              : snap.source === "sqlite-uninitialized"
+                ? "Database is present but has no pipeline tables yet. Run the CLI once to initialize it."
+                : snap.source === "sqlite"
+                  ? "Database is online with zero leads. Ingest a Sales Nav CSV or add a company to wake the funnel."
+                  : "Waiting for the outreach engine. The console only shows counts it can verify."}
           </p>
           <pre className="sgm-zero-cli">{`sgm-outreach status
 sgm-outreach ingest --source salesnav --inbox ./inbox

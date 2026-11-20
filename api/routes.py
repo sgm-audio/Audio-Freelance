@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 import config
 from api.auth import require_api_key
 from api.metrics import leads_discovered, leads_stored, ollama_available, pipeline_runs
+from api.outreach_status import OutreachDbUnavailableError, load_status, set_paused
 from debug.log import get_logger
 from graph.pipeline import run_pipeline
 from leads.schema import PREFERRED_NICHES, LeadStatus
@@ -33,6 +34,12 @@ log = get_logger(__name__)
 
 
 # ── Pydantic request models ──
+
+
+class OutreachPauseRequest(BaseModel):
+    """Kill-switch body for the SGM Outreach engine."""
+
+    paused: bool
 
 
 class ProfileUpdateRequest(BaseModel):
@@ -563,6 +570,25 @@ async def rate_work(task_description: str, estimated_hours: int):
 
     result = generate_rate(task_description, estimated_hours)
     return result
+
+
+@router.get("/outreach/status")
+async def outreach_status():
+    """Snapshot of the separate sgm-outreach SQLite pipeline.
+
+    Reports real counts (or honest zeros when the database does not exist);
+    the frontend console renders this through its same-origin proxy.
+    """
+    return load_status()
+
+
+@router.post("/outreach/pause")
+async def outreach_pause(body: OutreachPauseRequest):
+    """Arm (true) or clear (false) the global outreach kill switch."""
+    try:
+        return set_paused(body.paused)
+    except OutreachDbUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.post("/outreach/{lead_id}")
