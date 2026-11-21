@@ -7,12 +7,14 @@ Validates that every route accepts requests and returns expected shapes.
 import re
 import shutil
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from config import settings
 from main import app
+from research.market import MarketReport, MarketSignal, PricingBenchmark, TechTrend
 
 client = TestClient(app)
 
@@ -129,11 +131,30 @@ class TestProspecting:
         resp = client.post("/api/v1/prospect/INVALID")
         assert resp.status_code == 400
 
-    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
-    def test_prospect_valid_niche(self):
-        """POST /api/v1/prospect/plugin_dev runs full pipeline."""
-        resp = client.post("/api/v1/prospect/plugin_dev", timeout=120)
+    def test_prospect_valid_niche(self, monkeypatch):
+        """POST /api/v1/prospect/plugin_dev runs full pipeline with deterministic fixture."""
+        monkeypatch.setattr(
+            "api.routes.run_pipeline",
+            AsyncMock(
+                return_value={
+                    "all_candidates": [{"title": "JUCE synth"}],
+                    "leads": [{"id": "lead-1"}],
+                    "hot_leads": [],
+                    "warm_leads": [],
+                    "cold_leads": [],
+                    "skipped_leads": [],
+                    "archived_count": 0,
+                    "archive_path": "",
+                    "errors": [],
+                }
+            ),
+        )
+        resp = client.post("/api/v1/prospect/plugin_dev")
         assert resp.status_code == 200
+        data = resp.json()
+        assert data["niche"] == "plugin_dev"
+        assert data["total_candidates"] == 1
+        assert data["total_leads"] == 1
 
     def test_score_missing_body(self):
         """POST /api/v1/score without body returns 422."""
@@ -238,33 +259,86 @@ class TestColdLeads:
 
 
 class TestMarket:
-    """Market intelligence endpoints — skipped by default (external APIs, 60s+)."""
+    """Market intelligence endpoints tested with deterministic fixtures."""
 
-    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
-    def test_market_overview(self):
-        resp = client.get("/api/v1/market", timeout=120)
+    @pytest.fixture
+    def sample_report(self):
+        return MarketReport(
+            scanned_at="2026-11-20T00:00:00+00:00",
+            signals=[
+                MarketSignal(
+                    category="demand",
+                    source="fixture",
+                    title="JUCE C++ DSP developer needed",
+                    url="https://example.com/job/1",
+                    snippet="Looking for JUCE / C++20 audio plugin engineer.",
+                    relevance_score=90,
+                    tags=["juce", "c++"],
+                )
+            ],
+            tech_trends=[
+                TechTrend(
+                    technology="JUCE",
+                    mention_count=5,
+                    contexts=["audio plugin"],
+                    direction="rising",
+                )
+            ],
+            pricing_benchmarks=[
+                PricingBenchmark(
+                    niche="plugin_dev",
+                    contract_range_min=3000,
+                    contract_range_max=8000,
+                    hourly_min=85,
+                    hourly_max=150,
+                    sample_count=4,
+                )
+            ],
+            hot_opportunities=["JUCE VST3/AU plugin contracts"],
+            summary="Strong demand for JUCE/C++ DSP work.",
+        )
+
+    def test_market_overview(self, monkeypatch):
+        monkeypatch.setattr(
+            "research.market.generate_report",
+            AsyncMock(return_value={"summary": "Fixture market report", "signals": 1}),
+        )
+        resp = client.get("/api/v1/market")
         assert resp.status_code == 200
+        assert resp.json()["summary"] == "Fixture market report"
 
-    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
-    def test_market_trends(self):
-        resp = client.get("/api/v1/market/trends", timeout=120)
+    def test_market_trends(self, monkeypatch, sample_report):
+        monkeypatch.setattr(
+            "research.market.run_market_scan",
+            AsyncMock(return_value=sample_report),
+        )
+        resp = client.get("/api/v1/market/trends")
         assert resp.status_code == 200
         data = resp.json()
         assert "tech_trends" in data
+        assert data["tech_trends"][0]["technology"] == "JUCE"
 
-    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
-    def test_market_pricing(self):
-        resp = client.get("/api/v1/market/pricing", timeout=120)
+    def test_market_pricing(self, monkeypatch, sample_report):
+        monkeypatch.setattr(
+            "research.market.run_market_scan",
+            AsyncMock(return_value=sample_report),
+        )
+        resp = client.get("/api/v1/market/pricing")
         assert resp.status_code == 200
         data = resp.json()
         assert "pricing_benchmarks" in data
+        assert data["pricing_benchmarks"][0]["niche"] == "plugin_dev"
 
-    @pytest.mark.skip(reason="External provider integration; owner: maintainer; issue #74")
-    def test_market_opportunities(self):
-        resp = client.get("/api/v1/market/opportunities", timeout=120)
+    def test_market_opportunities(self, monkeypatch, sample_report):
+        monkeypatch.setattr(
+            "research.market.run_market_scan",
+            AsyncMock(return_value=sample_report),
+        )
+        resp = client.get("/api/v1/market/opportunities")
         assert resp.status_code == 200
         data = resp.json()
         assert "opportunities" in data
+        assert len(data["recent_signals"]) == 1
 
 
 class TestProfile:
