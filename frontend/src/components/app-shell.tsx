@@ -42,9 +42,9 @@ function Sidebar() {
         <div className="pt-4 mt-4 border-t border-border">
           <p className="text-xs text-muted-foreground px-3 pb-1">System</p>
           <NavItem href="/preferences" label="Preferences" />
-          <NavItem href="/api/v1/health" label="API Health" external />
-          <NavItem href="/api/v1/debug" label="Diagnostics" external />
-          <NavItem href="/briefing" label="Daily Briefing" external />
+          <NavItem href="/health" label="API Health" />
+          <NavItem href="/diagnostics" label="Diagnostics" />
+          <NavItem href="/daily-briefing" label="Daily Briefing" />
           <details className="pt-2">
             <summary className="px-3 py-1.5 text-xs text-muted-foreground cursor-pointer hover:text-foreground list-none">
               More…
@@ -64,17 +64,9 @@ function Sidebar() {
   );
 }
 
-function NavItem({ href, label, external }: { href: string; label: string; external?: boolean }) {
+function NavItem({ href, label }: { href: string; label: string }) {
   const cls =
     "flex items-center rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors";
-  if (external) {
-    return (
-      <a href={href} className={cls} target="_blank" rel="noopener noreferrer">
-        {label}
-        <span className="ml-auto text-xs opacity-50">↗</span>
-      </a>
-    );
-  }
   return (
     <Link href={href} prefetch={true} className={cls}>
       {label}

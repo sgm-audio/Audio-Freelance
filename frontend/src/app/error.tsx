@@ -6,10 +6,10 @@ import { useEffect } from "react";
 
 export default function ErrorPage({
   error,
-  unstable_retry,
+  retry,
 }: {
   error: Error & { digest?: string };
-  unstable_retry: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     console.error("Uncaught error:", error);
@@ -29,7 +29,7 @@ export default function ErrorPage({
       )}
       <div className="flex justify-center gap-3">
         <button
-          onClick={unstable_retry}
+          onClick={retry}
           className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 transition-opacity"
         >
           Try again

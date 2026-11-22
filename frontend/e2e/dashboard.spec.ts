@@ -40,9 +40,11 @@ test.describe("deterministic application flows", () => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/setup$/);
     await page.getByRole("button", { name: "Get Started" }).click();
+    // API Keys step was inserted ahead of Skills; no keys are needed here.
+    await page.getByRole("button", { name: "Save & Continue" }).click();
     await page.getByRole("button", { name: "c++" }).click();
     await page.getByRole("button", { name: "Next" }).click();
-    await page.getByRole("button", { name: "plugin dev" }).click();
+    await page.getByRole("button", { name: "plugin dev", exact: true }).click();
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByPlaceholder("e.g. 3000").fill("4500");
     await page.getByPlaceholder("e.g. 150").fill("175");
@@ -108,15 +110,17 @@ test.describe("deterministic application flows", () => {
     );
     await page.goto("/setup");
     await page.getByRole("button", { name: "Get Started" }).click();
+    // Advance past the API Keys step, then Skills, Domains and Rate.
+    await page.getByRole("button", { name: "Save & Continue" }).click();
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
     const input = page.locator('input[type="file"]');
 
     await input.setInputFiles({ name: "bad.txt", mimeType: "text/plain", buffer: Buffer.from("bad") });
-    await expect(page.getByRole("alert")).toContainText("Unsupported file type");
+    await expect(page.locator('p[role="alert"]')).toContainText("Unsupported file type");
     await input.setInputFiles({ name: "huge.pdf", mimeType: "application/pdf", buffer: Buffer.alloc(10 * 1024 * 1024 + 1) });
-    await expect(page.getByRole("alert")).toContainText("File too large");
+    await expect(page.locator('p[role="alert"]')).toContainText("File too large");
     await input.setInputFiles({ name: "resume.pdf", mimeType: "application/pdf", buffer: Buffer.from("pdf") });
     await expect(page.getByText("resume.pdf")).toBeVisible();
   });

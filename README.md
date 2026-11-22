@@ -250,13 +250,14 @@ Backend configuration is centralized in `config.py` (pydantic-settings); the sep
 
 | Capability | Implementation | Latest evidence |
 |---|---|---|
-| Configuration, JSON logging, correlation IDs, metrics | Implemented | Local static/unit checks pass; supported Python runtime CI is pending |
-| Bearer auth, CORS, security headers, rate limiting | Implemented | Focused local policy checks pass; full Python 3.12/3.13 runtime suite is pending |
-| Backups and data-integrity checks | Implemented | Source/tests present; container persistence gate awaits a working Actions runner |
-| Backend and outreach tests | Implemented | 2026-10-31, Linux, Python 3.12, `uv run pytest tests/`: 156 passed, 14 skipped, **1 failed** — `test_compose_files_do_not_publish_a_chroma_service`, because `docker-compose.yml` still runs `chromadb/chroma:latest` with port `8001:8000` published |
-| Frontend unit tests | Implemented | Node unit tests pass locally |
-| Playwright smoke tests | Implemented in CI | Browser installation/execution is pending |
-| Docker images and Compose profiles | Implemented in CI | Build, profile, health, persistence, non-root, and image-scan job is pending |
+| Configuration, JSON logging, correlation IDs, metrics | Implemented | `ruff check .` clean; backend unit tests pass locally. CI job is defined but runner execution is not verified here |
+| Bearer auth, CORS, security headers, rate limiting | Implemented | Auth-proxy unit tests pass locally; full Python matrix CI execution is not verified here |
+| Backups and data-integrity checks | Implemented | Source/tests present; container persistence gate has not been executed here |
+| Backend tests | Implemented | Local Python 3.14 `pytest tests/ -q`: 181 passed, 5 skipped |
+| Outreach workspace tests | Implemented | pnpm workspace test scripts defined; not re-run in this pass |
+| Frontend unit tests | Implemented | `npm run test:unit`: 6 passed; `npm run lint`, `npx tsc --noEmit`, `npm run build` clean |
+| Playwright smoke tests | Local suite only — **not wired into CI** | `npx playwright test`: 7 passed locally (Chromium required); `.github/workflows/ci.yml` has no Playwright job |
+| Docker images and Compose profiles | Image build/push job in CI | Frontend/backend images build on master/tags when Actions runners execute; Compose profiles are **not** validated in CI |
 | OpenAPI documentation | Implemented | Interactive schemas at `/docs`; route inventory below |
 
 A capability is not release-verified merely because its implementation exists. See

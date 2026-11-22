@@ -10,6 +10,19 @@ type LoadError =
   | { kind: "http"; message: string }
   | { kind: "empty_or_keys"; message: string };
 
+/** Backend may omit optional arrays; fill them so render never dereferences undefined. */
+function normalizeReport(raw: MarketReport): MarketReport {
+  return {
+    ...raw,
+    summary: raw.summary ?? "",
+    signals: raw.signals ?? [],
+    tech_trends: raw.tech_trends ?? [],
+    pricing_benchmarks: raw.pricing_benchmarks ?? [],
+    hot_opportunities: raw.hot_opportunities ?? [],
+    total_signals: raw.total_signals ?? 0,
+  };
+}
+
 function classifyFetchError(err: unknown): LoadError {
   const msg = err instanceof Error ? err.message : String(err);
   if (err instanceof Error && err.name === "AbortError") {
@@ -43,7 +56,7 @@ export default function MarketPage() {
         setLoading(false);
         return;
       }
-      setReport(await fetchMarket());
+      setReport(normalizeReport(await fetchMarket()));
     } catch (e) {
       setReport(null);
       setError(classifyFetchError(e));

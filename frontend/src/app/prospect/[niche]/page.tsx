@@ -25,7 +25,14 @@ export default function ProspectPage() {
     setError("");
     setRan(true);
     try {
-      setResult(await prospectNiche(niche));
+      const raw = await prospectNiche(niche);
+      // Backend may omit optional arrays; fill them so render never throws.
+      setResult({
+        ...raw,
+        hot_leads: raw.hot_leads ?? [],
+        warm_leads: raw.warm_leads ?? [],
+        errors: raw.errors ?? [],
+      });
     } catch (e) {
       setResult(null);
       setError(e instanceof Error ? e.message : String(e));

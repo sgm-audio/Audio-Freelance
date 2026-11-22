@@ -11,13 +11,22 @@ export default function TrackingPage() {
   const [summary, setSummary] = useState<WonLostSummary | null>(null);
   const [events, setEvents] = useState<TrackingEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.allSettled([
-      fetchActivePursuits().then((r) => setPursuits(r.active)).catch(() => {}),
-      fetchWonLost().then(setSummary).catch(() => {}),
-      fetchTracking(30).then((r) => setEvents(r.events)).catch(() => {}),
-    ]).finally(() => setLoading(false));
+    Promise.all([
+      fetchActivePursuits(),
+      fetchWonLost(),
+      fetchTracking(30),
+    ])
+      .then(([p, s, e]) => {
+        setPursuits((p.active ?? []).filter((item) => item?.lead));
+        setSummary(s);
+        setEvents(e.events ?? []);
+        setError(null);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Could not load tracking data"))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -36,6 +45,12 @@ export default function TrackingPage() {
           Pursued leads, status transitions, and pipeline effectiveness.
         </p>
       </div>
+
+      {error && (
+        <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
       {/* Summary cards */}
       {summary && (

@@ -190,3 +190,25 @@ There is **no accepted risk** covering the aggregate critical/high GitHub alerts
 ## Final recommendation
 
 **NO-GO.** PR #70 must remain `in progress`. The remediation provides meaningful local improvements, but release criteria are not met until authoritative supported-platform, browser, container, desktop, security-alert, CI-runner, and repository-control evidence exists and the inaccurate production-readiness documentation is corrected.
+
+## Follow-up (2026-11-22) — documentation and frontend corrections
+
+The original findings above are retained verbatim. A later pass corrected the
+specific overclaims this report identified:
+
+- `README.md` capability table now states that Playwright is a **local-only**
+  suite (there is no CI e2e job), that container image builds depend on Actions
+  runners actually executing, and that Compose profiles are not CI-validated.
+- Stale backend test figures (1 failed / 14 skipped) were replaced with the
+  current local result (181 passed, 5 skipped on Python 3.14).
+- `frontend/public/screenshots/README.md` no longer calls the real captures
+  placeholders; the unreferenced `assets/screenshots/dashboard.png` was removed.
+- Frontend toolchain drift was reduced: both Dockerfiles now use Node 22 (as in
+  CI), React/react-dom versions match, `shadcn` moved to devDependencies, and
+  a scoped `minimatch` override clears the 10 moderate npm advisories.
+  `npm audit` reports 0 vulnerabilities and `run.py` now uses reproducible
+  `npm ci` instead of `npm install --legacy-peer-deps`.
+
+The release recommendation above is unchanged: these corrections do not
+substitute for the missing authoritative CI, browser, container, and
+supported-platform evidence.

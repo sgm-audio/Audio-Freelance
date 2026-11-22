@@ -67,9 +67,13 @@ export interface OutreachSnapshot {
   timestamp: string;
 }
 
-/** A clearly-labelled placeholder for loading/error states — never real data. */
+/**
+ * A clearly-labelled placeholder for loading/error states — never real data.
+ * The timestamp is a fixed epoch so the SSR and client initial renders match;
+ * real timestamps only arrive from the API after hydration.
+ */
 export function emptyOutreachSnapshot(source: string): OutreachSnapshot {
-  const timestamp = new Date().toISOString();
+  const timestamp = "1970-01-01T00:00:00.000Z";
   return {
     lead_counts: Object.fromEntries(OUTREACH_STATES.map((s) => [s, 0])) as Record<
       OutreachLeadState,

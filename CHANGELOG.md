@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Black-screen pages** — removed route-level `loading.tsx` skeletons that hung on client-rendered routes. Updated all `error.tsx` boundaries to the Next 16 `retry` prop, added a root `global-error.tsx` and a local error boundary around the WebGL visualisation, and normalized partial API responses so leads/market/opportunities/tracking/prospect pages render guards instead of throwing. The first-boot detector now only nudges from the dashboard.
+- **API key entry in the UI** — added a Search API Keys section to Preferences (Tavily / Serper / Firecrawl) that saves through the same-origin proxy. Keys are stored backend-side and their values are never returned to the browser; the backend `API_KEY` remains server-side only. Setup wizard now surfaces key/profile save errors and masks key inputs.
+- **Nav tabs opening new pages** — replaced the three `target="_blank"` system links with in-app `/health`, `/diagnostics` and `/daily-briefing` pages that call through the existing auth proxy, and converted dashboard quick actions to Next.js `Link`.
+- **Stale e2e flows** — updated setup/upload tests for the inserted API Keys step, tightened ambiguous selectors, and disabled the Next 16 dev indicator that was intercepting theme-toggle clicks. All 7 Playwright flows now pass.
 - **`/outreach` console bound to real data** — added protected `GET /api/v1/outreach/status` and `POST /api/v1/outreach/pause` endpoints that read/write the engine's `data/outreach.sqlite` via stdlib `sqlite3` (mirroring `packages/core`). Removed all fabricated metrics and fake pause success from the console; it now shows honest zeros (or explicit missing/uninitialized states) and a working global kill switch through same-origin Next.js proxy routes. Added coverage for real counts, queues, missing/uninitialized DBs, kill-switch writes and the auth boundary, plus `SGM_OUTREACH_DB` config documentation.
 - **Frontend auth with `API_KEY`** — replaced the credential-less `next.config.ts` rewrites with same-origin Next.js route handlers that proxy `/api/v1/*` and `/briefing` to FastAPI and inject the backend key server-side. The browser never receives the key. Added `backendSetting()` and `proxyBackend()` unit tests plus an e2e assertion that no browser request carries `Authorization`.
 - **Frontend verification restored** — pinned ESLint 9 for `eslint-config-next` compatibility, added `npm run test:unit`, and wired frontend lint + unit tests into CI with a lockfile cache and `npm ci`.
@@ -15,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Python 3.15 startup failure** — pinned the app to Python 3.14 (`.python-version`, `requires-python = ">=3.12,<3.15"`) because `onnxruntime` has no cp315 wheels. Rebuilt `.venv` and refreshed `uv.lock`.
 
 ### Changed
+- **Toolchain and audit hygiene** — aligned both Dockerfiles to Node 22 (matching CI) and added `engines` to the frontend manifest, matched `react`/`react-dom` versions, moved the CLI-only `shadcn` package to devDependencies, added scoped `minimatch` overrides that clear all 10 moderate npm advisories (`npm audit`: 0 vulnerabilities), and switched the launcher to reproducible `npm ci`.
 - **One install command** — `python run.py install` creates `.env`, syncs backend dependencies and installs frontend dependencies. `run.sh` was removed; `start.bat`, `start.sh`, `make` targets and VS Code tasks are thin wrappers around `run.py`.
 
 ### Added

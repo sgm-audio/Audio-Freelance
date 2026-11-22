@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchProfile, saveProfile, ProfileData, fetchCompanies, CompaniesData, addCompany, removeCompany } from "@/lib/api";
+import { fetchProfile, saveProfile, ProfileData, fetchCompanies, CompaniesData, addCompany, removeCompany, fetchConfigStatus, updateSearchKeys, ConfigStatus } from "@/lib/api";
 
 export default function PreferencesPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -11,6 +11,10 @@ export default function PreferencesPage() {
   const [message, setMessage] = useState("");
   const [newSlug, setNewSlug] = useState("");
   const [newAts, setNewAts] = useState("greenhouse");
+  const [configStatus, setConfigStatus] = useState<ConfigStatus | null>(null);
+  const [keys, setKeys] = useState({ tavily: "", serper: "", firecrawl: "" });
+  const [keysSaving, setKeysSaving] = useState(false);
+  const [keysMessage, setKeysMessage] = useState("");
 
   useEffect(() => { load(); }, []);
 
@@ -20,6 +24,8 @@ export default function PreferencesPage() {
       const [p, c] = await Promise.all([fetchProfile(), fetchCompanies()]);
       setProfile(p); setCompanies(c);
     } catch {}
+    // Config status is independent; a failure here must not blank the page.
+    fetchConfigStatus().then(setConfigStatus).catch(() => {});
     setLoading(false);
   }
 
@@ -33,6 +39,30 @@ export default function PreferencesPage() {
     } catch { setMessage("Save failed."); }
     setSaving(false);
     setTimeout(() => setMessage(""), 3000);
+  }
+
+  async function handleSaveKeys() {
+    setKeysSaving(true);
+    setKeysMessage("");
+    try {
+      const payload: Record<string, string> = {};
+      if (keys.tavily.trim()) payload.tavily_api_key = keys.tavily.trim();
+      if (keys.serper.trim()) payload.serper_api_key = keys.serper.trim();
+      if (keys.firecrawl.trim()) payload.firecrawl_api_key = keys.firecrawl.trim();
+      if (Object.keys(payload).length === 0) {
+        setKeysMessage("Enter at least one key.");
+        return;
+      }
+      await updateSearchKeys(payload);
+      // Backend returns only configured flags, never the key itself.
+      setKeys({ tavily: "", serper: "", firecrawl: "" });
+      setConfigStatus(await fetchConfigStatus());
+      setKeysMessage("Keys saved on the server.");
+    } catch {
+      setKeysMessage("Could not save keys. Is the backend running?");
+    } finally {
+      setKeysSaving(false);
+    }
   }
 
   async function handleAddCompany() {
@@ -248,6 +278,47 @@ export default function PreferencesPage() {
           }
           input.value = "";
         }} className="rounded-md border border-red-500/30 text-red-400 px-3 py-1 text-xs hover:bg-red-500/10">Add</button>
+      </div>
+    </section>
+
+    {/* Search API Keys */}
+    <section className="rounded-lg border border-border bg-card p-5">
+      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Search API Keys</h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        Keys are stored on the backend and never sent to or shown in the browser. The backend&apos;s own
+        <code className="text-foreground"> API_KEY</code> stays server-side and cannot be changed here.
+        Web prospecting needs at least one of these; ATS company lists work without them.
+      </p>
+      <div className="space-y-4">
+        {([
+          { id: "tavily", label: "Tavily", configured: configStatus?.tavily, placeholder: "tvly-..." },
+          { id: "serper", label: "Serper", configured: configStatus?.serper, placeholder: "..." },
+          { id: "firecrawl", label: "Firecrawl", configured: configStatus?.firecrawl, placeholder: "..." },
+        ] as const).map(({ id, label, configured, placeholder }) => (
+          <div key={id}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground uppercase mb-1">{label} API key</p>
+              <span className={`text-xs ${configured ? "text-green-400" : "text-muted-foreground"}`}>
+                {configured ? "Configured" : "Not set"}
+              </span>
+            </div>
+            <input
+              type="password"
+              value={keys[id]}
+              onChange={e => setKeys({ ...keys, [id]: e.target.value })}
+              placeholder={configured ? "Leave blank to keep current key" : placeholder}
+              autoComplete="off"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-4 mt-4">
+        <button onClick={handleSaveKeys} disabled={keysSaving}
+          className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm disabled:opacity-50">
+          {keysSaving ? "Saving..." : "Save Keys"}
+        </button>
+        {keysMessage && <span className="text-sm text-muted-foreground">{keysMessage}</span>}
       </div>
     </section>
 

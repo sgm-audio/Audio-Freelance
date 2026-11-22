@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { fetchStatus, fetchHealth, fetchConfigStatus, StatusResponse, ConfigStatus } from "@/lib/api";
 import AudioVis from "@/components/audio-vis";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 export default function Dashboard() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
@@ -78,13 +80,13 @@ export default function Dashboard() {
             ? "Ollama available"
             : "Ollama off — local embedding fallback for dedup"}
           <span className="mx-2">·</span>
-          <a href="/market" className="underline hover:text-foreground">Open market scan →</a>
+          <Link href="/market" className="underline hover:text-foreground">Open market scan →</Link>
         </p>
         {configStatus &&
           !(configStatus.tavily || configStatus.serper || configStatus.firecrawl) && (
           <p className="text-sm mt-2 text-yellow-900 bg-yellow-100 border border-yellow-200 rounded-md px-3 py-2">
             ⚠ No search API keys configured — Prospect web search is disabled. Add keys in{" "}
-            <a href="/setup" className="underline hover:text-yellow-800">Setup</a>
+            <Link href="/setup" className="underline hover:text-yellow-800">Setup</Link>
             to enable Tavily, Serper, or Firecrawl.
           </p>
         )}
@@ -96,7 +98,9 @@ export default function Dashboard() {
         )}
       </div>
 
-      <AudioVis />
+      <ErrorBoundary label="Visualization unavailable (WebGL may be disabled)">
+        <AudioVis />
+      </ErrorBoundary>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Leads" value={totalLeads} total={totalLeads} />
@@ -137,41 +141,41 @@ export default function Dashboard() {
         <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Quick Actions</h2>
         <div className="flex flex-wrap gap-2">
           {["plugin_dev", "reaper_scripts", "rust_audio", "audio_ml", "game_audio_dev"].map((niche) => (
-            <a key={niche} href={`/prospect/${niche}`}
+            <Link key={niche} href={`/prospect/${niche}`}
               className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent transition-colors"
             >
               Prospect {niche.replace("_", " ")}
-            </a>
+            </Link>
           ))}
-          <a href="/market"
+          <Link href="/market"
             className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent transition-colors"
           >
             Market Scan →
-          </a>
-          <a href="/opportunities"
+          </Link>
+          <Link href="/opportunities"
             className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent transition-colors"
           >
             Opportunities →
-          </a>
-          <a href="/cold-leads"
+          </Link>
+          <Link href="/cold-leads"
             className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent transition-colors"
           >
             Cold Leads →
-          </a>
-          <a href="/tracking"
+          </Link>
+          <Link href="/tracking"
             className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent transition-colors"
           >
             Tracking →
-          </a>
+          </Link>
         </div>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-5">
         <h2 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">Market &amp; pricing</h2>
         <p className="text-sm text-muted-foreground">
-          Live market scans run on the <a href="/market" className="underline hover:text-foreground">Market</a> page
+          Live market scans run on the <Link href="/market" className="underline hover:text-foreground">Market</Link> page
           so the dashboard stays fast. Open{" "}
-          <a href="/opportunities" className="underline hover:text-foreground">Opportunities</a> for pursue signals.
+          <Link href="/opportunities" className="underline hover:text-foreground">Opportunities</Link> for pursue signals.
         </p>
       </div>
     </div>

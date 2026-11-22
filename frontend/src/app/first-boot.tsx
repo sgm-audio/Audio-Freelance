@@ -8,15 +8,18 @@ export function FirstBootDetector() {
   const pathname = usePathname();
   const router = useRouter();
   useEffect(() => {
-    // Only check on root/dashboard pages, not on setup itself
-    if (pathname === "/setup") return;
+    // Only nudge first-time users from the dashboard. Force-redirecting from
+    // every route made other pages look like dead ends before setup finished.
+    if (pathname !== "/") return;
 
     fetchProfileStatus()
       .then((status) => {
         if (!status.exists || status.is_empty) {
-          if (pathname !== "/setup") router.push("/setup");
+          router.push("/setup");
         }
       })
+      // Backend down is not a reason to redirect; the page renders its own
+      // connection error state instead.
       .catch(() => {});
   }, [pathname, router]);
 

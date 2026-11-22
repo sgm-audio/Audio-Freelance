@@ -167,9 +167,9 @@ def install() -> int:
     if not npm:
         print(f"{RED}[MISSING]{NC} npm — install Node.js: https://nodejs.org")
         return 1
-    log("Installing frontend dependencies (npm install --legacy-peer-deps)...")
+    log("Installing frontend dependencies (npm ci)...")
     proc = subprocess.run(
-        [npm, "install", "--legacy-peer-deps"],
+        [npm, "ci"],
         cwd=ROOT / "frontend",
         check=False,
     )
@@ -355,14 +355,14 @@ def preflight(*, force: bool = False) -> tuple[int, bool, bool]:
     if next_bin.is_file():
         vlog(f"{GREEN}[OK]{NC} frontend Next.js binary present")
     else:
-        log("Installing frontend dependencies (npm install --legacy-peer-deps)...")
+        log("Installing frontend dependencies (npm ci)...")
         npm = shutil.which("npm")
         if not npm:
             print(f"{RED}[MISSING]{NC} npm not found — install Node.js: https://nodejs.org")
             failures += 1
         else:
             proc = subprocess.run(
-                [npm, "install", "--legacy-peer-deps"],
+                [npm, "ci"],
                 cwd=ROOT / "frontend",
                 capture_output=True,
                 text=True,

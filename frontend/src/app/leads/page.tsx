@@ -121,7 +121,7 @@ export default function LeadsPage() {
       const q = query.trim().toLowerCase();
       if (!q) return true;
       return (
-        l.title.toLowerCase().includes(q) ||
+        (l.title ?? "").toLowerCase().includes(q) ||
         (l.company ?? "").toLowerCase().includes(q) ||
         (l.raw_text ?? "").toLowerCase().includes(q)
       );

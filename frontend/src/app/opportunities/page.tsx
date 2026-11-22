@@ -41,7 +41,12 @@ export default function OpportunitiesPage() {
         setLoading(false);
         return;
       }
-      setData(await fetchMarketOpportunities());
+      const raw = await fetchMarketOpportunities();
+      setData({
+        summary: raw.summary ?? "",
+        opportunities: raw.opportunities ?? [],
+        recent_signals: (raw.recent_signals ?? []).map((s) => ({ ...s, tags: s.tags ?? [] })),
+      });
     } catch (e) {
       setData(null);
       setError(classifyFetchError(e));

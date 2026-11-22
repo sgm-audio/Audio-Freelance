@@ -127,6 +127,38 @@ export async function updateSearchKeys(
   } finally { clearTimeout(timer); }
 }
 
+export interface DiagnosticReport {
+  status: string;
+  timestamp: string;
+  ollama_available: boolean;
+  chroma_healthy: boolean;
+  tavily_reachable: boolean;
+  serper_reachable: boolean;
+  firecrawl_reachable: boolean;
+  chroma_stats: Record<string, unknown>;
+  recent_errors: unknown[];
+  failure_modes: string[];
+  errors: string[];
+  remediation: string[];
+}
+
+/** Runs the backend diagnostics sweep via the same-origin proxy (POST /debug). */
+export async function runDiagnostics(): Promise<DiagnosticReport> {
+  const controller = new AbortController();
+  // The sweep probes several services with multi-second timeouts.
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const res = await fetch(`${API}/debug`, {
+      method: "POST",
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function fetchStatus(): Promise<StatusResponse> {
   return get("/status");
 }

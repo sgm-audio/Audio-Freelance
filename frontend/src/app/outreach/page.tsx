@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import OutreachClient from "./outreach-client";
+import "./outreach.css";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

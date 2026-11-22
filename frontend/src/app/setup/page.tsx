@@ -29,6 +29,8 @@ export default function SetupPage() {
   const [niches, setNiches] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<ProfileData["portfolio"]["portfolio_files"]>([]);
   const [uploadError, setUploadError] = useState("");
+  const [keysError, setKeysError] = useState("");
+  const [finishError, setFinishError] = useState("");
 
   function toggle(arr: string[], set: (v: string[]) => void, item: string) {
     set(arr.includes(item) ? arr.filter(x => x !== item) : [...arr, item]);
@@ -36,6 +38,7 @@ export default function SetupPage() {
 
   async function handleSaveKeys() {
     setSaving(true);
+    setKeysError("");
     try {
       const keys: Record<string, string> = {};
       if (tavilyKey) keys.tavily_api_key = tavilyKey;
@@ -45,8 +48,9 @@ export default function SetupPage() {
         await updateSearchKeys(keys);
       }
       setStep(2);
-    } catch {
-      setStep(2);
+    } catch (err) {
+      // Do not silently advance — the user must know the keys were not saved.
+      setKeysError(err instanceof Error ? err.message : "Could not save keys. Is the backend running?");
     } finally {
       setSaving(false);
     }
@@ -54,6 +58,7 @@ export default function SetupPage() {
 
   async function handleFinish() {
     setSaving(true);
+    setFinishError("");
     try {
       await saveProfile({
         identity: { name: "", location: "", timezone: "", remote_ok: true, relocation_ok: false },
@@ -63,7 +68,10 @@ export default function SetupPage() {
         portfolio: { github: "", website: "", notable_work: [], portfolio_files: uploadedFiles },
       });
       router.push("/");
-    } catch { setSaving(false); }
+    } catch (err) {
+      setFinishError(err instanceof Error ? err.message : "Could not save profile. Is the backend running?");
+      setSaving(false);
+    }
   }
 
   return (
@@ -86,20 +94,21 @@ export default function SetupPage() {
         <div className="space-y-4">
           <div>
             <p className="text-xs text-muted-foreground uppercase mb-1">Tavily API key</p>
-            <input type="text" value={tavilyKey} onChange={e=>setTavilyKey(e.target.value)} placeholder="tvly-..." className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"/>
+            <input type="password" autoComplete="off" value={tavilyKey} onChange={e=>setTavilyKey(e.target.value)} placeholder="tvly-..." className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"/>
             <p className="text-xs text-muted-foreground mt-1">Search jobs via Tavily. Get a key at <a href="https://tavily.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">tavily.com</a>.</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase mb-1">Serper API key</p>
-            <input type="text" value={serperKey} onChange={e=>setSerperKey(e.target.value)} placeholder="..." className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"/>
+            <input type="password" autoComplete="off" value={serperKey} onChange={e=>setSerperKey(e.target.value)} placeholder="..." className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"/>
             <p className="text-xs text-muted-foreground mt-1">Search jobs via Serper (Google). Get a key at <a href="https://serper.dev" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">serper.dev</a>.</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase mb-1">Firecrawl API key</p>
-            <input type="text" value={firecrawlKey} onChange={e=>setFirecrawlKey(e.target.value)} placeholder="..." className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"/>
+            <input type="password" autoComplete="off" value={firecrawlKey} onChange={e=>setFirecrawlKey(e.target.value)} placeholder="..." className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"/>
             <p className="text-xs text-muted-foreground mt-1">Search jobs via Firecrawl. Get a key at <a href="https://firecrawl.dev" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">firecrawl.dev</a>.</p>
           </div>
         </div>
+        {keysError && <p role="alert" className="text-sm text-red-400">{keysError}</p>}
         <div className="flex justify-between pt-4">
           <button onClick={()=>router.push("/")} className="text-sm text-muted-foreground hover:text-foreground">Skip for now</button>
           <button onClick={handleSaveKeys} disabled={saving} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm disabled:opacity-50">{saving?"Saving…":"Save & Continue"}</button>
@@ -218,6 +227,7 @@ export default function SetupPage() {
           {uploadedFiles.length>0&&<p>Portfolio Files: <span className="text-muted-foreground">{uploadedFiles.map(f=>f.filename).join(", ")}</span></p>}
         </div>
         <p className="text-xs text-muted-foreground">Edit anytime in <strong>Preferences</strong>.</p>
+        {finishError && <p role="alert" className="text-sm text-red-400">{finishError}</p>}
         <div className="flex justify-between pt-4">
           <button onClick={()=>setStep(5)} className="text-sm text-muted-foreground hover:text-foreground">Back</button>
           <button onClick={handleFinish} disabled={saving} className="rounded-md bg-primary text-primary-foreground px-6 py-2 text-sm disabled:opacity-50">{saving?"Saving...":"Finish → Dashboard"}</button>
